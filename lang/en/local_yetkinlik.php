@@ -79,3 +79,20 @@ $string['last30days']       = 'Last 30 days';
 $string['last90days']       = 'Last 90 days';
 $string['alltime']          = 'All time';
 $string['successrate']      = 'Success Rate (%)';
+$string['generalcomment'] = 'General comment';
+$string['comment_red'] = 'Topics not yet achieved: {$a}';
+$string['comment_orange'] = 'Partially learned topics: {$a}';
+$string['comment_blue'] = 'Mostly learned topics: {$a}';
+$string['comment_green'] = 'Fully learned topics: {$a}';
+
+$string['ai_not_configured'] = 'AI is not configured.';
+$string['ai_prompt_student'] = 'Write a short pedagogical analysis for the student based on the following competency percentages:';
+$string['ai_prompt_school'] = 'Write a pedagogical analysis and development strategy for the school based on the following competency percentages:';
+$string['ai_system_prompt'] = 'You are an educational assistant. Provide motivational and pedagogical feedback for students or schools.';
+$string['ai_failed'] = 'AI request failed.';
+
+$string['structured_red'] = '{$a->shortname}: Success rate %{$a->rate}. Not enough progress yet. Recommendation: review, use extra resources, and ask your teacher.';
+$string['structured_orange'] = '{$a->shortname}: Success rate %{$a->rate}. Partially learned. Recommendation: practice more, solve sample questions, and consolidate knowledge.';
+$string['structured_blue'] = '{$a->shortname}: Success rate %{$a->rate}. Mostly learned. Recommendation: reinforce with repetition and fill in missing points.';
+$string['structured_green'] = '{$a->shortname}: Success rate %{$a->rate}. Fully learned. Recommendation: move to advanced activities and apply knowledge in different contexts.';
+
