@@ -5,6 +5,7 @@ $string['pdfreport']       = 'PDF Raporu';
 $string['user']            = 'Öğrenci';
 $string['competency']      = 'Kazanım';
 $string['allusers']        = 'Tüm öğrenciler';
+$string['student']        = 'Öğrenci';
 $string['allcompetencies'] = 'Tüm kazanımlar';
 $string['show']            = 'Göster';
 $string['courseavg']       = 'Kurs Ort.';
