@@ -5,6 +5,7 @@ $string['pdfreport']       = '📄 PDF Report';
 $string['user']            = 'Student';
 $string['competency']      = 'Competency';
 $string['allusers']        = 'All students';
+$string['student']        = 'Student';
 $string['allcompetencies'] = 'All competencies';
 $string['show']            = 'Show';
 $string['courseavg']       = 'Course Avg.';
