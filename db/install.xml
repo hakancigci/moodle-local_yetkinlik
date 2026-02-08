@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/yetkinlik/db" VERSION="2026020670" COMMENT="Yetkinlik plugin tables">
+
+    <TABLES>
+
+        <TABLE NAME="local_yetkinlik_qmap" COMMENT="Mapping between questions and competencies">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+                <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Course ID"/>
+                <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Question ID"/>
+                <FIELD NAME="competencyid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Competency ID"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Creation timestamp"/>
+            </FIELDS>
+
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="coursefk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+                <KEY NAME="questionfk" TYPE="foreign" FIELDS="questionid" REFTABLE="question" REFFIELDS="id"/>
+                <KEY NAME="competencyfk" TYPE="foreign" FIELDS="competencyid" REFTABLE="competency" REFFIELDS="id"/>
+            </KEYS>
+
+            <INDEXES>
+                <INDEX NAME="course_question_comp_idx" UNIQUE="true" FIELDS="courseid,questionid,competencyid"/>
+            </INDEXES>
+        </TABLE>
+
+    </TABLES>
+</XMLDB>
