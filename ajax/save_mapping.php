@@ -41,7 +41,7 @@ require_capability('moodle/question:editall', $context);
 
 $existing = $DB->get_record('local_yetkinlik_qmap', [
     'courseid'   => $courseid,
-    'questionid' => $questionid
+    'questionid' => $questionid,
 ]);
 
 // JSON yanıtı için header ayarı.
