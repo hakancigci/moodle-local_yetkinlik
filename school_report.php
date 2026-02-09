@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * School wide competency performance report.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -23,19 +23,23 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+
 require_login();
 
 $context = context_system::instance();
 require_capability('moodle/site:config', $context);
 
 $PAGE->set_url('/local/yetkinlik/school_report.php');
-$PAGE->set_title('Okul Genel Kazanım Raporu');
-$PAGE->set_heading('Okul Genel Kazanım Raporu');
+$PAGE->set_title(get_string('schoolreport', 'local_yetkinlik'));
+$PAGE->set_heading(get_string('schoolreport', 'local_yetkinlik'));
 
 echo $OUTPUT->header();
+
 global $DB;
 
-/* Tüm okul yetkinlik başarısı */
+/** @var \moodle_database $DB */
+
+// Fetch all school competency success rates.
 $sql = "
     SELECT c.id, c.shortname, c.description,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
@@ -59,13 +63,13 @@ $sql = "
 $rows = $DB->get_records_sql($sql);
 
 echo '<table class="generaltable">';
-echo '<tr>
-        <th>Kazanım Kodu</th>
-        <th>Kazanım</th>
-        <th>Çözülen</th>
-        <th>Doğru</th>
-        <th>Başarı</th>
-      </tr>';
+echo '<thead><tr>
+        <th>' . get_string('competencycode', 'local_yetkinlik') . '</th>
+        <th>' . get_string('competency', 'local_yetkinlik') . '</th>
+        <th>' . get_string('attempts', 'local_yetkinlik') . '</th>
+        <th>' . get_string('correct', 'local_yetkinlik') . '</th>
+        <th>' . get_string('success', 'local_yetkinlik') . '</th>
+      </tr></thead><tbody>';
 
 $labels = [];
 $data = [];
@@ -76,17 +80,21 @@ foreach ($rows as $r) {
     $color = $rate >= 70 ? 'green' : ($rate >= 50 ? 'orange' : 'red');
 
     echo "<tr>
-            <td>{$r->shortname}</td>
-            <td>{$r->description}</td>
+            <td>" . s($r->shortname) . "</td>
+            <td>" . s($r->description) . "</td>
             <td>{$r->attempts}</td>
             <td>{$r->correct}</td>
             <td style='color: $color'>%{$rate}</td>
           </tr>";
 }
-echo '</table>';
+echo '</tbody></table>';
 
 $labelsjs = json_encode($labels);
 $datajs = json_encode($data);
+
+/**
+ * Inline chart implementation.
+ */
 ?>
 
 <canvas id="schoolchart"></canvas>
