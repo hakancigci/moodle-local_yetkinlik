@@ -1,37 +1,39 @@
-define(['jquery', 'core/notification', 'core/form-autocomplete'], function($, Notification, Autocomplete) {
+define(['jquery'], function($) {
     return {
         init: function() {
-            console.log("local_yetkinlik/mapping init çalıştı");
+            // Event delegation kullanarak dinamik eklenen satırlarda da çalışmasını sağlayalım
+            $(document).on('change', '.yetkinlik-select', function() {
+                var dropdown = $(this);
+                var competencyId = dropdown.val();
+                var questionId = dropdown.data('questionid');
+                var courseId = dropdown.data('courseid');
 
-            // Autocomplete'i aktif et.
-            $(".yetkinlik-select").each(function() {
-                Autocomplete.enhance(this, false);
-            });
-
-            // Değişiklikleri kaydet.
-            $(document).on("change", ".yetkinlik-select", function() {
-                var el = $(this);
+                // M.cfg.wwwroot zaten Moodle sayfalarında tanımlıdır
+                var ajaxUrl = M.cfg.wwwroot + '/local/yetkinlik/ajax.php';
 
                 $.ajax({
-                    url: M.cfg.wwwroot + '/local/yetkinlik/ajax.php',
-                    method: 'POST',
+                    url: ajaxUrl,
+                    type: 'POST',
                     data: {
                         action: 'save_mapping',
-                        courseid: el.data("courseid"),
-                        questionid: el.data("questionid"),
-                        competencyid: el.val(),
+                        courseid: courseId,
+                        questionid: questionId,
+                        competencyid: competencyId,
                         sesskey: M.cfg.sesskey
                     },
-                    success: function(resp) {
-                        try {
-                            var data = JSON.parse(resp);
-                            console.log("Mapping kaydedildi:", data);
-                        } catch (e) {
-                            Notification.exception(e);
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'ok' || response.status === 'deleted') {
+                            // Başarılı olduğunu kullanıcıya hissettirelim (isteğe bağlı)
+                            dropdown.css('border-color', '#28a745');
+                            setTimeout(function() {
+                                dropdown.css('border-color', '');
+                            }, 2000);
                         }
                     },
                     error: function(xhr, status, error) {
-                        Notification.exception(error);
+                        console.error("AJAX Hatası:", error);
+                        alert("Kayıt yapılamadı!");
                     }
                 });
             });

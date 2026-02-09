@@ -1,4 +1,5 @@
 <?php
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -17,104 +18,88 @@
 /**
  * Report for competency.
  *
- * @package   local_yetkinlik
- * @copyright 2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later*/
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-require_once(__DIR__.'/../../config.php');
-require_once($CFG->libdir.'/tcpdf/tcpdf.php');
+require_once(__DIR__ . '/../../config.php');
+require_once($CFG->libdir . '/tcpdf/tcpdf.php');
+
 require_login();
-
-$context = context_system::instance();
-require_capability('moodle/site:config', $context);
+$courseid = required_param('courseid', PARAM_INT);
+$context = context_course::instance($courseid);
+require_capability('moodle/course:view', $context);
 
 global $DB;
 
-/* Okul geneli */
+// Başarı durumu SQL sorgusu.
 $sql = "
-SELECT c.id, c.shortname, c.description,
-       CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
-       CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
-FROM {quiz_attempts} quiza
-JOIN {user} u ON quiza.userid = u.id
-JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-JOIN {quiz} quiz ON quiz.id = quiza.quiz
-JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-JOIN {competency} c ON c.id = m.competencyid
-JOIN (
-    SELECT MAX(fraction) AS fraction, questionattemptid
-    FROM {question_attempt_steps}
-    GROUP BY questionattemptid
-) qas ON qas.questionattemptid = qa.id
-WHERE quiza.state = 'finished'
-GROUP BY c.id, c.shortname, c.description
+    SELECT c.id, c.shortname, c.description,
+           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+           CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+    FROM {quiz_attempts} quiza
+    JOIN {user} u ON quiza.userid = u.id
+    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+    JOIN {quiz} quiz ON quiz.id = quiza.quiz
+    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+    JOIN {competency} c ON c.id = m.competencyid
+    JOIN (
+        SELECT MAX(fraction) AS fraction, questionattemptid
+        FROM {question_attempt_steps}
+        GROUP BY questionattemptid
+    ) qas ON qas.questionattemptid = qa.id
+    WHERE quiz.course = :courseid
+    GROUP BY c.shortname, c.description, c.id
+    ORDER BY c.shortname
 ";
 
-$rows = $DB->get_records_sql($sql);
-
-/* Yüzdeler */
+$rows = $DB->get_records_sql($sql, ['courseid' => $courseid]);
 $rates = [];
+
 foreach ($rows as $r) {
-    $rates[] = [
-        'shortname'   => $r->shortname,
-        'description' => strip_tags($r->description),
-        'rate'        => $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0
-    ];
+    $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
+    $rates[$r->shortname] = $rate;
 }
 
-/* AI yorum fonksiyonuna uygun format */
-$stats = [];
-foreach ($rates as $r) {
-    $stats[$r['shortname']] = $r['rate'];
-}
+require_once(__DIR__ . '/ai.php');
+$comment = local_yetkinlik_generate_comment($rates);
+$course = $DB->get_record('course', ['id' => $courseid]);
 
-/* Yorum */
-require_once(__DIR__.'/ai.php');
-$comment = local_yetkinlik_generate_comment($stats, 'school');
-
-
-/* PDF */
+/* PDF İşlemleri */
 $pdf = new TCPDF();
 $pdf->AddPage();
-$pdf->SetFont('freeserif','',12);
+$pdf->SetFont('freeserif', '', 12);
 
-$pdf->Cell(0,10,get_string('schoolpdfreport','local_yetkinlik'),0,1,'C');
+$pdf->Cell(0, 10, $course->fullname . " - Kazanım Raporu", 0, 1);
 $pdf->Ln(5);
 
-/* Tablo başlıkları */
-$pdf->SetFillColor(224,224,224);
-$pdf->SetDrawColor(0,0,0);
-$pdf->SetLineWidth(0.3);
+$html = "<table border='1' cellpadding='6'>
+    <tr>
+        <th>Kazanım</th>
+        <th>Çözülen</th>
+        <th>Doğru</th>
+        <th>Başarı</th>
+    </tr>";
 
-$pdf->Cell(40,10,get_string('competencycode','local_yetkinlik'),1,0,'C',true);
-$pdf->Cell(100,10,get_string('competency','local_yetkinlik'),1,0,'C',true);
-$pdf->Cell(40,10,get_string('success','local_yetkinlik'),1,1,'C',true);
+foreach ($rows as $r) {
+    $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
+    $color = $rate >= 70 ? '#ccffcc' : ($rate >= 50 ? '#fff3cd' : '#f8d7da');
 
-/* Tablo satırları */
-foreach ($rates as $row) {
-    if ($row['rate'] >= 70) {
-        $pdf->SetFillColor(204,255,204); // yeşil
-    } elseif ($row['rate'] >= 50) {
-        $pdf->SetFillColor(255,243,205); // sarı
-    } else {
-        $pdf->SetFillColor(248,215,218); // kırmızı
-    }
-
-    $desc = $row['description'];
-    $descHeight = $pdf->getStringHeight(100, $desc);
-    $lineHeight = max(10, $descHeight);
-
-    $x = $pdf->GetX();
-    $y = $pdf->GetY();
-
-    $pdf->MultiCell(40, $lineHeight, $row['shortname'], 1, 'C', true, 0, $x, $y, true);
-    $pdf->MultiCell(100, $lineHeight, $desc, 1, 'L', true, 0, $x+40, $y, true);
-    $pdf->MultiCell(40, $lineHeight, '%'.$row['rate'], 1, 'C', true, 1, $x+140, $y, true);
+    $html .= "<tr style='background-color: $color'>
+        <td>{$r->shortname}</td>
+        <td>{$r->attempts}</td>
+        <td>{$r->correct}</td>
+        <td>%{$rate}</td>
+    </tr>";
 }
 
+$html .= "</table>";
 $pdf->Ln(10);
-$pdf->writeHTML("<b>".get_string('generalcomment','local_yetkinlik')."</b><br>$comment");
 
-$pdf->Output("school_achievement_report.pdf","I");
+$pdf->writeHTML($html);
+$pdf->writeHTML("<b>Yorum:</b><br>" . $comment);
+
+$pdf->Output("kazanim_raporu.pdf", "I");
 exit;

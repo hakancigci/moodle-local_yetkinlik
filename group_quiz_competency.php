@@ -1,4 +1,5 @@
 <?php
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -17,11 +18,12 @@
 /**
  * Report for competency.
  *
- * @package   local_yetkinlik
- * @copyright 2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later*/
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-require_once(__DIR__.'/../../config.php');
+require_once(__DIR__ . '/../../config.php');
 require_login();
 
 global $DB, $USER, $OUTPUT, $PAGE;
@@ -32,11 +34,10 @@ require_login($courseid);
 $context = context_course::instance($courseid);
 
 $groupid = optional_param('groupid', 0, PARAM_INT);
-$quizid  = optional_param('quizid', 0, PARAM_INT);
 
-$PAGE->set_url('/local/yetkinlik/group_quiz_competency.php', ['courseid'=>$courseid]);
-$PAGE->set_title(get_string('groupquizcompetency','local_yetkinlik'));
-$PAGE->set_heading(get_string('groupquizcompetency','local_yetkinlik'));
+$PAGE->set_url('/local/yetkinlik/group_competency.php', ['courseid' => $courseid]);
+$PAGE->set_title(get_string('groupcompetency', 'local_yetkinlik'));
+$PAGE->set_heading(get_string('groupcompetency', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 $PAGE->set_context($context);
 
@@ -44,35 +45,19 @@ echo $OUTPUT->header();
 
 /* Kurs grupları */
 $groups = groups_get_all_groups($courseid);
-
-/* Kurs sınavları */
-$quizzes = $DB->get_records('quiz', ['course'=>$courseid], 'name ASC');
-
 echo '<form method="get">';
-echo '<input type="hidden" name="courseid" value="'.$courseid.'">';
-
-/* Grup seçimi */
+echo '<input type="hidden" name="courseid" value="' . $courseid . '">';
 echo '<select name="groupid">';
-echo '<option value="0">'.get_string('selectgroup','local_yetkinlik').'</option>';
+echo '<option value="0">' . get_string('selectgroup', 'local_yetkinlik') . '</option>';
 foreach ($groups as $g) {
     $sel = ($groupid == $g->id) ? 'selected' : '';
     echo "<option value='{$g->id}' $sel>{$g->name}</option>";
 }
 echo '</select> ';
-
-/* Sınav seçimi */
-echo '<select name="quizid">';
-echo '<option value="0">'.get_string('selectquiz','local_yetkinlik').'</option>';
-foreach ($quizzes as $q) {
-    $sel = ($quizid == $q->id) ? 'selected' : '';
-    echo "<option value='{$q->id}' $sel>{$q->name}</option>";
-}
-echo '</select> ';
-
-echo '<button>'.get_string('show','local_yetkinlik').'</button>';
+echo '<button>' . get_string('show', 'local_yetkinlik') . '</button>';
 echo '</form><hr>';
 
-if ($groupid && $quizid) {
+if ($groupid) {
     // Grup öğrencilerini idnumber’a göre sırala (sadece student rolü olanlar)
     $students = $DB->get_records_sql("
         SELECT u.id, u.idnumber, u.firstname, u.lastname
@@ -85,98 +70,100 @@ if ($groupid && $quizid) {
           AND c.id = :courseid
           AND ra.roleid = (SELECT id FROM {role} WHERE shortname = 'student')
         ORDER BY u.idnumber ASC
-    ", ['groupid'=>$groupid, 'courseid'=>$courseid]);
+    ", ['groupid' => $groupid, 'courseid' => $courseid]);
 
-    // Seçilen sınava ait yetkinlikler
+    // Kurs yetkinliklerini çek
     $competencies = $DB->get_records_sql("
-        SELECT DISTINCT c.id, c.shortname, c.description
-        FROM {quiz_attempts} quiza
-        JOIN {user} u ON quiza.userid = u.id
-        JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-        JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-        JOIN {quiz} quiz ON quiz.id = quiza.quiz
-        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+        SELECT DISTINCT c.id, c.shortname
+        FROM {local_yetkinlik_qmap} m
         JOIN {competency} c ON c.id = m.competencyid
-        JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
-            GROUP BY questionattemptid
-        ) qas ON qas.questionattemptid = qa.id
-        WHERE quiz.id = :quizid
         ORDER BY c.shortname
-    ", ['quizid'=>$quizid]);
+    ");
 
+    // Tablo başlıkları
     echo '<table class="generaltable">';
-    echo '<tr><th>'.get_string('student','local_yetkinlik').'</th>';
+    echo '<tr><th>' . get_string('student', 'local_yetkinlik') . '</th>';
     foreach ($competencies as $c) {
         echo "<th>{$c->shortname}</th>";
     }
     echo '</tr>';
 
+    // Grup toplamları için hazırlık
     $groupTotals = [];
     foreach ($competencies as $c) {
-        $groupTotals[$c->id] = ['attempts'=>0,'correct'=>0];
+        $groupTotals[$c->id] = ['attempts' => 0, 'correct' => 0];
     }
 
+    // Her öğrenci için yetkinlik başarıları
     foreach ($students as $s) {
-        echo "<tr><td>".fullname($s)."</td>";
+        // Öğrenci adı link olacak
+        $url = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
+            'courseid' => $courseid,
+            'userid'   => $s->id
+        ]);
+        $studentlink = html_writer::link($url, fullname($s), ['target' => '_blank']);
+
+        echo "<tr><td>$studentlink</td>";
         foreach ($competencies as $c) {
             $sql = "
                 SELECT SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
                 FROM {quiz_attempts} quiza
-                JOIN {user} u ON quiza.userid = u.id
                 JOIN {question_usages} qu ON qu.id = quiza.uniqueid
                 JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                JOIN {quiz} quiz ON quiz.id = quiza.quiz
                 JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                JOIN {competency} c ON c.id = m.competencyid
                 JOIN (
-                    SELECT MAX(fraction) AS fraction, questionattemptid 
-                    FROM {question_attempt_steps} 
+                    SELECT MAX(fraction) AS fraction, questionattemptid
+                    FROM {question_attempt_steps}
                     GROUP BY questionattemptid
                 ) qas ON qas.questionattemptid = qa.id
-                WHERE quiz.id = :quizid AND u.id = :userid AND m.competencyid = :competencyid
-                GROUP BY c.shortname
+                WHERE quiza.userid = :userid AND quiza.state = 'finished'
+                  AND m.competencyid = :competencyid
             ";
             $data = $DB->get_record_sql($sql, [
-                'quizid' => $quizid,
                 'userid' => $s->id,
                 'competencyid' => $c->id
             ]);
 
             if ($data && $data->attempts) {
-                $rate = number_format(($data->correct / $data->attempts) * 100,1);
+                $rate = number_format(($data->correct / $data->attempts) * 100, 1);
 
-                if ($rate >= 80) { $color = 'green'; }
-                elseif ($rate >= 60) { $color = 'blue'; }
-                elseif ($rate >= 40) { $color = 'orange'; }
-                else { $color = 'red'; }
-
-                echo "<td style='color:$color;font-weight:bold'>%$rate</td>";
-
+                if ($rate >= 80) {
+                    $color = 'green';
+                } elseif ($rate >= 60) {
+                    $color = 'blue';
+                } elseif ($rate >= 40) {
+                    $color = 'orange';
+                } else {
+                    $color = 'red';
+                }
+                echo "<td style='color: $color; font-weight: bold;'>%$rate</td>";
                 $groupTotals[$c->id]['attempts'] += $data->attempts;
                 $groupTotals[$c->id]['correct']  += $data->correct;
             } else {
-                echo "<td></td>"; // girişim yoksa boş hücre
+                echo "<td></td>"; // Girişim yoksa boş hücre.
             }
         }
         echo '</tr>';
     }
 
     // Grup ortalama satırı
-    echo "<tr style='font-weight:bold;background:#eee'><td>".get_string('total','local_yetkinlik')."</td>";
+    echo "<tr style='font-weight: bold; background: #eee;'><td>" . get_string('total', 'local_yetkinlik') . "</td>";
     foreach ($competencies as $c) {
         $attempts = $groupTotals[$c->id]['attempts'];
         $correct  = $groupTotals[$c->id]['correct'];
-        $rate = ($attempts) ? number_format(($correct / $attempts) * 100,1) : '';
+        $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
 
         if ($rate !== '') {
-            if ($rate >= 80) { $color = 'green'; }
-            elseif ($rate >= 60) { $color = 'blue'; }
-            elseif ($rate >= 40) { $color = 'orange'; }
-            else { $color = 'red'; }
-
-            echo "<td style='color:$color'>%$rate</td>";
+            if ($rate >= 80) {
+                $color = 'green';
+            } elseif ($rate >= 60) {
+                $color = 'blue';
+            } elseif ($rate >= 40) {
+                $color = 'orange';
+            } else {
+                $color = 'red';
+            }
+            echo "<td style='color: $color;'>%$rate</td>";
         } else {
             echo "<td></td>";
         }

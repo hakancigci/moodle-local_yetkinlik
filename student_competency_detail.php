@@ -17,33 +17,34 @@
 /**
  * Report for competency.
  *
- * @package   local_yetkinlik
- * @copyright 2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later*/
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-require_once(__DIR__.'/../../config.php');
+require_once(__DIR__ . '/../../config.php');
 require_login();
 
 global $DB, $USER, $OUTPUT, $PAGE;
 
 $courseid = required_param('courseid', PARAM_INT);
-$userid   = required_param('userid', PARAM_INT);
+$userid = required_param('userid', PARAM_INT);
 
 $context = context_course::instance($courseid);
 require_capability('mod/quiz:viewreports', $context);
 
-$PAGE->set_url('/local/yetkinlik/student_competency_detail.php', ['courseid'=>$courseid,'userid'=>$userid]);
-$PAGE->set_title(get_string('studentcompetencydetail','local_yetkinlik'));
-$PAGE->set_heading(get_string('studentcompetencydetail','local_yetkinlik'));
+$PAGE->set_url('/local/yetkinlik/student_competency_detail.php', ['courseid' => $courseid, 'userid' => $userid]);
+$PAGE->set_title(get_string('studentcompetencydetail', 'local_yetkinlik'));
+$PAGE->set_heading(get_string('studentcompetencydetail', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// Öğrenci bilgisi
-$student = $DB->get_record('user', ['id'=>$userid], '*', MUST_EXIST);
-echo "<h3>".fullname($student)."</h3>";
+// Öğrenci bilgisi.
+$student = $DB->get_record('user', ['id' => $userid], '*', MUST_EXIST);
+echo "<h3>" . fullname($student) . "</h3>";
 
-// Kurs yetkinlikleri
+// Kurs yetkinlikleri.
 $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname, c.description
     FROM {local_yetkinlik_qmap} m
@@ -52,9 +53,11 @@ $competencies = $DB->get_records_sql("
 ");
 
 echo '<table class="generaltable">';
-echo '<tr><th>'.get_string('competencycode','local_yetkinlik').'</th>
-          <th>'.get_string('competency','local_yetkinlik').'</th>
-          <th>'.get_string('success','local_yetkinlik').'</th></tr>';
+echo '<tr>
+        <th>' . get_string('competencycode', 'local_yetkinlik') . '</th>
+        <th>' . get_string('competency', 'local_yetkinlik') . '</th>
+        <th>' . get_string('success', 'local_yetkinlik') . '</th>
+      </tr>';
 
 foreach ($competencies as $c) {
     $sql = "
@@ -68,30 +71,35 @@ foreach ($competencies as $c) {
             FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
-        WHERE quiza.userid = :userid AND quiza.state = 'finished'
+        WHERE quiza.userid = :userid 
+          AND quiza.state = 'finished'
           AND m.competencyid = :competencyid
     ";
-    $data = $DB->get_record_sql($sql, ['userid'=>$userid,'competencyid'=>$c->id]);
+    $data = $DB->get_record_sql($sql, ['userid' => $userid, 'competencyid' => $c->id]);
 
     if ($data && $data->attempts) {
-        $rate = number_format(($data->correct / $data->attempts) * 100,1);
+        $rate = number_format(($data->correct / $data->attempts) * 100, 1);
 
-        if ($rate >= 80) { $color = 'green'; }
-        elseif ($rate >= 60) { $color = 'blue'; }
-        elseif ($rate >= 40) { $color = 'orange'; }
-        else { $color = 'red'; }
+        if ($rate >= 80) {
+            $color = 'green';
+        } elseif ($rate >= 60) {
+            $color = 'blue';
+        } elseif ($rate >= 40) {
+            $color = 'orange';
+        } else {
+            $color = 'red';
+        }
 
         echo "<tr>
                 <td>{$c->shortname}</td>
                 <td>{$c->description}</td>
-                <td style='color:$color;font-weight:bold'>%$rate</td>
+                <td style='color: $color; font-weight: bold;'>%{$rate}</td>
               </tr>";
     } else {
         echo "<tr>
                 <td>{$c->shortname}</td>
                 <td>{$c->description}</td>
-                <td></td> <!-- girişim yoksa boş hücre -->
-              </tr>";
+                <td></td> </tr>";
     }
 }
 echo '</table>';

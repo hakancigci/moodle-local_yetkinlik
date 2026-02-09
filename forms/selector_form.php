@@ -1,68 +1,72 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
- * Report for competency.
- *
- * @package   local_yetkinlik
- * @copyright 2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later*/
+ * Selector form for competency report.
+ * @package    local_yetkinlik
+ */
 
-require_once("$CFG->libdir/formslib.php");
+defined('MOODLE_INTERNAL') || die();
+
+require_once($CFG->libdir . '/formslib.php');
 
 class local_yetkinlik_selector_form extends moodleform {
-    public function definition() {
+
+    protected function definition() {
         global $DB;
+
         $mform = $this->_form;
         $courseid = $this->_customdata['courseid'];
-        $context  = context_course::instance($courseid);
+        $context = context_course::instance($courseid);
 
-        // courseid gizli alan
+        // 1. Öğrenci Seçimi (Sadece Öğrenciler)
+        $users = [0 => "--- Öğrenci Seçin ---"];
+        
+        // Kursa kayıtlı tüm kullanıcıları alalım
+        $enrolled = get_enrolled_users($context, '', 0, 'u.id, u.firstname, u.lastname, u.department');
+        
+        if (!empty($enrolled)) {
+            foreach ($enrolled as $u) {
+                // EĞER kullanıcı yöneticiyse veya kursu düzenleme yetkisi (öğretmen vb.) varsa listede gösterme
+                if (is_siteadmin($u->id) || has_capability('moodle/course:update', $context, $u->id)) {
+                    continue; 
+                }
+
+                $name = fullname($u);
+                if (!empty($u->department)) {
+                    $name .= " (" . $u->department . ")";
+                }
+                $users[$u->id] = $name;
+            }
+        }
+
+        $mform->addElement('autocomplete', 'userid', "Öğrenci Seçin", $users, [
+            'placeholder' => "İsim veya Bölüm Yazın...",
+            'multiple' => false
+        ]);
+        $mform->setType('userid', PARAM_INT);
+
+        // 2. Yetkinlik Seçimi
+        $competencies = [0 => "--- Tüm Yetkinlikler ---"];
+        $sql = "SELECT DISTINCT c.id, c.shortname 
+                FROM {competency} c
+                JOIN {local_yetkinlik_qmap} m ON m.competencyid = c.id
+                WHERE m.courseid = :courseid";
+        
+        $records = $DB->get_records_sql($sql, ['courseid' => $courseid]);
+        if ($records) {
+            foreach ($records as $record) {
+                $competencies[$record->id] = $record->shortname;
+            }
+        }
+
+        $mform->addElement('autocomplete', 'competencyid', "Yetkinlik Seçin", $competencies, [
+            'placeholder' => "Yetkinlik Adı Yazın...",
+            'multiple' => false
+        ]);
+        $mform->setType('competencyid', PARAM_INT);
+
         $mform->addElement('hidden', 'courseid', $courseid);
         $mform->setType('courseid', PARAM_INT);
 
-        // Öğrenci listesi
-        $students = get_enrolled_users($context, 'mod/quiz:attempt');
-        $studentoptions = [0 => get_string('allusers','local_yetkinlik')];
-        foreach ($students as $s) {
-            $studentoptions[$s->id] = fullname($s);
-        }
-
-        // Öğrenci autocomplete
-        $mform->addElement('autocomplete', 'userid', get_string('user','local_yetkinlik'), $studentoptions);
-        $mform->setType('userid', PARAM_INT);
-        $mform->setDefault('userid', 0);
-
-        // Yetkinlik listesi (kurs yetkinlikleri)
-        $competencies = $DB->get_records_sql_menu(
-            "SELECT c.id, c.shortname
-               FROM {competency} c
-               JOIN {competency_coursecomp} cc ON cc.competencyid = c.id
-              WHERE cc.courseid = ?
-              ORDER BY c.shortname",
-            [$courseid]
-        );
-
-        $compoptions = [0 => get_string('allcompetencies','local_yetkinlik')] + $competencies;
-
-        // Yetkinlik autocomplete
-        $mform->addElement('autocomplete', 'competencyid', get_string('competency','local_yetkinlik'), $compoptions);
-        $mform->setType('competencyid', PARAM_INT);
-        $mform->setDefault('competencyid', 0);
-
-        $this->add_action_buttons(false, get_string('show','local_yetkinlik'));
+        $this->add_action_buttons(false, "Filtrele");
     }
 }

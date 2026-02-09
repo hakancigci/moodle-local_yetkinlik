@@ -15,48 +15,56 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Ajax handler for competency mapping.
  *
- * @package   local_yetkinlik
- * @copyright 2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later*/
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+// Dosyanın bir AJAX betiği olduğunu tanımlıyoruz.
+define('AJAX_SCRIPT', true);
 
 require_once(__DIR__ . '/../../../config.php');
+
+global $DB;
 
 require_login();
 require_sesskey();
 
-$courseid = required_param('courseid', PARAM_INT);
-$questionid = required_param('questionid', PARAM_INT);
+$courseid     = required_param('courseid', PARAM_INT);
+$questionid   = required_param('questionid', PARAM_INT);
 $competencyid = required_param('competencyid', PARAM_INT);
 
 $context = context_course::instance($courseid);
 require_capability('moodle/question:editall', $context);
 
-global $DB;
-
 $existing = $DB->get_record('local_yetkinlik_qmap', [
-    'courseid' => $courseid,
+    'courseid'   => $courseid,
     'questionid' => $questionid
 ]);
+
+// JSON yanıtı için header ayarı.
+header('Content-Type: application/json');
 
 if ($competencyid == 0) {
     if ($existing) {
         $DB->delete_records('local_yetkinlik_qmap', ['id' => $existing->id]);
     }
     echo json_encode(['status' => 'deleted']);
-    exit;
+    die();
 }
 
 if ($existing) {
     $existing->competencyid = $competencyid;
     $DB->update_record('local_yetkinlik_qmap', $existing);
 } else {
-    $DB->insert_record('local_yetkinlik_qmap', [
-        'courseid' => $courseid,
-        'questionid' => $questionid,
-        'competencyid' => $competencyid
-    ]);
+    $record = new stdClass();
+    $record->courseid     = $courseid;
+    $record->questionid   = $questionid;
+    $record->competencyid = $competencyid;
+    $DB->insert_record('local_yetkinlik_qmap', $record);
 }
 
 echo json_encode(['status' => 'ok']);
+die();

@@ -15,22 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Version details for the local_yetkinlik plugin.
  *
- * @package   local_yetkinlik
- * @copyright 2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later*/
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_yetkinlik';   // Eklenti adı
-$plugin->version   = 2026020670;          // YYYYMMDDXX formatında versiyon
-$plugin->requires  = 2025041400;          // Minimum Moodle 5.0 sürümü
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.0';
+/** @var stdClass $plugin */
+$plugin->component = 'local_yetkinlik';       // Eklentinin tam adı.
+$plugin->version   = 2026020900;              // Versiyon numarası (YYYYMMDDXX).
+$plugin->requires  = 2025041400;              // Minimum Moodle 5.0 gereksinimi.
+$plugin->maturity  = MATURITY_STABLE;         // Kararlı sürüm.
+$plugin->release   = '1.1.1';                   // İnsan tarafından okunabilir versiyon adı.
 
-// qbank_yetkinlik bağımlılığı
+// Bağımlılıklar (Bu eklenti çalışmadan önce yüklü olması gereken diğer eklentiler).
 $plugin->dependencies = [
-    'qbank_yetkinlik' => 2026020650
+    'qbank_yetkinlik' => 2026020900
 ];
-

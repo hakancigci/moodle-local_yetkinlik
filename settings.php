@@ -15,60 +15,73 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Settings for the yetkinlik plugin.
  *
- * @package   local_yetkinlik
- * @copyright 2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later*/
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    // Plugin için ayar sayfası
+
+    // 1. Ayarlar Sayfası Tanımlama.
     $settings = new admin_settingpage('local_yetkinlik', get_string('pluginname', 'local_yetkinlik'));
 
     if ($ADMIN->fulltree) {
-        // AI entegrasyonu aktif/pasif
+
+        // AI entegrasyonu aktif/pasif.
         $settings->add(new admin_setting_configcheckbox(
             'local_yetkinlik/enable_ai',
             get_string('enable_ai', 'local_yetkinlik'),
             get_string('enable_ai_desc', 'local_yetkinlik'),
             0
         ));
-        // API anahtarı
+
+        // API anahtarı.
         $settings->add(new admin_setting_configtext(
             'local_yetkinlik/apikey',
             get_string('apikey', 'local_yetkinlik'),
             get_string('apikey_desc', 'local_yetkinlik'),
-            ''
+            '',
+            PARAM_TEXT
         ));
 
-        // Model adı
+        // Model adı.
         $settings->add(new admin_setting_configtext(
             'local_yetkinlik/model',
             get_string('model', 'local_yetkinlik'),
             get_string('model_desc', 'local_yetkinlik'),
-            'gpt-4'
+            'gpt-4',
+            PARAM_ALPHANUMEXT
         ));
-       
 
+        // Maksimum satır sayısı.
+        $settings->add(new admin_setting_configtext(
+            'local_yetkinlik/maxrows',
+            get_string('maxrows', 'local_yetkinlik'),
+            get_string('maxrows_desc', 'local_yetkinlik'),
+            100,
+            PARAM_INT
+        ));
     }
-     $ADMIN->add('reports', new admin_externalpage(
-        'schoolreport',
+
+    // 2. Ayarlar Sayfasını "Yerel Eklentiler" altına ekle.
+    $ADMIN->add('localplugins', $settings);
+
+    // 3. Harici Rapor Sayfalarını "Raporlar" menüsü altına ekle.
+    $ADMIN->add('reports', new admin_externalpage(
+        'local_yetkinlik_schoolreport',
         get_string('schoolreport', 'local_yetkinlik'),
-        $CFG->wwwroot.'/local/yetkinlik/school_report.php',
+        new moodle_url('/local/yetkinlik/school_report.php'),
         'moodle/site:config'
     ));
 
     $ADMIN->add('reports', new admin_externalpage(
-        'schoolpdf',
+        'local_yetkinlik_schoolpdf',
         get_string('schoolpdf', 'local_yetkinlik'),
-        $CFG->wwwroot.'/local/yetkinlik/school_pdf.php',
+        new moodle_url('/local/yetkinlik/school_pdf.php'),
         'moodle/site:config'
     ));
-
-
-
-    // Site yönetimi → Yerel eklentiler altında ekle
-    $ADMIN->add('localplugins', $settings);
 }
