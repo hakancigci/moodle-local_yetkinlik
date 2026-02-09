@@ -155,4 +155,30 @@ if ($groupid) {
     }
 
     // Grup ortalama satırı.
-    echo html_writer::start_tag('tr',
+    echo html_writer::start_tag('tr', ['style' => 'font-weight: bold; background: #eee;']);
+    echo html_writer::tag('td', get_string('total', 'local_yetkinlik'));
+    foreach ($competencies as $c) {
+        $attempts = $group_totals[$c->id]['attempts'];
+        $correct  = $group_totals[$c->id]['correct'];
+        $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
+
+        if ($rate !== '') {
+            if ($rate >= 80) {
+                $color = 'green';
+            } else if ($rate >= 60) {
+                $color = 'blue';
+            } else if ($rate >= 40) {
+                $color = 'orange';
+            } else {
+                $color = 'red';
+            }
+            echo html_writer::tag('td', '%' . $rate, ['style' => "color: $color;"]);
+        } else {
+            echo html_writer::tag('td', '');
+        }
+    }
+    echo html_writer::end_tag('tr');
+    echo html_writer::end_tag('table');
+}
+
+echo $OUTPUT->footer();
