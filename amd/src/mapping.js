@@ -1,4 +1,4 @@
-define(['jquery'], function($) {
+define(['jquery', 'core/notification'], function($, Notification) {
     return {
         init: function() {
             // Event delegation kullanarak dinamik eklenen satırlarda da çalışmasını sağlayalım
@@ -24,7 +24,7 @@ define(['jquery'], function($) {
                     dataType: 'json',
                     success: function(response) {
                         if (response.status === 'ok' || response.status === 'deleted') {
-                            // Başarılı olduğunu kullanıcıya hissettirelim (isteğe bağlı)
+                            // Başarılı bildirim efekti
                             dropdown.css('border-color', '#28a745');
                             setTimeout(function() {
                                 dropdown.css('border-color', '');
@@ -32,8 +32,8 @@ define(['jquery'], function($) {
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error("AJAX Hatası:", error);
-                        alert("Kayıt yapılamadı!");
+                        // Alert yerine Moodle'ın kendi bildirim sistemini kullanıyoruz (no-alert hatası için)
+                        Notification.exception(new Error(error));
                     }
                 });
             });
