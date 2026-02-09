@@ -25,12 +25,10 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-
     // 1. Ayarlar Sayfası Tanımlama.
     $settings = new admin_settingpage('local_yetkinlik', get_string('pluginname', 'local_yetkinlik'));
 
     if ($ADMIN->fulltree) {
-
         // AI entegrasyonu aktif/pasif.
         $settings->add(new admin_setting_configcheckbox(
             'local_yetkinlik/enable_ai',
