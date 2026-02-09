@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Detailed student competency report.
+ * Detailed competency report for a specific student.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -23,89 +23,133 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
-require_login();
+
+$courseid = required_param('courseid', PARAM_INT);
+$userid   = optional_param('userid', $USER->id, PARAM_INT);
+
+require_login($courseid);
 
 global $DB, $USER, $OUTPUT, $PAGE;
 
-$courseid = required_param('courseid', PARAM_INT);
-$userid = required_param('userid', PARAM_INT);
-
 $context = context_course::instance($courseid);
-require_capability('mod/quiz:viewreports', $context);
 
-$PAGE->set_url('/local/yetkinlik/student_competency_detail.php', ['courseid' => $courseid, 'userid' => $userid]);
-$PAGE->set_title(get_string('studentcompetencydetail', 'local_yetkinlik'));
-$PAGE->set_heading(get_string('studentcompetencydetail', 'local_yetkinlik'));
+// Check if the user is allowed to see this report.
+if ($userid != $USER->id) {
+    require_capability('mod/quiz:viewreports', $context);
+}
+
+$course  = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+$student = $DB->get_record('user', ['id' => $userid], '*', MUST_EXIST);
+
+$PAGE->set_url('/local/yetkinlik/student_competency_detail.php', [
+    'courseid' => $courseid,
+    'userid'   => $userid,
+]);
+$PAGE->set_context($context);
 $PAGE->set_pagelayout('course');
+$PAGE->set_title(get_string('studentreport', 'local_yetkinlik'));
+$PAGE->set_heading(fullname($student) . ' - ' . $course->fullname);
 
 echo $OUTPUT->header();
 
-// Öğrenci bilgisi.
-$student = $DB->get_record('user', ['id' => $userid], '*', MUST_EXIST);
-echo html_writer::tag('h3', fullname($student));
-
-// Kurs yetkinlikleri.
-$competencies = $DB->get_records_sql("
-    SELECT DISTINCT c.id, c.shortname, c.description
-    FROM {local_yetkinlik_qmap} m
+/**
+ * Fetch competency data for the specific user.
+ */
+$sql = "
+    SELECT c.id,
+           c.shortname,
+           c.description,
+           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS questions,
+           CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+    FROM {quiz_attempts} quiza
+    JOIN {user} u ON quiza.userid = u.id
+    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+    JOIN {quiz} quiz ON quiz.id = quiza.quiz
+    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
-    ORDER BY c.shortname
-");
+    JOIN (
+        SELECT MAX(fraction) AS fraction, questionattemptid 
+        FROM {question_attempt_steps} 
+        GROUP BY questionattemptid
+    ) qas ON qas.questionattemptid = qa.id
+    WHERE quiz.course = :courseid 
+      AND u.id = :userid 
+      AND quiza.state = 'finished'
+    GROUP BY c.id, c.shortname, c.description
+";
+
+$rows = $DB->get_records_sql($sql, [
+    'courseid' => $courseid,
+    'userid'   => $userid,
+]);
 
 echo html_writer::start_tag('table', ['class' => 'generaltable']);
 echo html_writer::start_tag('thead');
 echo html_writer::start_tag('tr');
 echo html_writer::tag('th', get_string('competencycode', 'local_yetkinlik'));
 echo html_writer::tag('th', get_string('competency', 'local_yetkinlik'));
-echo html_writer::tag('th', get_string('success', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('questioncount', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('correctcount', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('successrate', 'local_yetkinlik'));
 echo html_writer::end_tag('tr');
 echo html_writer::end_tag('thead');
 echo html_writer::start_tag('tbody');
 
-foreach ($competencies as $c) {
-    $sql = "
-        SELECT SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
-        FROM {quiz_attempts} quiza
-        JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-        JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-        JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid
-            FROM {question_attempt_steps}
-            GROUP BY questionattemptid
-        ) qas ON qas.questionattemptid = qa.id
-        WHERE quiza.userid = :userid
-          AND quiza.state = 'finished'
-          AND m.competencyid = :competencyid
-    ";
-    $data = $DB->get_record_sql($sql, ['userid' => $userid, 'competencyid' => $c->id]);
+$rates = [];
 
-    $ratecell = '';
-    if ($data && $data->attempts) {
-        $rate = number_format(($data->correct / $data->attempts) * 100, 1);
+foreach ($rows as $r) {
+    $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
+    $rates[$r->shortname] = $rate;
 
-        if ($rate >= 80) {
-            $color = 'green';
-        } else if ($rate >= 60) {
-            $color = 'blue';
-        } else if ($rate >= 40) {
-            $color = 'orange';
-        } else {
-            $color = 'red';
-        }
-        $ratecell = html_writer::tag('span', '%' . $rate, [
-            'style' => "color: $color; font-weight: bold;"
-        ]);
+    if ($rate >= 80) {
+        $color = 'green';
+    } elseif ($rate >= 60) {
+        $color = 'blue';
+    } elseif ($rate >= 40) {
+        $color = 'orange';
+    } else {
+        $color = 'red';
     }
 
+    // Clean description tags.
+    $cleandesc = strip_tags(html_entity_decode($r->description, ENT_QUOTES, 'UTF-8'));
+
     echo html_writer::start_tag('tr');
-    echo html_writer::tag('td', s($c->shortname));
-    echo html_writer::tag('td', s($c->description));
-    echo html_writer::tag('td', $ratecell);
+    echo html_writer::tag('td', s($r->shortname));
+    echo html_writer::tag('td', $cleandesc);
+    echo html_writer::tag('td', $r->questions);
+    echo html_writer::tag('td', $r->correct);
+    echo html_writer::tag('td', "%{$rate}", [
+        'style' => "color: $color; font-weight: bold;",
+    ]);
     echo html_writer::end_tag('tr');
 }
-
 echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
+
+/**
+ * PDF Button Section with userid parameter.
+ */
+$pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', [
+    'courseid' => $courseid,
+    'userid'   => $userid, // Added userid here for correct reporting.
+]);
+
+echo html_writer::start_tag('div', ['class' => 'mt-4']);
+echo html_writer::link($pdfurl, get_string('pdfmystudent', 'local_yetkinlik'), [
+    'class' => 'btn btn-secondary',
+    'target' => '_blank',
+]);
+echo html_writer::end_tag('div');
+
+/**
+ * AI Commentary Section.
+ */
+require_once(__DIR__ . '/ai.php');
+echo html_writer::tag('h3', get_string('generalcomment', 'local_yetkinlik'), ['class' => 'mt-4']);
+echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), [
+    'class' => 'alert alert-info',
+]);
 
 echo $OUTPUT->footer();
