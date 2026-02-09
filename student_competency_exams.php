@@ -135,13 +135,17 @@ if ($competencyid) {
             $totalc += $r->correct;
 
             // Find last finished attempt.
-            $lastattempt = $DB->get_record_sql("
+            $sqlattempt = "
                 SELECT id
                 FROM {quiz_attempts}
                 WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
                 ORDER BY attempt DESC
                 LIMIT 1
-            ", ['quizid' => $r->quizid, 'userid' => $USER->id]);
+            ";
+            $lastattempt = $DB->get_record_sql($sqlattempt, [
+                'quizid' => $r->quizid,
+                'userid' => $USER->id,
+            ]);
 
             $link = s($r->quizname);
             if ($lastattempt) {
@@ -154,7 +158,7 @@ if ($competencyid) {
             echo html_writer::tag('td', $r->questions);
             echo html_writer::tag('td', $r->correct);
             echo html_writer::tag('td', '%' . $rate, [
-                'style' => "color: $color; font-weight: bold;"
+                'style' => "color: $color; font-weight: bold;",
             ]);
             echo html_writer::end_tag('tr');
         }
@@ -175,13 +179,17 @@ if ($competencyid) {
         echo html_writer::tag('td', get_string('total', 'local_yetkinlik'));
         echo html_writer::tag('td', $totalq);
         echo html_writer::tag('td', $totalc);
-        echo html_writer::tag('td', '%' . $totalrate, ['style' => "color: $tcolor;"]);
+        echo html_writer::tag('td', '%' . $totalrate, [
+            'style' => "color: $tcolor;",
+        ]);
         echo html_writer::end_tag('tr');
 
         echo html_writer::end_tag('tbody');
         echo html_writer::end_tag('table');
     } else {
-        echo html_writer::tag('p', get_string('nocompetencyexamdata', 'local_yetkinlik'), ['class' => 'alert alert-warning']);
+        echo html_writer::tag('p', get_string('nocompetencyexamdata', 'local_yetkinlik'), [
+            'class' => 'alert alert-warning',
+        ]);
     }
 }
 
