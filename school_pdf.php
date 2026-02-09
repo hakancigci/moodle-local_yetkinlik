@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * School performance report in PDF format.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -64,15 +63,15 @@ foreach ($rows as $r) {
 }
 
 require_once(__DIR__ . '/ai.php');
-$comment = local_yetkinlik_generate_comment($rates);
+$comment = local_yetkinlik_generate_comment($rates, 'school');
 $course = $DB->get_record('course', ['id' => $courseid]);
 
-/* PDF İşlemleri */
+/* PDF İşlemleri. */
 $pdf = new TCPDF();
 $pdf->AddPage();
 $pdf->SetFont('freeserif', '', 12);
 
-$pdf->Cell(0, 10, $course->fullname . " - Kazanım Raporu", 0, 1);
+$pdf->Cell(0, 10, $course->fullname . " - Okul Genel Kazanım Raporu", 0, 1);
 $pdf->Ln(5);
 
 $html = "<table border='1' cellpadding='6'>
@@ -99,7 +98,7 @@ $html .= "</table>";
 $pdf->Ln(10);
 
 $pdf->writeHTML($html);
-$pdf->writeHTML("<b>Yorum:</b><br>" . $comment);
+$pdf->writeHTML("<b>Genel Değerlendirme ve Strateji (AI):</b><br>" . $comment);
 
-$pdf->Output("kazanim_raporu.pdf", "I");
+$pdf->Output("okul_kazanim_raporu.pdf", "I");
 exit;
