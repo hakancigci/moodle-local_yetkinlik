@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Report for student competency exams.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -41,7 +41,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-/* Öğrencinin bu derste sahip olduğu yetkinlikler */
+// Get competencies associated with this course.
 $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname, c.description
     FROM {local_yetkinlik_qmap} m
@@ -49,22 +49,26 @@ $competencies = $DB->get_records_sql("
     ORDER BY c.shortname
 ");
 
-echo '<form method="get">';
-echo '<input type="hidden" name="courseid" value="' . $courseid . '">';
-echo '<select name="competencyid">';
-echo '<option value="0">' . get_string('selectcompetency', 'local_yetkinlik') . '</option>';
+echo html_writer::start_tag('form', ['method' => 'get']);
+echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'courseid', 'value' => $courseid]);
+echo html_writer::start_tag('select', ['name' => 'competencyid']);
+echo html_writer::tag('option', get_string('selectcompetency', 'local_yetkinlik'), ['value' => '0']);
 foreach ($competencies as $c) {
-    $sel = ($competencyid == $c->id) ? 'selected' : '';
-    echo "<option value='{$c->id}' $sel>{$c->shortname}</option>";
+    $attributes = ['value' => $c->id];
+    if ($competencyid == $c->id) {
+        $attributes['selected'] = 'selected';
+    }
+    echo html_writer::tag('option', s($c->shortname), $attributes);
 }
-echo '</select> ';
-echo '<button>' . get_string('show', 'local_yetkinlik') . '</button>';
-echo '</form><hr>';
+echo html_writer::end_tag('select');
+echo ' ' . html_writer::tag('button', get_string('show', 'local_yetkinlik'), ['class' => 'btn btn-primary']);
+echo html_writer::end_tag('form');
+echo html_writer::tag('hr');
 
 if ($competencyid) {
-    // Yetkinlik açıklamasını güvenli bir şekilde çekelim.
+    // Safely fetch competency details.
     if ($competency = $DB->get_record('competency', ['id' => $competencyid])) {
-        echo html_writer::tag('div', $competency->description, ['class' => 'competency-description mb-3']);
+        echo html_writer::tag('div', $competency->description, ['class' => 'competency-description mb-3 alert alert-info']);
     }
 
     $sql = "
@@ -80,8 +84,8 @@ if ($competencyid) {
         JOIN {quiz} quiz ON quiz.id = quiza.quiz
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE quiz.course = :courseid
@@ -94,19 +98,22 @@ if ($competencyid) {
     $params = [
         'courseid'     => $courseid,
         'competencyid' => $competencyid,
-        'userid'       => $USER->id
+        'userid'       => $USER->id,
     ];
 
     $rows = $DB->get_records_sql($sql, $params);
 
     if ($rows) {
-        echo '<table class="generaltable">';
-        echo '<tr>
-                <th>' . get_string('quiz', 'local_yetkinlik') . '</th>
-                <th>' . get_string('question', 'local_yetkinlik') . '</th>
-                <th>' . get_string('correct', 'local_yetkinlik') . '</th>
-                <th>' . get_string('success', 'local_yetkinlik') . '</th>
-              </tr>';
+        echo html_writer::start_tag('table', ['class' => 'generaltable']);
+        echo html_writer::start_tag('thead');
+        echo html_writer::start_tag('tr');
+        echo html_writer::tag('th', get_string('quiz', 'local_yetkinlik'));
+        echo html_writer::tag('th', get_string('question', 'local_yetkinlik'));
+        echo html_writer::tag('th', get_string('correct', 'local_yetkinlik'));
+        echo html_writer::tag('th', get_string('success', 'local_yetkinlik'));
+        echo html_writer::end_tag('tr');
+        echo html_writer::end_tag('thead');
+        echo html_writer::start_tag('tbody');
 
         $totalq = 0;
         $totalc = 0;
@@ -116,9 +123,9 @@ if ($competencyid) {
 
             if ($rate >= 80) {
                 $color = 'green';
-            } elseif ($rate >= 60) {
+            } else if ($rate >= 60) {
                 $color = 'blue';
-            } elseif ($rate >= 40) {
+            } else if ($rate >= 40) {
                 $color = 'orange';
             } else {
                 $color = 'red';
@@ -127,7 +134,7 @@ if ($competencyid) {
             $totalq += $r->questions;
             $totalc += $r->correct;
 
-            // Son başarılı/bitmiş girişimi bul.
+            // Find last finished attempt.
             $lastattempt = $DB->get_record_sql("
                 SELECT id
                 FROM {quiz_attempts}
@@ -136,42 +143,45 @@ if ($competencyid) {
                 LIMIT 1
             ", ['quizid' => $r->quizid, 'userid' => $USER->id]);
 
-            $link = $r->quizname;
+            $link = s($r->quizname);
             if ($lastattempt) {
                 $url = new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]);
                 $link = html_writer::link($url, $r->quizname, ['target' => '_blank']);
             }
 
-            echo "<tr>
-                    <td>$link</td>
-                    <td>{$r->questions}</td>
-                    <td>{$r->correct}</td>
-                    <td style='color: $color; font-weight: bold;'>%{$rate}</td>
-                  </tr>";
+            echo html_writer::start_tag('tr');
+            echo html_writer::tag('td', $link);
+            echo html_writer::tag('td', $r->questions);
+            echo html_writer::tag('td', $r->correct);
+            echo html_writer::tag('td', '%' . $rate, [
+                'style' => "color: $color; font-weight: bold;"
+            ]);
+            echo html_writer::end_tag('tr');
         }
 
         $totalrate = $totalq ? number_format(($totalc / $totalq) * 100, 1) : 0;
 
         if ($totalrate >= 80) {
             $tcolor = 'green';
-        } elseif ($totalrate >= 60) {
+        } else if ($totalrate >= 60) {
             $tcolor = 'blue';
-        } elseif ($totalrate >= 40) {
+        } else if ($totalrate >= 40) {
             $tcolor = 'orange';
         } else {
             $tcolor = 'red';
         }
 
-        echo "<tr style='font-weight: bold; background: #eee;'>
-                <td>" . get_string('total', 'local_yetkinlik') . "</td>
-                <td>$totalq</td>
-                <td>$totalc</td>
-                <td style='color: $tcolor;'>%{$totalrate}</td>
-              </tr>";
+        echo html_writer::start_tag('tr', ['style' => 'font-weight: bold; background: #eee;']);
+        echo html_writer::tag('td', get_string('total', 'local_yetkinlik'));
+        echo html_writer::tag('td', $totalq);
+        echo html_writer::tag('td', $totalc);
+        echo html_writer::tag('td', '%' . $totalrate, ['style' => "color: $tcolor;"]);
+        echo html_writer::end_tag('tr');
 
-        echo '</table>';
+        echo html_writer::end_tag('tbody');
+        echo html_writer::end_tag('table');
     } else {
-        echo html_writer::tag('p', get_string('nocompetencyexamdata', 'local_yetkinlik'));
+        echo html_writer::tag('p', get_string('nocompetencyexamdata', 'local_yetkinlik'), ['class' => 'alert alert-warning']);
     }
 }
 
