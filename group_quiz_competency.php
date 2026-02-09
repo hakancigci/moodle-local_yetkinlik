@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Group-based competency report.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -32,10 +31,9 @@ $courseid = required_param('courseid', PARAM_INT);
 require_login($courseid);
 
 $context = context_course::instance($courseid);
-
 $groupid = optional_param('groupid', 0, PARAM_INT);
 
-$PAGE->set_url('/local/yetkinlik/group_competency.php', ['courseid' => $courseid]);
+$PAGE->set_url('/local/yetkinlik/group_quiz_competency.php', ['courseid' => $courseid]);
 $PAGE->set_title(get_string('groupcompetency', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('groupcompetency', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
@@ -43,22 +41,27 @@ $PAGE->set_context($context);
 
 echo $OUTPUT->header();
 
-/* Kurs grupları */
+/* Kurs grupları. */
 $groups = groups_get_all_groups($courseid);
-echo '<form method="get">';
-echo '<input type="hidden" name="courseid" value="' . $courseid . '">';
-echo '<select name="groupid">';
-echo '<option value="0">' . get_string('selectgroup', 'local_yetkinlik') . '</option>';
+echo html_writer::start_tag('form', ['method' => 'get']);
+echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'courseid', 'value' => $courseid]);
+echo html_writer::start_tag('select', ['name' => 'groupid']);
+echo html_writer::tag('option', get_string('selectgroup', 'local_yetkinlik'), ['value' => '0']);
+
 foreach ($groups as $g) {
-    $sel = ($groupid == $g->id) ? 'selected' : '';
-    echo "<option value='{$g->id}' $sel>{$g->name}</option>";
+    $attributes = ['value' => $g->id];
+    if ($groupid == $g->id) {
+        $attributes['selected'] = 'selected';
+    }
+    echo html_writer::tag('option', $g->name, $attributes);
 }
-echo '</select> ';
-echo '<button>' . get_string('show', 'local_yetkinlik') . '</button>';
-echo '</form><hr>';
+echo html_writer::end_tag('select');
+echo ' ' . html_writer::tag('button', get_string('show', 'local_yetkinlik'));
+echo html_writer::end_tag('form');
+echo html_writer::empty_tag('hr');
 
 if ($groupid) {
-    // Grup öğrencilerini idnumber’a göre sırala (sadece student rolü olanlar)
+    // Grup öğrencilerini idnumber’a göre sırala (sadece student rolü olanlar).
     $students = $DB->get_records_sql("
         SELECT u.id, u.idnumber, u.firstname, u.lastname
         FROM {groups_members} gm
@@ -72,7 +75,7 @@ if ($groupid) {
         ORDER BY u.idnumber ASC
     ", ['groupid' => $groupid, 'courseid' => $courseid]);
 
-    // Kurs yetkinliklerini çek
+    // Kurs yetkinliklerini çek.
     $competencies = $DB->get_records_sql("
         SELECT DISTINCT c.id, c.shortname
         FROM {local_yetkinlik_qmap} m
@@ -80,30 +83,33 @@ if ($groupid) {
         ORDER BY c.shortname
     ");
 
-    // Tablo başlıkları
-    echo '<table class="generaltable">';
-    echo '<tr><th>' . get_string('student', 'local_yetkinlik') . '</th>';
+    // Tablo başlıkları.
+    echo html_writer::start_tag('table', ['class' => 'generaltable']);
+    echo html_writer::start_tag('tr');
+    echo html_writer::tag('th', get_string('student', 'local_yetkinlik'));
     foreach ($competencies as $c) {
-        echo "<th>{$c->shortname}</th>";
+        echo html_writer::tag('th', $c->shortname);
     }
-    echo '</tr>';
+    echo html_writer::end_tag('tr');
 
-    // Grup toplamları için hazırlık
-    $groupTotals = [];
+    // Grup toplamları için hazırlık.
+    $group_totals = [];
     foreach ($competencies as $c) {
-        $groupTotals[$c->id] = ['attempts' => 0, 'correct' => 0];
+        $group_totals[$c->id] = ['attempts' => 0, 'correct' => 0];
     }
 
-    // Her öğrenci için yetkinlik başarıları
+    // Her öğrenci için yetkinlik başarıları.
     foreach ($students as $s) {
-        // Öğrenci adı link olacak
+        // Öğrenci adı link olacak.
         $url = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
             'courseid' => $courseid,
-            'userid'   => $s->id
+            'userid'   => $s->id,
         ]);
         $studentlink = html_writer::link($url, fullname($s), ['target' => '_blank']);
 
-        echo "<tr><td>$studentlink</td>";
+        echo html_writer::start_tag('tr');
+        echo html_writer::tag('td', $studentlink);
+
         foreach ($competencies as $c) {
             $sql = "
                 SELECT SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
@@ -121,7 +127,7 @@ if ($groupid) {
             ";
             $data = $DB->get_record_sql($sql, [
                 'userid' => $s->id,
-                'competencyid' => $c->id
+                'competencyid' => $c->id,
             ]);
 
             if ($data && $data->attempts) {
@@ -129,48 +135,24 @@ if ($groupid) {
 
                 if ($rate >= 80) {
                     $color = 'green';
-                } elseif ($rate >= 60) {
+                } else if ($rate >= 60) {
                     $color = 'blue';
-                } elseif ($rate >= 40) {
+                } else if ($rate >= 40) {
                     $color = 'orange';
                 } else {
                     $color = 'red';
                 }
-                echo "<td style='color: $color; font-weight: bold;'>%$rate</td>";
-                $groupTotals[$c->id]['attempts'] += $data->attempts;
-                $groupTotals[$c->id]['correct']  += $data->correct;
+                $style = "color: $color; font-weight: bold;";
+                echo html_writer::tag('td', '%' . $rate, ['style' => $style]);
+
+                $group_totals[$c->id]['attempts'] += $data->attempts;
+                $group_totals[$c->id]['correct']  += $data->correct;
             } else {
-                echo "<td></td>"; // Girişim yoksa boş hücre.
+                echo html_writer::tag('td', ''); // Girişim yoksa boş hücre.
             }
         }
-        echo '</tr>';
+        echo html_writer::end_tag('tr');
     }
 
-    // Grup ortalama satırı
-    echo "<tr style='font-weight: bold; background: #eee;'><td>" . get_string('total', 'local_yetkinlik') . "</td>";
-    foreach ($competencies as $c) {
-        $attempts = $groupTotals[$c->id]['attempts'];
-        $correct  = $groupTotals[$c->id]['correct'];
-        $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
-
-        if ($rate !== '') {
-            if ($rate >= 80) {
-                $color = 'green';
-            } elseif ($rate >= 60) {
-                $color = 'blue';
-            } elseif ($rate >= 40) {
-                $color = 'orange';
-            } else {
-                $color = 'red';
-            }
-            echo "<td style='color: $color;'>%$rate</td>";
-        } else {
-            echo "<td></td>";
-        }
-    }
-    echo '</tr>';
-
-    echo '</table>';
-}
-
-echo $OUTPUT->footer();
+    // Grup ortalama satırı.
+    echo html_writer::start_tag('tr',
