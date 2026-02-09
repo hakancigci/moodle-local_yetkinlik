@@ -54,11 +54,11 @@ function local_yetkinlik_rule_based_comment(array $stats) {
     foreach ($stats as $k => $rate) {
         if ($rate <= 39) {
             $red[] = $k;
-        } elseif ($rate >= 40 && $rate <= 59) {
+        } else if ($rate >= 40 && $rate <= 59) {
             $orange[] = $k;
-        } elseif ($rate >= 60 && $rate <= 79) {
+        } else if ($rate >= 60 && $rate <= 79) {
             $blue[] = $k;
-        } elseif ($rate >= 80) {
+        } else if ($rate >= 80) {
             $green[] = $k;
         }
     }
@@ -67,22 +67,22 @@ function local_yetkinlik_rule_based_comment(array $stats) {
 
     if ($red) {
         $text .= html_writer::tag('span', get_string('comment_red', 'local_yetkinlik', implode(', ', $red)), [
-            'style' => 'color: red;'
+            'style' => 'color: red;',
         ]) . html_writer::empty_tag('br');
     }
     if ($orange) {
         $text .= html_writer::tag('span', get_string('comment_orange', 'local_yetkinlik', implode(', ', $orange)), [
-            'style' => 'color: orange;'
+            'style' => 'color: orange;',
         ]) . html_writer::empty_tag('br');
     }
     if ($blue) {
         $text .= html_writer::tag('span', get_string('comment_blue', 'local_yetkinlik', implode(', ', $blue)), [
-            'style' => 'color: blue;'
+            'style' => 'color: blue;',
         ]) . html_writer::empty_tag('br');
     }
     if ($green) {
         $text .= html_writer::tag('span', get_string('comment_green', 'local_yetkinlik', implode(', ', $green)), [
-            'style' => 'color: green;'
+            'style' => 'color: green;',
         ]) . html_writer::empty_tag('br');
     }
 
@@ -121,26 +121,26 @@ function local_yetkinlik_ai_comment(array $stats, $context = 'student') {
     $curl = new \curl();
     $headers = [
         "Authorization: Bearer {$apikey}",
-        "Content-Type: application/json"
+        "Content-Type: application/json",
     ];
-    
+
     $postdata = json_encode([
         "model" => $model,
         "messages" => [
             [
-                "role" => "system", 
-                "content" => get_string('ai_system_prompt', 'local_yetkinlik')
+                "role" => "system",
+                "content" => get_string('ai_system_prompt', 'local_yetkinlik'),
             ],
             [
-                "role" => "user", 
-                "content" => $prompt
-            ]
-        ]
+                "role" => "user",
+                "content" => $prompt,
+            ],
+        ],
     ]);
 
     $options = [
         'httpheader' => $headers,
-        'timeout'    => 30
+        'timeout'    => 30,
     ];
 
     $response = $curl->post("https://api.openai.com/v1/chat/completions", $postdata, $options);
@@ -166,19 +166,19 @@ function local_yetkinlik_structured_comment(array $stats) {
         $a = ['shortname' => $shortname, 'rate' => $rate];
         if ($rate <= 39) {
             $text .= html_writer::tag('span', get_string('structured_red', 'local_yetkinlik', $a), [
-                'style' => 'color: red;'
+                'style' => 'color: red;',
             ]) . html_writer::empty_tag('br');
         } else if ($rate >= 40 && $rate <= 59) {
             $text .= html_writer::tag('span', get_string('structured_orange', 'local_yetkinlik', $a), [
-                'style' => 'color: orange;'
+                'style' => 'color: orange;',
             ]) . html_writer::empty_tag('br');
         } else if ($rate >= 60 && $rate <= 79) {
             $text .= html_writer::tag('span', get_string('structured_blue', 'local_yetkinlik', $a), [
-                'style' => 'color: blue;'
+                'style' => 'color: blue;',
             ]) . html_writer::empty_tag('br');
         } else if ($rate >= 80) {
             $text .= html_writer::tag('span', get_string('structured_green', 'local_yetkinlik', $a), [
-                'style' => 'color: green;'
+                'style' => 'color: green;',
             ]) . html_writer::empty_tag('br');
         }
     }
