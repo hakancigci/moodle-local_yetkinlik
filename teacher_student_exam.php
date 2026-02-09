@@ -44,11 +44,11 @@ $PAGE->set_heading(fullname($student) . ' - ' . $quiz->name);
 
 echo $OUTPUT->header();
 
-$sql="
+$sql = "
 SELECT
- c.shortname,
- COUNT(qa.id) attempts,
- SUM(CASE WHEN qas.fraction > 0 THEN 1 ELSE 0 END) correct
+ c.shortname,
+ COUNT(qa.id) attempts,
+ SUM(CASE WHEN qas.fraction > 0 THEN 1 ELSE 0 END) correct
 FROM {local_yetkinlik_qmap} m
 JOIN {competency} c ON c.id = m.competencyid
 JOIN {question_attempts} qa ON qa.questionid = m.questionid
@@ -63,10 +63,10 @@ $rows = $DB->get_records_sql($sql, ['quizid' => $quizid, 'userid' => $userid]);
 
 echo html_writer::start_tag('table', ['class' => 'generaltable']);
 echo html_writer::start_tag('thead');
-echo html_writer::tag('tr', 
-    html_writer::tag('th', 'Kazanım') . 
-    html_writer::tag('th', 'Başarı')
-);
+echo html_writer::start_tag('tr');
+echo html_writer::tag('th', 'Kazanım');
+echo html_writer::tag('th', 'Başarı');
+echo html_writer::end_tag('tr');
 echo html_writer::end_tag('thead');
 echo html_writer::start_tag('tbody');
 
@@ -74,16 +74,16 @@ $labels = [];
 $data = [];
 
 foreach ($rows as $r) {
-    // attempts varsa, sonucu 100 ile çarpıp tek ondalık hane olacak şekilde formatlıyoruz.
+    // Attempts varsa, sonucu 100 ile çarpıp tek ondalık hane olacak şekilde formatlıyoruz.
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
-    
+
     $labels[] = $r->shortname;
     $data[] = $rate;
-    
+
     $color = $rate >= 70 ? 'green' : ($rate >= 50 ? 'orange' : 'red');
-    
+
     echo html_writer::start_tag('tr');
-    echo html_writer::tag('td', $r->shortname);
+    echo html_writer::tag('td', s($r->shortname));
     echo html_writer::tag('td', "%{$rate}", ['style' => "color: $color; font-weight: bold;"]);
     echo html_writer::end_tag('tr');
 }
@@ -93,6 +93,10 @@ echo html_writer::end_tag('table');
 
 $labelsjs = json_encode($labels);
 $datajs = json_encode($data);
+
+/**
+ * Chart display section for student competency performance.
+ */
 ?>
 
 <div class="chart-container mt-4" style="position: relative; height:40vh; width:100%">
@@ -101,6 +105,9 @@ $datajs = json_encode($data);
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    /**
+     * Initialize the bar chart using Chart.js.
+     */
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('teacherchart').getContext('2d');
         new Chart(ctx, {
