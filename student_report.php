@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Student competency report.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -42,7 +42,7 @@ $PAGE->set_heading($course->fullname);
 echo $OUTPUT->header();
 global $DB;
 
-/* Öğrenci verisi SQL sorgusu */
+// Student data SQL query.
 $sql = "
     SELECT c.id,
            c.shortname,
@@ -57,8 +57,8 @@ $sql = "
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
-        SELECT MAX(fraction) AS fraction, questionattemptid 
-        FROM {question_attempt_steps} 
+        SELECT MAX(fraction) AS fraction, questionattemptid
+        FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
     WHERE quiz.course = :courseid AND u.id = :userid
@@ -67,17 +67,17 @@ $sql = "
 
 $rows = $DB->get_records_sql($sql, ['courseid' => $courseid, 'userid' => $userid]);
 
-echo '<table class="generaltable">';
-echo '<thead>
-        <tr>
-            <th>' . get_string('competencycode', 'local_yetkinlik') . '</th>
-            <th>' . get_string('competency', 'local_yetkinlik') . '</th>
-            <th>' . get_string('questioncount', 'local_yetkinlik') . '</th>
-            <th>' . get_string('correctcount', 'local_yetkinlik') . '</th>
-            <th>' . get_string('successrate', 'local_yetkinlik') . '</th>
-        </tr>
-      </thead>';
-echo '<tbody>';
+echo html_writer::start_tag('table', ['class' => 'generaltable']);
+echo html_writer::start_tag('thead');
+echo html_writer::start_tag('tr');
+echo html_writer::tag('th', get_string('competencycode', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('competency', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('questioncount', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('correctcount', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('successrate', 'local_yetkinlik'));
+echo html_writer::end_tag('tr');
+echo html_writer::end_tag('thead');
+echo html_writer::start_tag('tbody');
 
 $rates = [];
 
@@ -87,37 +87,41 @@ foreach ($rows as $r) {
 
     if ($rate >= 80) {
         $color = 'green';
-    } elseif ($rate >= 60) {
+    } else if ($rate >= 60) {
         $color = 'blue';
-    } elseif ($rate >= 40) {
+    } else if ($rate >= 40) {
         $color = 'orange';
     } else {
         $color = 'red';
     }
 
-    echo "<tr>
-            <td>{$r->shortname}</td>
-            <td>{$r->description}</td>
-            <td>{$r->questions}</td>
-            <td>{$r->correct}</td>
-            <td style='color: $color; font-weight: bold;'>%{$rate}</td>
-        </tr>";
+    echo html_writer::start_tag('tr');
+    echo html_writer::tag('td', s($r->shortname));
+    echo html_writer::tag('td', s($r->description));
+    echo html_writer::tag('td', $r->questions);
+    echo html_writer::tag('td', $r->correct);
+    echo html_writer::tag('td', '%' . $rate, [
+        'style' => "color: $color; font-weight: bold;",
+    ]);
+    echo html_writer::end_tag('tr');
 }
-echo '</tbody>';
-echo '</table>';
+echo html_writer::end_tag('tbody');
+echo html_writer::end_tag('table');
 
-/* PDF raporu butonu */
+// PDF report button.
 $pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid]);
-echo html_writer::start_tag('div', ['style' => 'margin-top: 20px;']);
+echo html_writer::start_tag('div', ['class' => 'mt-4']);
 echo html_writer::link($pdfurl, get_string('pdfmystudent', 'local_yetkinlik'), [
     'class' => 'btn btn-secondary',
-    'target' => '_blank'
+    'target' => '_blank',
 ]);
 echo html_writer::end_tag('div');
 
-/* Yorum kısmı */
+// AI Comment section.
 require_once(__DIR__ . '/ai.php');
 echo html_writer::tag('h3', get_string('generalcomment', 'local_yetkinlik'), ['class' => 'mt-4']);
-echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), ['class' => 'alert alert-info']);
+echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), [
+    'class' => 'alert alert-info',
+]);
 
 echo $OUTPUT->footer();
