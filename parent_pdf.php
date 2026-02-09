@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * PDF Report for student competency.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -27,6 +26,8 @@ require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/tcpdf/tcpdf.php');
 require_login();
 
+global $DB, $USER, $PAGE, $CFG;
+
 $courseid = required_param('courseid', PARAM_INT);
 $userid = $USER->id; // Giriş yapan öğrenci.
 
@@ -35,8 +36,6 @@ $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('course');
-
-global $DB;
 
 $student = $DB->get_record('user', ['id' => $userid]);
 
@@ -52,8 +51,8 @@ $sql = "
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
-        SELECT MAX(fraction) AS fraction, questionattemptid 
-        FROM {question_attempt_steps} 
+        SELECT MAX(fraction) AS fraction, questionattemptid
+        FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
     WHERE quiz.course = :courseid AND u.id = :userid
@@ -67,7 +66,7 @@ foreach ($rows as $r) {
     $rates[] = [
         'shortname'   => $r->shortname,
         'description' => strip_tags($r->description),
-        'rate'        => $r->attempts ? round($r->correct / $r->attempts * 100) : 0
+        'rate'        => $r->attempts ? round($r->correct / $r->attempts * 100) : 0,
     ];
 }
 
@@ -80,7 +79,7 @@ foreach ($rates as $r) {
 require_once(__DIR__ . '/ai.php');
 $comment = local_yetkinlik_generate_comment($stats, 'student');
 
-/* PDF İşlemleri */
+/* PDF İşlemleri. */
 $pdf = new TCPDF();
 $pdf->AddPage();
 $pdf->SetFont('freeserif', '', 12);
@@ -89,7 +88,7 @@ $pdf->Cell(0, 10, "$student->firstname $student->lastname", 0, 1);
 $pdf->Cell(0, 10, "$course->fullname - " . get_string('studentpdfreport', 'local_yetkinlik'), 0, 1);
 $pdf->Ln(5);
 
-/* Tablo başlıkları */
+/* Tablo başlıkları. */
 $pdf->SetFillColor(224, 224, 224);
 $pdf->SetDrawColor(0, 0, 0);
 $pdf->SetLineWidth(0.3);
@@ -98,36 +97,36 @@ $pdf->Cell(40, 10, get_string('competencycode', 'local_yetkinlik'), 1, 0, 'C', t
 $pdf->Cell(100, 10, get_string('competency', 'local_yetkinlik'), 1, 0, 'C', true);
 $pdf->Cell(40, 10, get_string('success', 'local_yetkinlik'), 1, 1, 'C', true);
 
-/* Tablo satırları */
+/* Tablo satırları. */
 foreach ($rates as $row) {
     $rate = $row['rate'];
 
     if ($rate >= 80) {
         $pdf->SetFillColor(204, 255, 204);
-    } elseif ($rate >= 60) {
+    } else if ($rate >= 60) {
         $pdf->SetFillColor(204, 229, 255);
-    } elseif ($rate >= 40) {
+    } else if ($rate >= 40) {
         $pdf->SetFillColor(255, 243, 205);
     } else {
         $pdf->SetFillColor(248, 215, 218);
     }
 
     $desc = $row['description'];
-    $descHeight = $pdf->getStringHeight(100, $desc);
-    $lineHeight = max(10, $descHeight);
+    $desc_height = $pdf->getStringHeight(100, $desc);
+    $line_height = max(10, $desc_height);
 
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    $pdf->MultiCell(40, $lineHeight, $row['shortname'], 1, 'C', true, 0, $x, $y, true);
-    $pdf->MultiCell(100, $lineHeight, $desc, 1, 'L', true, 0, $x + 40, $y, true);
-    $pdf->MultiCell(40, $lineHeight, '%' . $rate, 1, 'C', true, 1, $x + 140, $y, true);
+    $pdf->MultiCell(40, $line_height, $row['shortname'], 1, 'C', true, 0, $x, $y, true);
+    $pdf->MultiCell(100, $line_height, $desc, 1, 'L', true, 0, $x + 40, $y, true);
+    $pdf->MultiCell(40, $line_height, '%' . $rate, 1, 'C', true, 1, $x + 140, $y, true);
 }
 
 $pdf->Ln(10);
 $pdf->writeHTML("<b>" . get_string('generalcomment', 'local_yetkinlik') . "</b><br>$comment");
 
-/* Renk Legend (Açıklama) */
+/* Renk Legend (Açıklama). */
 $pdf->Ln(10);
 $pdf->SetFont('freeserif', '', 10);
 $pdf->writeHTML("
