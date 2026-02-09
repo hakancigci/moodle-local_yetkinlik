@@ -22,13 +22,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Add custom JS to the question editing page.
  *
  * @return void
-*/
+ */
 function local_yetkinlik_before_standard_html_head() {
     global $PAGE;
     if ($PAGE->url->compare(new moodle_url('/question/edit.php'), URL_MATCH_BASE)) {
@@ -52,7 +50,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
         if (!$navigation->find('yetkinlik_teacher', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/class_report.php', ['courseid' => $course->id]);
             $navigation->add(
-                get_string('classreport', 'local_yetkinlik'), // Dil dosyasından alınması önerilir
+                get_string('classreport', 'local_yetkinlik'),
                 $url,
                 navigation_node::TYPE_SETTING,
                 null,
@@ -103,7 +101,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
 
     // 3. Student Specific Menus.
     if (isloggedin() && !isguestuser()) {
-        // Create a parent node for student reports if it doesn't exist to clean up the menu.
+        // Create a parent node for student reports if it doesn't exist.
         $studentnode = $navigation->find('yetkinlik_student_parent', navigation_node::TYPE_CUSTOM);
         if (!$studentnode) {
             $studentnode = $navigation->add(
