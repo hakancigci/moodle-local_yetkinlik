@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Detailed student competency report.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -42,7 +42,7 @@ echo $OUTPUT->header();
 
 // Öğrenci bilgisi.
 $student = $DB->get_record('user', ['id' => $userid], '*', MUST_EXIST);
-echo "<h3>" . fullname($student) . "</h3>";
+echo html_writer::tag('h3', fullname($student));
 
 // Kurs yetkinlikleri.
 $competencies = $DB->get_records_sql("
@@ -52,12 +52,15 @@ $competencies = $DB->get_records_sql("
     ORDER BY c.shortname
 ");
 
-echo '<table class="generaltable">';
-echo '<tr>
-        <th>' . get_string('competencycode', 'local_yetkinlik') . '</th>
-        <th>' . get_string('competency', 'local_yetkinlik') . '</th>
-        <th>' . get_string('success', 'local_yetkinlik') . '</th>
-      </tr>';
+echo html_writer::start_tag('table', ['class' => 'generaltable']);
+echo html_writer::start_tag('thead');
+echo html_writer::start_tag('tr');
+echo html_writer::tag('th', get_string('competencycode', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('competency', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('success', 'local_yetkinlik'));
+echo html_writer::end_tag('tr');
+echo html_writer::end_tag('thead');
+echo html_writer::start_tag('tbody');
 
 foreach ($competencies as $c) {
     $sql = "
@@ -71,37 +74,38 @@ foreach ($competencies as $c) {
             FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
-        WHERE quiza.userid = :userid 
+        WHERE quiza.userid = :userid
           AND quiza.state = 'finished'
           AND m.competencyid = :competencyid
     ";
     $data = $DB->get_record_sql($sql, ['userid' => $userid, 'competencyid' => $c->id]);
 
+    $ratecell = '';
     if ($data && $data->attempts) {
         $rate = number_format(($data->correct / $data->attempts) * 100, 1);
 
         if ($rate >= 80) {
             $color = 'green';
-        } elseif ($rate >= 60) {
+        } else if ($rate >= 60) {
             $color = 'blue';
-        } elseif ($rate >= 40) {
+        } else if ($rate >= 40) {
             $color = 'orange';
         } else {
             $color = 'red';
         }
-
-        echo "<tr>
-                <td>{$c->shortname}</td>
-                <td>{$c->description}</td>
-                <td style='color: $color; font-weight: bold;'>%{$rate}</td>
-              </tr>";
-    } else {
-        echo "<tr>
-                <td>{$c->shortname}</td>
-                <td>{$c->description}</td>
-                <td></td> </tr>";
+        $ratecell = html_writer::tag('span', '%' . $rate, [
+            'style' => "color: $color; font-weight: bold;"
+        ]);
     }
+
+    echo html_writer::start_tag('tr');
+    echo html_writer::tag('td', s($c->shortname));
+    echo html_writer::tag('td', s($c->description));
+    echo html_writer::tag('td', $ratecell);
+    echo html_writer::end_tag('tr');
 }
-echo '</table>';
+
+echo html_writer::end_tag('tbody');
+echo html_writer::end_tag('table');
 
 echo $OUTPUT->footer();
