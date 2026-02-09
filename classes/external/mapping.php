@@ -24,8 +24,6 @@
 
 namespace local_yetkinlik\external;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_value;
@@ -79,7 +77,7 @@ class mapping extends external_api {
 
         $existing = $DB->get_record('local_yetkinlik_qmap', [
             'courseid'   => $params['courseid'],
-            'questionid' => $params['questionid']
+            'questionid' => $params['questionid'],
         ]);
 
         // If competencyid is 0, delete the record.
@@ -99,7 +97,7 @@ class mapping extends external_api {
             $record->questionid   = $params['questionid'];
             $record->competencyid = $params['competencyid'];
             $record->timecreated  = time();
-            
+
             $DB->insert_record('local_yetkinlik_qmap', $record);
         }
 
@@ -113,7 +111,7 @@ class mapping extends external_api {
      */
     public static function save_mapping_returns() {
         return new external_single_structure([
-            'status' => new external_value(PARAM_ALPHANUMEXT, 'Result status')
+            'status' => new external_value(PARAM_ALPHANUMEXT, 'Result status'),
         ]);
     }
 }
