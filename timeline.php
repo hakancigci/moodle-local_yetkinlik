@@ -42,7 +42,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-/* Filtreler ve SQL hazırlığı */
+// Filters and SQL preparation.
 $where = "quiz.course = :courseid AND u.id = :userid";
 $params = ['courseid' => $courseid, 'userid' => $userid];
 
@@ -81,12 +81,12 @@ ORDER BY period ASC
 
 $rows = $DB->get_records_sql($sql, $params);
 
-/* Verileri işleme */
+// Process the data rows.
 $data = [];
 $periods = [];
 
 foreach ($rows as $r) {
-    // number_format ile tek ondalık hane.
+    // Number_format with one decimal place.
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
     $data[$r->shortname][$r->period] = $rate;
     $periods[$r->period] = true;
@@ -110,13 +110,17 @@ foreach ($data as $comp => $vals) {
         'borderColor' => $colors[$i % count($colors)],
         'backgroundColor' => $colors[$i % count($colors)],
         'fill' => false,
-        'tension' => 0.1
+        'tension' => 0.1,
     ];
     $i++;
 }
 
 $labelsjs = json_encode($periods);
 $datasetsjs = json_encode($datasets);
+
+/**
+ * Display filter form and chart container.
+ */
 ?>
 
 <div class="card mb-4">
@@ -146,6 +150,9 @@ $datasetsjs = json_encode($datasets);
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    /**
+     * Initialize the timeline chart.
+     */
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('timeline').getContext('2d');
         new Chart(ctx, {
