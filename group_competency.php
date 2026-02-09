@@ -1,4 +1,5 @@
 <?php
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -42,7 +43,7 @@ $PAGE->set_context($context);
 
 echo $OUTPUT->header();
 
-/* Kurs grupları. */
+/* Kurs grupları */
 $groups = groups_get_all_groups($courseid);
 echo '<form method="get">';
 echo '<input type="hidden" name="courseid" value="' . $courseid . '">';
@@ -57,7 +58,7 @@ echo '<button>' . get_string('show', 'local_yetkinlik') . '</button>';
 echo '</form><hr>';
 
 if ($groupid) {
-    // Grup öğrencilerini idnumber’a göre sırala (sadece student rolü olanlar).
+    // Grup öğrencilerini idnumber’a göre sırala (sadece student rolü olanlar)
     $students = $DB->get_records_sql("
         SELECT u.id, u.idnumber, u.firstname, u.lastname
         FROM {groups_members} gm
@@ -71,7 +72,7 @@ if ($groupid) {
         ORDER BY u.idnumber ASC
     ", ['groupid' => $groupid, 'courseid' => $courseid]);
 
-    // Kurs yetkinliklerini çek.
+    // Kurs yetkinliklerini çek
     $competencies = $DB->get_records_sql("
         SELECT DISTINCT c.id, c.shortname
         FROM {local_yetkinlik_qmap} m
@@ -79,7 +80,7 @@ if ($groupid) {
         ORDER BY c.shortname
     ");
 
-    // Tablo başlıkları.
+    // Tablo başlıkları
     echo '<table class="generaltable">';
     echo '<tr><th>' . get_string('student', 'local_yetkinlik') . '</th>';
     foreach ($competencies as $c) {
@@ -87,18 +88,18 @@ if ($groupid) {
     }
     echo '</tr>';
 
-    // Grup toplamları için hazırlık.
-    $group_totals = [];
+    // Grup toplamları için hazırlık
+    $groupTotals = [];
     foreach ($competencies as $c) {
-        $group_totals[$c->id] = ['attempts' => 0, 'correct' => 0];
+        $groupTotals[$c->id] = ['attempts' => 0, 'correct' => 0];
     }
 
-    // Her öğrenci için yetkinlik başarıları.
+    // Her öğrenci için yetkinlik başarıları
     foreach ($students as $s) {
-        // Öğrenci adı link olacak.
+        // Öğrenci adı link olacak
         $url = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
             'courseid' => $courseid,
-            'userid'   => $s->id,
+            'userid'   => $s->id
         ]);
         $studentlink = html_writer::link($url, fullname($s), ['target' => '_blank']);
 
@@ -120,7 +121,7 @@ if ($groupid) {
             ";
             $data = $DB->get_record_sql($sql, [
                 'userid' => $s->id,
-                'competencyid' => $c->id,
+                'competencyid' => $c->id
             ]);
 
             if ($data && $data->attempts) {
@@ -128,16 +129,16 @@ if ($groupid) {
 
                 if ($rate >= 80) {
                     $color = 'green';
-                } else if ($rate >= 60) {
+                } elseif ($rate >= 60) {
                     $color = 'blue';
-                } else if ($rate >= 40) {
+                } elseif ($rate >= 40) {
                     $color = 'orange';
                 } else {
                     $color = 'red';
                 }
                 echo "<td style='color: $color; font-weight: bold;'>%$rate</td>";
-                $group_totals[$c->id]['attempts'] += $data->attempts;
-                $group_totals[$c->id]['correct']  += $data->correct;
+                $groupTotals[$c->id]['attempts'] += $data->attempts;
+                $groupTotals[$c->id]['correct']  += $data->correct;
             } else {
                 echo "<td></td>"; // Girişim yoksa boş hücre.
             }
@@ -145,19 +146,19 @@ if ($groupid) {
         echo '</tr>';
     }
 
-    // Grup ortalama satırı.
+    // Grup ortalama satırı
     echo "<tr style='font-weight: bold; background: #eee;'><td>" . get_string('total', 'local_yetkinlik') . "</td>";
     foreach ($competencies as $c) {
-        $attempts = $group_totals[$c->id]['attempts'];
-        $correct  = $group_totals[$c->id]['correct'];
+        $attempts = $groupTotals[$c->id]['attempts'];
+        $correct  = $groupTotals[$c->id]['correct'];
         $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
 
         if ($rate !== '') {
             if ($rate >= 80) {
                 $color = 'green';
-            } else if ($rate >= 60) {
+            } elseif ($rate >= 60) {
                 $color = 'blue';
-            } else if ($rate >= 40) {
+            } elseif ($rate >= 40) {
                 $color = 'orange';
             } else {
                 $color = 'red';
