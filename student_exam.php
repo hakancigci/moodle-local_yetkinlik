@@ -40,7 +40,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-/* Öğrencinin girdiği sınavları çek */
+// Fetch quizzes completed by the student.
 $quizzes = $DB->get_records_sql("
     SELECT DISTINCT q.id, q.name
       FROM {quiz} q
@@ -49,7 +49,7 @@ $quizzes = $DB->get_records_sql("
   ORDER BY q.name
 ", [$USER->id, $courseid]);
 
-// Form Başlangıcı
+// Start Form.
 echo html_writer::start_tag('div', ['class' => 'card mb-4']);
 echo html_writer::start_tag('div', ['class' => 'card-body']);
 
@@ -84,8 +84,8 @@ if ($quizid) {
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
-        SELECT MAX(fraction) AS fraction, questionattemptid 
-        FROM {question_attempt_steps} 
+        SELECT MAX(fraction) AS fraction, questionattemptid
+        FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
     WHERE quiz.id = ? AND u.id = ?
@@ -100,7 +100,7 @@ if ($quizid) {
         $table->head = [
             get_string('competencycode', 'local_yetkinlik'),
             get_string('competency', 'local_yetkinlik'),
-            get_string('success', 'local_yetkinlik')
+            get_string('success', 'local_yetkinlik'),
         ];
         $table->attributes['class'] = 'generaltable mt-3';
 
@@ -113,15 +113,20 @@ if ($quizid) {
             $labels[] = $r->shortname;
             $data[] = $rate;
 
-            if ($rate >= 80) { $color = 'green'; }
-            elseif ($rate >= 60) { $color = 'blue'; }
-            elseif ($rate >= 40) { $color = 'orange'; }
-            else { $color = 'red'; }
-            
+            if ($rate >= 80) {
+                $color = 'green';
+            } else if ($rate >= 60) {
+                $color = 'blue';
+            } else if ($rate >= 40) {
+                $color = 'orange';
+            } else {
+                $color = 'red';
+            }
+
             $bgcolors[] = $color;
 
             $formattedrate = html_writer::tag('span', "%{$rate}", [
-                'style' => "color: $color; font-weight: bold;"
+                'style' => "color: $color; font-weight: bold;",
             ]);
 
             $table->data[] = [$r->shortname, $r->description, $formattedrate];
@@ -132,6 +137,9 @@ if ($quizid) {
         $labelsjs = json_encode($labels);
         $datajs = json_encode($data);
         $colorsjs = json_encode($bgcolors);
+        /**
+         * Student exam success chart display.
+         */
         ?>
 
         <div class="chart-container mt-4" style="position: relative; height:40vh; width:100%">
