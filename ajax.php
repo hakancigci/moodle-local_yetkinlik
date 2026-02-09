@@ -22,12 +22,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
-// /local/yetkinlik/ajax.php
 define('AJAX_SCRIPT', true);
 require_once(__DIR__ . '/../../config.php');
 
-// Güvenlik kontrolleri
+// Güvenlik kontrolleri.
 require_login();
 require_sesskey();
 
@@ -45,13 +43,14 @@ if ($action === 'save_mapping') {
 
     $existing = $DB->get_record('local_yetkinlik_qmap', [
         'courseid' => $courseid,
-        'questionid' => $questionid
+        'questionid' => $questionid,
     ]);
 
     if ($competencyid == 0) {
         if ($existing) {
             $DB->delete_records('local_yetkinlik_qmap', ['id' => $existing->id]);
         }
+        header('Content-Type: application/json');
         echo json_encode(['status' => 'deleted']);
         exit;
     }
@@ -63,7 +62,7 @@ if ($action === 'save_mapping') {
         $DB->insert_record('local_yetkinlik_qmap', [
             'courseid' => $courseid,
             'questionid' => $questionid,
-            'competencyid' => $competencyid
+            'competencyid' => $competencyid,
         ]);
     }
 
