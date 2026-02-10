@@ -31,7 +31,6 @@ $courseid = required_param('courseid', PARAM_INT);
 require_login($courseid);
 
 $context = context_course::instance($courseid);
-
 $groupid = optional_param('groupid', 0, PARAM_INT);
 
 $PAGE->set_url('/local/yetkinlik/group_competency.php', ['courseid' => $courseid]);
@@ -88,9 +87,9 @@ if ($groupid) {
     echo '</tr>';
 
     // Grup toplamları için hazırlık.
-    $grouptotals = [];
+    $groupTotals = []; // Düzeltildi: camelCase
     foreach ($competencies as $c) {
-        $grouptotals[$c->id] = ['attempts' => 0, 'correct' => 0];
+        $groupTotals[$c->id] = ['attempts' => 0, 'correct' => 0];
     }
 
     // Her öğrenci için yetkinlik başarıları.
@@ -100,9 +99,9 @@ if ($groupid) {
             'courseid' => $courseid,
             'userid'   => $s->id,
         ]);
-        $studentlink = html_writer::link($url, fullname($s), ['target' => '_blank']);
+        $studentLink = html_writer::link($url, fullname($s), ['target' => '_blank']);
 
-        echo "<tr><td>$studentlink</td>";
+        echo "<tr><td>$studentLink</td>";
         foreach ($competencies as $c) {
             $sql = "
                 SELECT SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
@@ -136,8 +135,8 @@ if ($groupid) {
                     $color = 'red';
                 }
                 echo "<td style='color: $color; font-weight: bold;'>%$rate</td>";
-                $grouptotals[$c->id]['attempts'] += $data->attempts;
-                $grouptotals[$c->id]['correct']  += $data->correct;
+                $groupTotals[$c->id]['attempts'] += $data->attempts;
+                $groupTotals[$c->id]['correct']  += $data->correct;
             } else {
                 echo "<td></td>"; // Girişim yoksa boş hücre.
             }
@@ -148,8 +147,8 @@ if ($groupid) {
     // Grup ortalama satırı.
     echo "<tr style='font-weight: bold; background: #eee;'><td>" . get_string('total', 'local_yetkinlik') . "</td>";
     foreach ($competencies as $c) {
-        $attempts = $grouptotals[$c->id]['attempts'];
-        $correct  = $grouptotals[$c->id]['correct'];
+        $attempts = $groupTotals[$c->id]['attempts'];
+        $correct  = $groupTotals[$c->id]['correct'];
         $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
 
         if ($rate !== '') {
