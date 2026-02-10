@@ -118,10 +118,7 @@ foreach ($data as $comp => $vals) {
 $labelsjs = json_encode($periods);
 $datasetsjs = json_encode($datasets);
 
-// Display filter form and chart container.
-/**
- * Timeline filter form and chart display.
- */
+// Timeline filter form and chart display.
 ?>
 
 <div class="card mb-4">
@@ -129,52 +126,68 @@ $datasetsjs = json_encode($datasets);
         <form method="get" class="form-inline">
             <input type="hidden" name="courseid" value="<?php
             /**
-             * Output course id for form.
+             * @package    local_yetkinlik
+             * @copyright  2026 Hakan Çiğci
+             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
              */
             echo $courseid;
             ?>">
             <label class="mr-2" for="days"><?php
             /**
-             * Output filter label.
+             * @package    local_yetkinlik
+             * @copyright  2026 Hakan Çiğci
+             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
              */
             echo get_string('filterlabel', 'local_yetkinlik');
             ?></label>
             <select name="days" id="days" class="form-control mr-2">
                 <option value="30" <?php
                 /**
-                 * Selected attribute logic for 30 days.
+                 * @package    local_yetkinlik
+                 * @copyright  2026 Hakan Çiğci
+                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                  */
                 echo ($days == 30) ? 'selected' : '';
                 ?>>
                     <?php
                     /**
-                     * Output last 30 days string.
+                     * @package    local_yetkinlik
+                     * @copyright  2026 Hakan Çiğci
+                     * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                      */
                     echo get_string('last30days', 'local_yetkinlik');
                     ?>
                 </option>
                 <option value="90" <?php
                 /**
-                 * Selected attribute logic for 90 days.
+                 * @package    local_yetkinlik
+                 * @copyright  2026 Hakan Çiğci
+                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                  */
                 echo ($days == 90) ? 'selected' : '';
                 ?>>
                     <?php
                     /**
-                     * Output last 90 days string.
+                     * @package    local_yetkinlik
+                     * @copyright  2026 Hakan Çiğci
+                     * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                      */
                     echo get_string('last90days', 'local_yetkinlik');
                     ?>
                 </option>
                 <option value="0" <?php
                 /**
-                 * Selected attribute logic for all time.
+                 * @package    local_yetkinlik
+                 * @copyright  2026 Hakan Çiğci
+                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                  */
                 echo ($days == 0) ? 'selected' : '';
                 ?>>
                     <?php
                     /**
-                     * Output all time string.
+                     * @package    local_yetkinlik
+                     * @copyright  2026 Hakan Çiğci
+                     * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                      */
                     echo get_string('alltime', 'local_yetkinlik');
                     ?>
@@ -182,7 +195,9 @@ $datasetsjs = json_encode($datasets);
             </select>
             <button type="submit" class="btn btn-primary"><?php
             /**
-             * Output show button label.
+             * @package    local_yetkinlik
+             * @copyright  2026 Hakan Çiğci
+             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
              */
             echo get_string('show', 'local_yetkinlik');
             ?></button>
@@ -194,12 +209,12 @@ $datasetsjs = json_encode($datasets);
     <canvas id="timeline"></canvas>
 </div>
 
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Initialize the timeline chart.
-    /**
-     * JavaScript to render the competency timeline chart.
-     */
+    // JavaScript to render the competency timeline chart.
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('timeline').getContext('2d');
         new Chart(ctx, {
@@ -207,13 +222,17 @@ $datasetsjs = json_encode($datasets);
             data: {
                 labels: <?php
                 /**
-                 * Output chart labels.
+                 * @package    local_yetkinlik
+                 * @copyright  2026 Hakan Çiğci
+                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                  */
                 echo $labelsjs;
                 ?>,
                 datasets: <?php
                 /**
-                 * Output chart datasets.
+                 * @package    local_yetkinlik
+                 * @copyright  2026 Hakan Çiğci
+                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                  */
                 echo $datasetsjs;
                 ?>
@@ -229,7 +248,9 @@ $datasetsjs = json_encode($datasets);
                             display: true,
                             text: '<?php
                             /**
-                             * Output success rate string for chart axis.
+                             * @package    local_yetkinlik
+                             * @copyright  2026 Hakan Çiğci
+                             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
                              */
                             echo get_string('successrate', 'local_yetkinlik');
                             ?> (%)'
@@ -249,5 +270,9 @@ $datasetsjs = json_encode($datasets);
 <?php
 /**
  * Footer of the page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 echo $OUTPUT->footer();
