@@ -44,21 +44,21 @@ echo $OUTPUT->header();
 
 // 1. VERİ SORGULARI.
 $coursesql = "SELECT c.id, c.shortname,
-                     CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                     CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-              FROM {quiz_attempts} quiza
-              JOIN {quiz} quiz ON quiz.id = quiza.quiz
-              JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-              JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-              JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-              JOIN {competency} c ON c.id = m.competencyid
-              JOIN (
-                  SELECT MAX(fraction) AS fraction, questionattemptid
-                  FROM {question_attempt_steps}
-                  GROUP BY questionattemptid
-              ) qas ON qas.questionattemptid = qa.id
-              WHERE quiz.course = :courseid AND quiza.state = 'finished'
-              GROUP BY c.id, c.shortname";
+                      CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+                      CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+               FROM {quiz_attempts} quiza
+               JOIN {quiz} quiz ON quiz.id = quiza.quiz
+               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+               JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+               JOIN {competency} c ON c.id = m.competencyid
+               JOIN (
+                   SELECT MAX(fraction) AS fraction, questionattemptid
+                   FROM {question_attempt_steps}
+                   GROUP BY questionattemptid
+               ) qas ON qas.questionattemptid = qa.id
+               WHERE quiz.course = :courseid AND quiza.state = 'finished'
+               GROUP BY c.id, c.shortname";
 
 $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid]);
 
@@ -92,19 +92,19 @@ if (!empty($coursedata)) {
     $studentsql = "SELECT c.id,
                           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
                           CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-                   FROM {quiz_attempts} quiza
-                   JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                   JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                   JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                   JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                   JOIN {competency} c ON c.id = m.competencyid
-                   JOIN (
-                       SELECT MAX(fraction) AS fraction, questionattemptid
-                       FROM {question_attempt_steps}
-                       GROUP BY questionattemptid
-                   ) qas ON qas.questionattemptid = qa.id
-                   WHERE quiz.course = :courseid AND quiza.userid = :userid AND quiza.state = 'finished'
-                   GROUP BY c.id";
+                    FROM {quiz_attempts} quiza
+                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+                    JOIN {competency} c ON c.id = m.competencyid
+                    JOIN (
+                        SELECT MAX(fraction) AS fraction, questionattemptid
+                        FROM {question_attempt_steps}
+                        GROUP BY questionattemptid
+                    ) qas ON qas.questionattemptid = qa.id
+                    WHERE quiz.course = :courseid AND quiza.userid = :userid AND quiza.state = 'finished'
+                    GROUP BY c.id";
     $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
 }
 
@@ -218,11 +218,4 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 // Footer output.
-/**
- * Footer output.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 echo $OUTPUT->footer();
