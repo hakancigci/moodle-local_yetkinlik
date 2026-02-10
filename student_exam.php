@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Student exam competency analysis report.
@@ -139,9 +139,7 @@ if ($quizid) {
         $colorsjs = json_encode($bgcolors);
 
         // Student exam success chart display.
-        /**
-         * Chart output section.
-         */
+        // Chart output section.
         ?>
 
         <div class="chart-container mt-4" style="position: relative; height:40vh; width:100%">
@@ -179,7 +177,12 @@ if ($quizid) {
     }
 }
 
+// Footer section.
 /**
  * Footer section.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 echo $OUTPUT->footer();
