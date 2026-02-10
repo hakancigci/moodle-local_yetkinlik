@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Teacher student exam analysis report.
@@ -95,9 +95,7 @@ $labelsjs = json_encode($labels);
 $datajs = json_encode($data);
 
 // Chart display section for student competency performance.
-/**
- * Chart display template.
- */
+// Chart display template.
 ?>
 
 <div class="chart-container mt-4" style="position: relative; height:40vh; width:100%">
@@ -139,5 +137,9 @@ $datajs = json_encode($data);
 <?php
 /**
  * Footer of the page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 echo $OUTPUT->footer();
