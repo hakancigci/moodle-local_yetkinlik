@@ -129,7 +129,7 @@ if ($groupid && $quizid) {
         }
 
         foreach ($students as $s) {
-            // Öğrenci detayı için link (userid ve courseid ile).
+            // Ogrenci detayı için link (userid ve courseid ile).
             $studenturl = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
                 'courseid' => $courseid,
                 'userid'   => $s->id,
