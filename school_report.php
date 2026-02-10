@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Report for competency.
@@ -39,7 +39,7 @@ global $DB;
 $pdfurl = new moodle_url('/local/yetkinlik/school_pdf.php');
 echo $OUTPUT->single_button($pdfurl, 'Raporu PDF Olarak İndir', 'get', ['class' => 'btn btn-primary mb-3']);
 
-/* Tüm okul yetkinlik başarısı SQL. */
+// Tüm okul yetkinlik başarıları SQL.
 $sql = "
     SELECT c.id, c.shortname, c.description,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
@@ -92,9 +92,7 @@ echo '</tbody></table>';
 $labelsjs = json_encode($labels);
 $datajs = json_encode($data);
 
-/**
- * Chart display section.
- */
+// Chart display section.
 ?>
 
 <div class="card mt-4">
@@ -128,5 +126,9 @@ $datajs = json_encode($data);
 <?php
 /**
  * Footer section.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 echo $OUTPUT->footer();
