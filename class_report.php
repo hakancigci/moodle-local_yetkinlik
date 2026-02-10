@@ -60,9 +60,9 @@ if ($data = $mform->get_data()) {
 $mform->set_data(['userid' => $userid, 'competencyid' => $competency]);
 
 // PDF Butonu.
-$pdfUrl = new moodle_url('/local/yetkinlik/pdf_report.php', ['courseid' => $courseid]);
+$pdfurl = new moodle_url('/local/yetkinlik/pdf_report.php', ['courseid' => $courseid]);
 echo html_writer::start_tag('div', ['class' => 'mb-3']);
-echo html_writer::link($pdfUrl, 'PDF Rapor Al', ['class' => 'btn btn-secondary', 'target' => '_blank']);
+echo html_writer::link($pdfurl, 'PDF Rapor Al', ['class' => 'btn btn-secondary', 'target' => '_blank']);
 echo html_writer::end_tag('div');
 
 $mform->display();
@@ -70,7 +70,7 @@ $mform->display();
 // 2. Veri Hesaplama.
 
 // Kurs Ortalaması SQL.
-$courseSql = "SELECT c.id, c.shortname,
+$coursesql = "SELECT c.id, c.shortname,
                      CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
                      CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
               FROM {quiz_attempts} quiza
@@ -86,17 +86,17 @@ $courseSql = "SELECT c.id, c.shortname,
               . ($competency ? " AND c.id = :competencyid " : "") .
               " GROUP BY c.id, c.shortname";
 
-$courseData = $DB->get_records_sql($courseSql, ['courseid' => $courseid, 'competencyid' => $competency]);
+$coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid, 'competencyid' => $competency]);
 
-$classData = [];
-$studentData = [];
+$classdata = [];
+$studentdata = [];
 
 if ($userid) {
     // Sınıf (Bölüm) Ortalaması.
-    $userDept = $DB->get_field('user', 'department', ['id' => $userid]);
+    $userdept = $DB->get_field('user', 'department', ['id' => $userid]);
 
-    if (!empty($userDept)) {
-        $classSql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
+    if (!empty($userdept)) {
+        $classsql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
                             CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
                      FROM {quiz_attempts} quiza
                      JOIN {user} u ON quiza.userid = u.id
@@ -111,15 +111,15 @@ if ($userid) {
                      WHERE quiz.course = :courseid AND u.department = :dept AND quiza.state = 'finished' "
                      . ($competency ? " AND c.id = :competencyid " : "") .
                      " GROUP BY c.id, c.shortname";
-        $classData = $DB->get_records_sql($classSql, [
+        $classdata = $DB->get_records_sql($classsql, [
             'courseid' => $courseid,
-            'dept' => $userDept,
+            'dept' => $userdept,
             'competencyid' => $competency,
         ]);
     }
 
     // Bireysel Öğrenci Ortalaması.
-    $studentSql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
+    $studentsql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
                             CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
                     FROM {quiz_attempts} quiza
                     JOIN {user} u ON quiza.userid = u.id
@@ -134,7 +134,7 @@ if ($userid) {
                     WHERE quiz.course = :courseid AND u.id = :userid AND quiza.state = 'finished' "
                     . ($competency ? " AND c.id = :competencyid " : "") .
                     " GROUP BY c.id, c.shortname";
-    $studentData = $DB->get_records_sql($studentSql, [
+    $studentdata = $DB->get_records_sql($studentsql, [
         'courseid' => $courseid,
         'userid' => $userid,
         'competencyid' => $competency,
@@ -154,28 +154,28 @@ echo html_writer::end_tag('thead');
 echo html_writer::start_tag('tbody');
 
 $labels = [];
-$courseRates = [];
-$classRates = [];
-$studentRates = [];
+$courserates = [];
+$classrates = [];
+$studentrates = [];
 
-foreach ($courseData as $cid => $c) {
-    $courseRate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-    $classRate  = (isset($classData[$cid]) && $classData[$cid]->attempts)
-        ? round(($classData[$cid]->correct / $classData[$cid]->attempts) * 100, 1) : 0;
-    $studRate   = (isset($studentData[$cid]) && $studentData[$cid]->attempts)
-        ? round(($studentData[$cid]->correct / $studentData[$cid]->attempts) * 100, 1) : 0;
+foreach ($coursedata as $cid => $c) {
+    $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
+    $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts)
+        ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+    $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts)
+        ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
     echo html_writer::start_tag('tr');
     echo html_writer::tag('td', $c->shortname);
-    echo html_writer::tag('td', '%' . $courseRate, ['class' => 'font-weight-bold']);
-    echo html_writer::tag('td', '%' . $classRate, ['class' => 'text-muted']);
-    echo html_writer::tag('td', '%' . $studRate, ['class' => 'text-primary font-weight-bold']);
+    echo html_writer::tag('td', '%' . $courserate, ['class' => 'font-weight-bold']);
+    echo html_writer::tag('td', '%' . $classrate, ['class' => 'text-muted']);
+    echo html_writer::tag('td', '%' . $studrate, ['class' => 'text-primary font-weight-bold']);
     echo html_writer::end_tag('tr');
 
     $labels[] = $c->shortname;
-    $courseRates[] = $courseRate;
-    $classRates[] = $classRate;
-    $studentRates[] = $studRate;
+    $courserates[] = $courserate;
+    $classrates[] = $classrate;
+    $studentrates[] = $studrate;
 }
 echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
@@ -186,13 +186,13 @@ echo html_writer::tag('canvas', '', ['id' => 'competencyChart', 'height' => '100
 echo html_writer::end_tag('div');
 
 // ChartJS Script.
-$chartJsUrl = 'https://cdn.jsdelivr.net/npm/chart.js';
-echo html_writer::script('', $chartJsUrl);
+$chartjsurl = 'https://cdn.jsdelivr.net/npm/chart.js';
+echo html_writer::script('', $chartjsurl);
 
-$jsLabels = json_encode($labels);
-$jsCourse = json_encode($courseRates);
-$jsClass = json_encode($classRates);
-$jsStudent = json_encode($studentRates);
+$jslabels = json_encode($labels);
+$jscourse = json_encode($courserates);
+$jsclass = json_encode($classrates);
+$jsstudent = json_encode($studentrates);
 
 $script = "
 document.addEventListener('DOMContentLoaded', function() {
@@ -200,11 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: $jsLabels,
+            labels: $jslabels,
             datasets: [
-                { label: 'Kurs Ort.', data: $jsCourse, backgroundColor: 'rgba(156, 39, 176, 0.6)' },
-                { label: 'Sınıf Ort.', data: $jsClass, backgroundColor: 'rgba(76, 175, 80, 0.6)' },
-                { label: 'Öğrenci Ort.', data: $jsStudent, backgroundColor: 'rgba(33, 150, 243, 0.6)' }
+                { label: 'Kurs Ort.', data: $jscourse, backgroundColor: 'rgba(156, 39, 176, 0.6)' },
+                { label: 'Sınıf Ort.', data: $jsclass, backgroundColor: 'rgba(76, 175, 80, 0.6)' },
+                { label: 'Öğrenci Ort.', data: $jsstudent, backgroundColor: 'rgba(33, 150, 243, 0.6)' }
             ]
         },
         options: {
