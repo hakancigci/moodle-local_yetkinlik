@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Turkish strings for local_yetkinlik plugin.
@@ -102,6 +102,10 @@ $string['selectquiz'] = 'Sınav seçiniz';
 $string['selectstudent'] = 'Öğrenci seçiniz';
 $string['selectuser'] = 'Öğrenci seçiniz';
 $string['show'] = 'Göster';
+$string['structured_blue'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Büyük oranda öğrenildi. Öneri: Eksik kalan noktaları gözden geçir.';
+$string['structured_green'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Tam başarı sağlandı. Öneri: İleri düzey etkinliklere geçebilirsin.';
+$string['structured_orange'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Kısmen öğrenildi. Öneri: Daha fazla örnek soru çözerek pekiştir.';
+$string['structured_red'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Henüz yeterli gelişim sağlanamadı. Öneri: Konuyu tekrar et ve ek kaynaklardan yararlan.';
 $string['student'] = 'Öğrenci';
 $string['studentanalysis'] = 'Kazanım Karşılaştırma Raporum';
 $string['studentclass'] = 'Yetkinlik Durumu';
@@ -110,10 +114,6 @@ $string['studentcompetencyexams'] = 'Yetkinlik Bazlı Sınav Analizim';
 $string['studentexam'] = 'Sınav Kazanım Analizim';
 $string['studentpdfreport'] = 'Yetkinlik Gelişim Raporu';
 $string['studentreport'] = 'Yetkinlik Karnem';
-$string['structured_blue'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Büyük oranda öğrenildi. Öneri: Eksik kalan noktaları gözden geçir.';
-$string['structured_green'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Tam başarı sağlandı. Öneri: İleri düzey etkinliklere geçebilirsin.';
-$string['structured_orange'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Kısmen öğrenildi. Öneri: Daha fazla örnek soru çözerek pekiştir.';
-$string['structured_red'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Henüz yeterli gelişim sağlanamadı. Öneri: Konuyu tekrar et ve ek kaynaklardan yararlan.';
 $string['success'] = 'Başarı';
 $string['success_threshold'] = 'Başarı eşiği';
 $string['success_threshold_desc'] = 'Renk kodlaması için varsayılan başarı yüzdesi.';
