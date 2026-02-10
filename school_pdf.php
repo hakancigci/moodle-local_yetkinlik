@@ -1,21 +1,6 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
- * School performance report in PDF format.
+ * PDF Export for competency.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -24,24 +9,38 @@
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/tcpdf/tcpdf.php');
+require_once(__DIR__ . '/ai.php');
 
 require_login();
-$courseid = required_param('courseid', PARAM_INT);
-$context = context_course::instance($courseid);
-require_capability('moodle/course:view', $context);
 
+// Parametre kontrolü
+$courseid = optional_param('courseid', 0, PARAM_INT);
 global $DB;
 
-// Başarı durumu SQL sorgusu.
+if ($courseid) {
+    $context = context_course::instance($courseid);
+    require_capability('moodle/course:view', $context);
+    $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+    $reporttitle = $course->fullname . " - Kazanım Başarı Raporu";
+    $wheresql = "WHERE quiz.course = :courseid AND quiza.state = 'finished'";
+    $params = ['courseid' => $courseid];
+} else {
+    $context = context_system::instance();
+    require_capability('moodle/site:config', $context);
+    $reporttitle = "Okul Genel Kazanım Başarı Raporu";
+    $wheresql = "WHERE quiza.state = 'finished'";
+    $params = [];
+}
+
+// Veri Çekme SQL
 $sql = "
     SELECT c.id, c.shortname, c.description,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
            CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
     FROM {quiz_attempts} quiza
-    JOIN {user} u ON quiza.userid = u.id
+    JOIN {quiz} quiz ON quiz.id = quiza.quiz
     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-    JOIN {quiz} quiz ON quiz.id = quiza.quiz
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
@@ -49,12 +48,12 @@ $sql = "
         FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
-    WHERE quiz.course = :courseid
-    GROUP BY c.shortname, c.description, c.id
-    ORDER BY c.shortname
+    $wheresql
+    GROUP BY c.id, c.shortname, c.description
+    ORDER BY c.shortname ASC
 ";
 
-$rows = $DB->get_records_sql($sql, ['courseid' => $courseid]);
+$rows = $DB->get_records_sql($sql, $params);
 $rates = [];
 
 foreach ($rows as $r) {
@@ -62,43 +61,83 @@ foreach ($rows as $r) {
     $rates[$r->shortname] = $rate;
 }
 
-require_once(__DIR__ . '/ai.php');
-$comment = local_yetkinlik_generate_comment($rates, 'school');
-$course = $DB->get_record('course', ['id' => $courseid]);
+// AI Yorumu Üretme
+$comment = local_yetkinlik_generate_comment($rates);
 
-/* PDF İşlemleri. */
-$pdf = new TCPDF();
+/* PDF Hazırlığı */
+$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+$pdf->SetCreator('Moodle');
+$pdf->SetTitle($reporttitle);
+$pdf->setPrintHeader(false);
+$pdf->setPrintFooter(true);
+$pdf->SetMargins(15, 15, 15);
+$pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
 $pdf->AddPage();
+
+// Font Ayarı (Türkçe karakterler için)
 $pdf->SetFont('freeserif', '', 12);
 
-$pdf->Cell(0, 10, $course->fullname . " - Okul Genel Kazanım Raporu", 0, 1);
+// Başlık Bölümü
+$pdf->SetFont('freeserif', 'B', 16);
+$pdf->Cell(0, 10, $reporttitle, 0, 1, 'C');
+$pdf->SetFont('freeserif', '', 9);
+$pdf->Cell(0, 5, "Oluşturma Tarihi: " . date('d.m.Y H:i'), 0, 1, 'R');
 $pdf->Ln(5);
 
-$html = "<table border='1' cellpadding='6'>
-    <tr>
-        <th>Kazanım</th>
-        <th>Çözülen</th>
-        <th>Doğru</th>
-        <th>Başarı</th>
-    </tr>";
+// Sabit Sütun Genişlikli HTML Tablo (Kaymayı Önler)
+$html = '
+<table border="0.5" cellpadding="6" style="width: 100%;">
+    <thead>
+        <tr style="background-color: #f2f2f2; font-weight: bold; text-align: center;">
+            <th width="15%">Kod</th>
+            <th width="45%">Kazanım Açıklaması</th>
+            <th width="12%">Soru</th>
+            <th width="12%">Doğru</th>
+            <th width="16%">Başarı %</th>
+        </tr>
+    </thead>
+    <tbody>';
 
 foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
-    $color = $rate >= 70 ? '#ccffcc' : ($rate >= 50 ? '#fff3cd' : '#f8d7da');
+    
+    // HTML Etiketlerini Temizle ( <p>, <strong> vb. kodların görünmesini engeller)
+    $clean_desc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
 
-    $html .= "<tr style='background-color: $color'>
-        <td>{$r->shortname}</td>
-        <td>{$r->attempts}</td>
-        <td>{$r->correct}</td>
-        <td>%{$rate}</td>
-    </tr>";
+    // Renk skalası
+    $bgcolor = $rate >= 70 ? '#e6ffec' : ($rate >= 50 ? '#fff9e6' : '#ffe6e6');
+
+    $html .= '
+        <tr bgcolor="'.$bgcolor.'">
+            <td width="15%" style="text-align: center;"><b>'.$r->shortname.'</b></td>
+            <td width="45%">'.$clean_desc.'</td>
+            <td width="12%" style="text-align: center;">'.$r->attempts.'</td>
+            <td width="12%" style="text-align: center;">'.$r->correct.'</td>
+            <td width="16%" style="text-align: center; font-weight: bold;">%'.$rate.'</td>
+        </tr>';
 }
 
-$html .= "</table>";
-$pdf->Ln(10);
+$html .= '</tbody></table>';
 
-$pdf->writeHTML($html);
-$pdf->writeHTML("<b>Genel Değerlendirme ve Strateji (AI):</b><br>" . $comment);
+// Tabloyu PDF'e Aktar
+$pdf->writeHTML($html, true, false, true, false, '');
 
-$pdf->Output("okul_kazanim_raporu.pdf", "I");
+// AI Analiz Notu (Eğer yorum varsa)
+if (!empty($comment)) {
+    // AI yorumundaki HTML kodlarını temizle
+    $clean_comment = html_entity_decode(strip_tags($comment), ENT_QUOTES, 'UTF-8');
+
+    $pdf->Ln(8);
+    $pdf->SetFont('freeserif', 'B', 12);
+    $pdf->SetFillColor(240, 240, 240);
+    $pdf->Cell(0, 10, " Yapay Zeka Analizi ve Öneriler", 0, 1, 'L', true);
+    
+    $pdf->Ln(2);
+    $pdf->SetFont('freeserif', '', 11);
+    // MultiCell kullanımı metni otomatik olarak hizalar ve temizlenmiş içeriği basar
+    $pdf->MultiCell(0, 7, $clean_comment, 0, 'L', false, 1);
+}
+
+// Çıktı
+$pdf->Output("kazanim_raporu.pdf", "I");
 exit;
