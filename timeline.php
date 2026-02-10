@@ -115,8 +115,8 @@ foreach ($data as $comp => $vals) {
     $i++;
 }
 
-$labels_js = json_encode($periods);
-$datasets_js = json_encode($datasets);
+$labelsjs = json_encode($periods);
+$datasetsjs = json_encode($datasets);
 
 // Timeline filter form and chart display.
 ?>
@@ -148,29 +148,19 @@ $datasets_js = json_encode($datasets);
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    /**
-     * JavaScript to render the competency timeline chart.
-     */
+    // JavaScript to render the competency timeline chart.
     document.addEventListener('DOMContentLoaded', function() {
-        /**
-         * Get context for the timeline chart.
-         */
+        // Get context for the timeline chart.
         const ctx = document.getElementById('timeline').getContext('2d');
         
-        /**
-         * Initialize the competency development line chart.
-         */
+        // Initialize the competency development line chart.
         new Chart(ctx, {
             type: 'line',
             data: {
-                /**
-                 * Labels represent the time periods.
-                 */
-                labels: <?php echo $labels_js; ?>,
-                /**
-                 * Datasets represent each competency progress.
-                 */
-                datasets: <?php echo $datasets_js; ?>
+                // Labels represent the time periods.
+                labels: <?php echo $labelsjs; ?>,
+                // Datasets represent each competency progress.
+                datasets: <?php echo $datasetsjs; ?>
             },
             options: {
                 responsive: true,
@@ -186,9 +176,7 @@ $datasets_js = json_encode($datasets);
                     }
                 },
                 plugins: {
-                    /**
-                     * Legend configuration.
-                     */
+                    // Legend configuration.
                     legend: {
                         position: 'bottom'
                     }
@@ -199,7 +187,5 @@ $datasets_js = json_encode($datasets);
 </script>
 
 <?php
-/**
- * Footer section.
- */
+// Footer section.
 echo $OUTPUT->footer();
