@@ -105,13 +105,13 @@ if ($quizid) {
         $table->attributes['class'] = 'generaltable mt-3';
 
         $labels = [];
-        $data = [];
-        $bgcolors = [];
+        $chartData = [];
+        $bgColors = [];
 
         foreach ($rows as $r) {
             $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
             $labels[] = $r->shortname;
-            $data[] = $rate;
+            $chartData[] = $rate;
 
             if ($rate >= 80) {
                 $color = 'green';
@@ -123,20 +123,20 @@ if ($quizid) {
                 $color = 'red';
             }
 
-            $bgcolors[] = $color;
+            $bgColors[] = $color;
 
-            $formattedrate = html_writer::tag('span', "%{$rate}", [
+            $formattedRate = html_writer::tag('span', "%{$rate}", [
                 'style' => "color: $color; font-weight: bold;",
             ]);
 
-            $table->data[] = [$r->shortname, $r->description, $formattedrate];
+            $table->data[] = [$r->shortname, $r->description, $formattedRate];
         }
 
         echo html_writer::table($table);
 
-        $labelsjs = json_encode($labels);
-        $datajs = json_encode($data);
-        $colorsjs = json_encode($bgcolors);
+        $labelsJs = json_encode($labels);
+        $dataJs = json_encode($chartData);
+        $colorsJs = json_encode($bgColors);
 
         // Student exam success chart display.
         // Chart output section.
@@ -153,11 +153,11 @@ if ($quizid) {
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: <?php echo $labelsjs; ?>,
+                    labels: <?php echo $labelsJs; ?>,
                     datasets: [{
                         label: '<?php echo get_string('successpercent', 'local_yetkinlik'); ?> (%)',
-                        data: <?php echo $datajs; ?>,
-                        backgroundColor: <?php echo $colorsjs; ?>
+                        data: <?php echo $dataJs; ?>,
+                        backgroundColor: <?php echo $colorsJs; ?>
                     }]
                 },
                 options: {
@@ -178,11 +178,4 @@ if ($quizid) {
 }
 
 // Footer section.
-/**
- * Footer section.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 echo $OUTPUT->footer();
