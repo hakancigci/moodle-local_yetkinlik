@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * PDF Export for competency.
  *
@@ -13,7 +28,7 @@ require_once(__DIR__ . '/ai.php');
 
 require_login();
 
-// Parametre kontrolü
+// Parametre kontrolü.
 $courseid = optional_param('courseid', 0, PARAM_INT);
 global $DB;
 
@@ -32,7 +47,7 @@ if ($courseid) {
     $params = [];
 }
 
-// Veri Çekme SQL
+// Veri Çekme SQL.
 $sql = "
     SELECT c.id, c.shortname, c.description,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
@@ -61,30 +76,30 @@ foreach ($rows as $r) {
     $rates[$r->shortname] = $rate;
 }
 
-// AI Yorumu Üretme
+// AI Yorumu Üretme.
 $comment = local_yetkinlik_generate_comment($rates);
 
-/* PDF Hazırlığı */
+/* PDF Hazırlığı. */
 $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 $pdf->SetCreator('Moodle');
 $pdf->SetTitle($reporttitle);
 $pdf->setPrintHeader(false);
 $pdf->setPrintFooter(true);
 $pdf->SetMargins(15, 15, 15);
-$pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+$pdf->SetAutoPageBreak(true, PDF_MARGIN_BOTTOM);
 $pdf->AddPage();
 
-// Font Ayarı (Türkçe karakterler için)
+// Font Ayarı (Türkçe karakterler için).
 $pdf->SetFont('freeserif', '', 12);
 
-// Başlık Bölümü
+// Başlık Bölümü.
 $pdf->SetFont('freeserif', 'B', 16);
 $pdf->Cell(0, 10, $reporttitle, 0, 1, 'C');
 $pdf->SetFont('freeserif', '', 9);
 $pdf->Cell(0, 5, "Oluşturma Tarihi: " . date('d.m.Y H:i'), 0, 1, 'R');
 $pdf->Ln(5);
 
-// Sabit Sütun Genişlikli HTML Tablo (Kaymayı Önler)
+// Sabit Sütun Genişlikli HTML Tablo (Kaymayı Önler).
 $html = '
 <table border="0.5" cellpadding="6" style="width: 100%;">
     <thead>
@@ -100,44 +115,44 @@ $html = '
 
 foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
-    
-    // HTML Etiketlerini Temizle ( <p>, <strong> vb. kodların görünmesini engeller)
-    $clean_desc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
 
-    // Renk skalası
+    // HTML Etiketlerini Temizle.
+    $cleandesc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
+
+    // Renk skalası.
     $bgcolor = $rate >= 70 ? '#e6ffec' : ($rate >= 50 ? '#fff9e6' : '#ffe6e6');
 
     $html .= '
-        <tr bgcolor="'.$bgcolor.'">
-            <td width="15%" style="text-align: center;"><b>'.$r->shortname.'</b></td>
-            <td width="45%">'.$clean_desc.'</td>
-            <td width="12%" style="text-align: center;">'.$r->attempts.'</td>
-            <td width="12%" style="text-align: center;">'.$r->correct.'</td>
-            <td width="16%" style="text-align: center; font-weight: bold;">%'.$rate.'</td>
+        <tr bgcolor="' . $bgcolor . '">
+            <td width="15%" style="text-align: center;"><b>' . $r->shortname . '</b></td>
+            <td width="45%">' . $cleandesc . '</td>
+            <td width="12%" style="text-align: center;">' . $r->attempts . '</td>
+            <td width="12%" style="text-align: center;">' . $r->correct . '</td>
+            <td width="16%" style="text-align: center; font-weight: bold;">%' . $rate . '</td>
         </tr>';
 }
 
 $html .= '</tbody></table>';
 
-// Tabloyu PDF'e Aktar
+// Tabloyu PDF'e Aktar.
 $pdf->writeHTML($html, true, false, true, false, '');
 
-// AI Analiz Notu (Eğer yorum varsa)
+// AI Analiz Notu (Eğer yorum varsa).
 if (!empty($comment)) {
-    // AI yorumundaki HTML kodlarını temizle
-    $clean_comment = html_entity_decode(strip_tags($comment), ENT_QUOTES, 'UTF-8');
+    // AI yorumundaki HTML kodlarını temizle.
+    $cleancomment = html_entity_decode(strip_tags($comment), ENT_QUOTES, 'UTF-8');
 
     $pdf->Ln(8);
     $pdf->SetFont('freeserif', 'B', 12);
     $pdf->SetFillColor(240, 240, 240);
     $pdf->Cell(0, 10, " Yapay Zeka Analizi ve Öneriler", 0, 1, 'L', true);
-    
+
     $pdf->Ln(2);
     $pdf->SetFont('freeserif', '', 11);
-    // MultiCell kullanımı metni otomatik olarak hizalar ve temizlenmiş içeriği basar
-    $pdf->MultiCell(0, 7, $clean_comment, 0, 'L', false, 1);
+    // MultiCell kullanımı metni otomatik olarak hizalar ve temizlenmiş içeriği basar.
+    $pdf->MultiCell(0, 7, $cleancomment, 0, 'L', false, 1);
 }
 
-// Çıktı
+// Çıktı.
 $pdf->Output("kazanim_raporu.pdf", "I");
 exit;
