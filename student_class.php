@@ -43,73 +43,73 @@ $PAGE->set_pagelayout('course');
 echo $OUTPUT->header();
 
 // 1. VERİ SORGULARI.
-$course_sql = "SELECT c.id, c.shortname,
-                      CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                      CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-               FROM {quiz_attempts} quiza
-               JOIN {quiz} quiz ON quiz.id = quiza.quiz
-               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-               JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-               JOIN {competency} c ON c.id = m.competencyid
-               JOIN (
-                   SELECT MAX(fraction) AS fraction, questionattemptid
-                   FROM {question_attempt_steps}
-                   GROUP BY questionattemptid
-               ) qas ON qas.questionattemptid = qa.id
-               WHERE quiz.course = :courseid AND quiza.state = 'finished'
-               GROUP BY c.id, c.shortname";
+$coursesql = "SELECT c.id, c.shortname,
+                     CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+                     CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+              FROM {quiz_attempts} quiza
+              JOIN {quiz} quiz ON quiz.id = quiza.quiz
+              JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+              JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+              JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+              JOIN {competency} c ON c.id = m.competencyid
+              JOIN (
+                  SELECT MAX(fraction) AS fraction, questionattemptid
+                  FROM {question_attempt_steps}
+                  GROUP BY questionattemptid
+              ) qas ON qas.questionattemptid = qa.id
+              WHERE quiz.course = :courseid AND quiza.state = 'finished'
+              GROUP BY c.id, c.shortname";
 
-$course_data = $DB->get_records_sql($course_sql, ['courseid' => $courseid]);
+$coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid]);
 
-$class_data = [];
-$student_data = [];
+$classdata = [];
+$studentdata = [];
 
-if (!empty($course_data)) {
+if (!empty($coursedata)) {
     // Sınıf Ortalaması (Departman bazlı).
     if (!empty($USER->department)) {
-        $class_sql = "SELECT c.id,
-                             CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                             CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-                      FROM {quiz_attempts} quiza
-                      JOIN {user} u ON quiza.userid = u.id
-                      JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                      JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                      JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                      JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                      JOIN {competency} c ON c.id = m.competencyid
-                      JOIN (
-                          SELECT MAX(fraction) AS fraction, questionattemptid
-                          FROM {question_attempt_steps}
-                          GROUP BY questionattemptid
-                      ) qas ON qas.questionattemptid = qa.id
-                      WHERE quiz.course = :courseid AND u.department = :dept AND quiza.state = 'finished'
-                      GROUP BY c.id";
-        $class_data = $DB->get_records_sql($class_sql, ['courseid' => $courseid, 'dept' => $USER->department]);
+        $classsql = "SELECT c.id,
+                            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+                            CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+                     FROM {quiz_attempts} quiza
+                     JOIN {user} u ON quiza.userid = u.id
+                     JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+                     JOIN {competency} c ON c.id = m.competencyid
+                     JOIN (
+                         SELECT MAX(fraction) AS fraction, questionattemptid
+                         FROM {question_attempt_steps}
+                         GROUP BY questionattemptid
+                     ) qas ON qas.questionattemptid = qa.id
+                     WHERE quiz.course = :courseid AND u.department = :dept AND quiza.state = 'finished'
+                     GROUP BY c.id";
+        $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
     }
 
     // Öğrencinin Kendi Verisi.
-    $student_sql = "SELECT c.id,
-                           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                           CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-                    FROM {quiz_attempts} quiza
-                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                    JOIN {competency} c ON c.id = m.competencyid
-                    JOIN (
-                        SELECT MAX(fraction) AS fraction, questionattemptid
-                        FROM {question_attempt_steps}
-                        GROUP BY questionattemptid
-                    ) qas ON qas.questionattemptid = qa.id
-                    WHERE quiz.course = :courseid AND quiza.userid = :userid AND quiza.state = 'finished'
-                    GROUP BY c.id";
-    $student_data = $DB->get_records_sql($student_sql, ['courseid' => $courseid, 'userid' => $USER->id]);
+    $studentsql = "SELECT c.id,
+                          CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+                          CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+                   FROM {quiz_attempts} quiza
+                   JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                   JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                   JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                   JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+                   JOIN {competency} c ON c.id = m.competencyid
+                   JOIN (
+                       SELECT MAX(fraction) AS fraction, questionattemptid
+                       FROM {question_attempt_steps}
+                       GROUP BY questionattemptid
+                   ) qas ON qas.questionattemptid = qa.id
+                   WHERE quiz.course = :courseid AND quiza.userid = :userid AND quiza.state = 'finished'
+                   GROUP BY c.id";
+    $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
 }
 
 // 2. EKRAN ÇIKTISI.
-if (empty($course_data)) {
+if (empty($coursedata)) {
     echo $OUTPUT->notification(get_string('nodatafound', 'local_yetkinlik'), 'info');
 } else {
     // Bilgi Kutusu.
@@ -133,12 +133,12 @@ if (empty($course_data)) {
     $classrates = [];
     $myrates = [];
 
-    foreach ($course_data as $cid => $c) {
+    foreach ($coursedata as $cid => $c) {
         $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-        $classrate  = (isset($class_data[$cid]) && $class_data[$cid]->attempts)
-            ? round(($class_data[$cid]->correct / $class_data[$cid]->attempts) * 100, 1) : 0;
-        $myrate     = (isset($student_data[$cid]) && $student_data[$cid]->attempts)
-            ? round(($student_data[$cid]->correct / $student_data[$cid]->attempts) * 100, 1) : 0;
+        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts)
+            ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+        $myrate     = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts)
+            ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
         $colorclass = ($myrate >= $courserate) ? 'text-success' : 'text-danger';
 
@@ -161,6 +161,10 @@ if (empty($course_data)) {
 
     // Grafik.
     echo html_writer::div('<canvas id="compareChart" height="120"></canvas>', 'card mt-4 p-4 shadow-sm border-0 bg-light');
+
+    /**
+     * JavaScript for Chart rendering.
+     */
     ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -214,4 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <?php
 }
+
+/**
+ * Footer output.
+ */
 echo $OUTPUT->footer();
