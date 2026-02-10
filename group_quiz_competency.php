@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Group and Quiz based competency report.
@@ -123,9 +123,9 @@ if ($groupid && $quizid) {
         echo html_writer::end_tag('thead');
         echo html_writer::start_tag('tbody');
 
-        $group_totals = [];
+        $grouptotals = [];
         foreach ($competencies as $c) {
-            $group_totals[$c->id] = ['attempts' => 0, 'correct' => 0];
+            $grouptotals[$c->id] = ['attempts' => 0, 'correct' => 0];
         }
 
         foreach ($students as $s) {
@@ -139,7 +139,7 @@ if ($groupid && $quizid) {
             echo html_writer::tag('td', html_writer::link($studenturl, fullname($s)));
 
             foreach ($competencies as $c) {
-                // SQL SORGUSU DEĞİŞTİRİLMEDİ.
+                // SQL sorgusu değiştirilmedi.
                 $sql = "
                     SELECT SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
                     FROM {quiz_attempts} quiza
@@ -180,8 +180,8 @@ if ($groupid && $quizid) {
                         'style' => "color: $color; font-weight: bold;",
                     ]);
 
-                    $group_totals[$c->id]['attempts'] += $data->attempts;
-                    $group_totals[$c->id]['correct']  += $data->correct;
+                    $grouptotals[$c->id]['attempts'] += $data->attempts;
+                    $grouptotals[$c->id]['correct']  += $data->correct;
                 } else {
                     echo html_writer::tag('td', '-');
                 }
@@ -193,8 +193,8 @@ if ($groupid && $quizid) {
         echo html_writer::start_tag('tr', ['style' => 'font-weight: bold; background: #eee;']);
         echo html_writer::tag('td', get_string('total', 'local_yetkinlik'));
         foreach ($competencies as $c) {
-            $attempts = $group_totals[$c->id]['attempts'];
-            $correct  = $group_totals[$c->id]['correct'];
+            $attempts = $grouptotals[$c->id]['attempts'];
+            $correct  = $grouptotals[$c->id]['correct'];
             $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
 
             if ($rate !== '') {
