@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Student competency report.
@@ -88,22 +88,22 @@ foreach ($rows as $r) {
     $rates[$r->shortname] = $rate;
 
     if ($rate >= 80) {
-        $color = '#28a745'; // Green
+        $color = '#28a745'; // Green.
     } else if ($rate >= 60) {
-        $color = '#007bff'; // Blue
+        $color = '#007bff'; // Blue.
     } else if ($rate >= 40) {
-        $color = '#fd7e14'; // Orange
+        $color = '#fd7e14'; // Orange.
     } else {
-        $color = '#dc3545'; // Red
+        $color = '#dc3545'; // Red.
     }
 
     echo html_writer::start_tag('tr');
     echo html_writer::tag('td', s($r->shortname));
-    
+
     // Düzenlenen Kısım: HTML taglarını render eder.
     $description = format_text($r->description, $r->descriptionformat, ['context' => $context]);
     echo html_writer::tag('td', $description);
-    
+
     echo html_writer::tag('td', $r->questions);
     echo html_writer::tag('td', $r->correct);
     echo html_writer::tag('td', '%' . $rate, [
@@ -113,16 +113,19 @@ foreach ($rows as $r) {
 }
 
 if (empty($rows)) {
-    echo html_writer::tag('tr', html_writer::tag('td', get_string('nodatafound', 'local_yetkinlik'), ['colspan' => 5, 'class' => 'text-center']));
+    $nodata = get_string('nodatafound', 'local_yetkinlik');
+    echo html_writer::start_tag('tr');
+    echo html_writer::tag('td', $nodata, ['colspan' => 5, 'class' => 'text-center']);
+    echo html_writer::end_tag('tr');
 }
 
 echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
 
 // PDF report button.
-$pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid]);
+$pdfUrl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid]);
 echo html_writer::start_tag('div', ['class' => 'mt-4']);
-echo html_writer::link($pdfurl, get_string('pdfmystudent', 'local_yetkinlik'), [
+echo html_writer::link($pdfUrl, get_string('pdfmystudent', 'local_yetkinlik'), [
     'class' => 'btn btn-secondary',
     'target' => '_blank',
 ]);
