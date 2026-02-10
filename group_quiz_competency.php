@@ -47,24 +47,24 @@ $PAGE->set_context($context);
 
 echo $OUTPUT->header();
 
-/* Kurs grupları */
+/* Kurs grupları. */
 $groups = groups_get_all_groups($courseid);
 
-/* Kurs sınavları */
+/* Kurs sınavları. */
 $quizzes = $DB->get_records('quiz', ['course' => $courseid], 'name ASC');
 
-// Form başlangıcı
+// Form başlangıcı.
 echo html_writer::start_tag('form', ['method' => 'get', 'class' => 'form-inline mb-4']);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'courseid', 'value' => $courseid]);
 
-/* Grup seçimi */
+/* Grup seçimi. */
 $groupoptions = [0 => get_string('selectgroup', 'local_yetkinlik')];
 foreach ($groups as $g) {
     $groupoptions[$g->id] = format_string($g->name);
 }
 echo html_writer::select($groupoptions, 'groupid', $groupid, false, ['class' => 'form-control mr-2']);
 
-/* Sınav seçimi */
+/* Sınav seçimi. */
 $quizoptions = [0 => get_string('selectquiz', 'local_yetkinlik')];
 foreach ($quizzes as $q) {
     $quizoptions[$q->id] = format_string($q->name);
@@ -79,7 +79,7 @@ echo html_writer::end_tag('form');
 echo html_writer::tag('hr', '');
 
 if ($groupid && $quizid) {
-    // SQL SORGULARI DEĞİŞTİRİLMEDİ
+    // SQL SORGULARI DEĞİŞTİRİLMEDİ.
     $students = $DB->get_records_sql("
         SELECT u.id, u.idnumber, u.firstname, u.lastname
         FROM {groups_members} gm
@@ -103,8 +103,8 @@ if ($groupid && $quizid) {
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE quiz.id = :quizid
@@ -123,23 +123,23 @@ if ($groupid && $quizid) {
         echo html_writer::end_tag('thead');
         echo html_writer::start_tag('tbody');
 
-        $groupTotals = [];
+        $group_totals = [];
         foreach ($competencies as $c) {
-            $groupTotals[$c->id] = ['attempts' => 0, 'correct' => 0];
+            $group_totals[$c->id] = ['attempts' => 0, 'correct' => 0];
         }
 
         foreach ($students as $s) {
-            // Öğrenci detayı için link (userid ve courseid ile)
+            // Öğrenci detayı için link (userid ve courseid ile).
             $studenturl = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
                 'courseid' => $courseid,
                 'userid'   => $s->id,
             ]);
-            
+
             echo html_writer::start_tag('tr');
             echo html_writer::tag('td', html_writer::link($studenturl, fullname($s)));
 
             foreach ($competencies as $c) {
-                // SQL SORGUSU DEĞİŞTİRİLMEDİ
+                // SQL SORGUSU DEĞİŞTİRİLMEDİ.
                 $sql = "
                     SELECT SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
                     FROM {quiz_attempts} quiza
@@ -150,8 +150,8 @@ if ($groupid && $quizid) {
                     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
                     JOIN {competency} c ON c.id = m.competencyid
                     JOIN (
-                        SELECT MAX(fraction) AS fraction, questionattemptid 
-                        FROM {question_attempt_steps} 
+                        SELECT MAX(fraction) AS fraction, questionattemptid
+                        FROM {question_attempt_steps}
                         GROUP BY questionattemptid
                     ) qas ON qas.questionattemptid = qa.id
                     WHERE quiz.id = :quizid AND u.id = :userid AND m.competencyid = :competencyid
@@ -166,17 +166,22 @@ if ($groupid && $quizid) {
                 if ($data && $data->attempts) {
                     $rate = number_format(($data->correct / $data->attempts) * 100, 1);
 
-                    if ($rate >= 80) { $color = 'green'; }
-                    elseif ($rate >= 60) { $color = 'blue'; }
-                    elseif ($rate >= 40) { $color = 'orange'; }
-                    else { $color = 'red'; }
+                    if ($rate >= 80) {
+                        $color = 'green';
+                    } else if ($rate >= 60) {
+                        $color = 'blue';
+                    } else if ($rate >= 40) {
+                        $color = 'orange';
+                    } else {
+                        $color = 'red';
+                    }
 
                     echo html_writer::tag('td', "%$rate", [
                         'style' => "color: $color; font-weight: bold;",
                     ]);
 
-                    $groupTotals[$c->id]['attempts'] += $data->attempts;
-                    $groupTotals[$c->id]['correct']  += $data->correct;
+                    $group_totals[$c->id]['attempts'] += $data->attempts;
+                    $group_totals[$c->id]['correct']  += $data->correct;
                 } else {
                     echo html_writer::tag('td', '-');
                 }
@@ -184,19 +189,24 @@ if ($groupid && $quizid) {
             echo html_writer::end_tag('tr');
         }
 
-        // Grup toplam satırı
+        // Grup toplam satırı.
         echo html_writer::start_tag('tr', ['style' => 'font-weight: bold; background: #eee;']);
         echo html_writer::tag('td', get_string('total', 'local_yetkinlik'));
         foreach ($competencies as $c) {
-            $attempts = $groupTotals[$c->id]['attempts'];
-            $correct  = $groupTotals[$c->id]['correct'];
+            $attempts = $group_totals[$c->id]['attempts'];
+            $correct  = $group_totals[$c->id]['correct'];
             $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
 
             if ($rate !== '') {
-                if ($rate >= 80) { $color = 'green'; }
-                elseif ($rate >= 60) { $color = 'blue'; }
-                elseif ($rate >= 40) { $color = 'orange'; }
-                else { $color = 'red'; }
+                if ($rate >= 80) {
+                    $color = 'green';
+                } else if ($rate >= 60) {
+                    $color = 'blue';
+                } else if ($rate >= 40) {
+                    $color = 'orange';
+                } else {
+                    $color = 'red';
+                }
                 echo html_writer::tag('td', "%$rate", ['style' => "color: $color;"]);
             } else {
                 echo html_writer::tag('td', '-');
