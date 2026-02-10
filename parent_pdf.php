@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * PDF report generator for student competencies.
@@ -123,16 +123,16 @@ foreach ($rates as $row) {
     }
 
     $desc = $row['description'];
-    $desc_height = $pdf->getStringHeight(100, $desc);
-    $line_height = max(10, $desc_height);
+    $descheight = $pdf->getStringHeight(100, $desc);
+    $lineheight = max(10, $descheight);
 
     // MultiCell handles long text.
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    $pdf->MultiCell(40, $line_height, $row['shortname'], 1, 'C', true, 0, $x, $y, true);
-    $pdf->MultiCell(100, $line_height, $desc, 1, 'L', true, 0, $x + 40, $y, true);
-    $pdf->MultiCell(40, $line_height, '%' . $rate, 1, 'C', true, 1, $x + 140, $y, true);
+    $pdf->MultiCell(40, $lineheight, $row['shortname'], 1, 'C', true, 0, $x, $y, true);
+    $pdf->MultiCell(100, $lineheight, $desc, 1, 'L', true, 0, $x + 40, $y, true);
+    $pdf->MultiCell(40, $lineheight, '%' . $rate, 1, 'C', true, 1, $x + 140, $y, true);
 }
 
 // AI Comment Section.
