@@ -52,9 +52,7 @@ $PAGE->set_heading(fullname($student) . ' - ' . $course->fullname);
 
 echo $OUTPUT->header();
 
-/**
- * Fetch competency data for the specific user.
- */
+// Fetch competency data for the specific user.
 $sql = "
     SELECT c.id,
            c.shortname,
@@ -69,12 +67,12 @@ $sql = "
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
-        SELECT MAX(fraction) AS fraction, questionattemptid 
-        FROM {question_attempt_steps} 
+        SELECT MAX(fraction) AS fraction, questionattemptid
+        FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
-    WHERE quiz.course = :courseid 
-      AND u.id = :userid 
+    WHERE quiz.course = :courseid
+      AND u.id = :userid
       AND quiza.state = 'finished'
     GROUP BY c.id, c.shortname, c.description
 ";
@@ -104,9 +102,9 @@ foreach ($rows as $r) {
 
     if ($rate >= 80) {
         $color = 'green';
-    } elseif ($rate >= 60) {
+    } else if ($rate >= 60) {
         $color = 'blue';
-    } elseif ($rate >= 40) {
+    } else if ($rate >= 40) {
         $color = 'orange';
     } else {
         $color = 'red';
@@ -128,9 +126,7 @@ foreach ($rows as $r) {
 echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
 
-/**
- * PDF Button Section with userid parameter.
- */
+// PDF Button Section with userid parameter.
 $pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', [
     'courseid' => $courseid,
     'userid'   => $userid, // Added userid here for correct reporting.
@@ -143,9 +139,7 @@ echo html_writer::link($pdfurl, get_string('pdfmystudent', 'local_yetkinlik'), [
 ]);
 echo html_writer::end_tag('div');
 
-/**
- * AI Commentary Section.
- */
+// AI Commentary Section.
 require_once(__DIR__ . '/ai.php');
 echo html_writer::tag('h3', get_string('generalcomment', 'local_yetkinlik'), ['class' => 'mt-4']);
 echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), [
