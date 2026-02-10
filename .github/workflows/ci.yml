@@ -1,0 +1,30 @@
+name: Moodle Plugin CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  phpcs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Install dependencies
+        run: composer global require squizlabs/php_codesniffer
+
+      - name: Run PHPCS
+        run: ~/.composer/vendor/bin/phpcs --standard=PSR12 --extensions=php .
+
+      - name: Run PHPCBF (auto-fix)
+        if: failure()
+        run: ~/.composer/vendor/bin/phpcbf --standard=PSR12 --extensions=php .
