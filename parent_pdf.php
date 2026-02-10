@@ -56,8 +56,8 @@ $sql = "
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
-        SELECT MAX(fraction) AS fraction, questionattemptid 
-        FROM {question_attempt_steps} 
+        SELECT MAX(fraction) AS fraction, questionattemptid
+        FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
     WHERE quiz.course = :courseid AND u.id = :userid AND quiza.state = 'finished'
@@ -113,26 +113,26 @@ foreach ($rates as $row) {
     $rate = $row['rate'];
 
     if ($rate >= 80) {
-        $pdf->SetFillColor(204, 255, 204); // Green
-    } elseif ($rate >= 60) {
-        $pdf->SetFillColor(204, 229, 255); // Blue
-    } elseif ($rate >= 40) {
-        $pdf->SetFillColor(255, 243, 205); // Orange
+        $pdf->SetFillColor(204, 255, 204); // Green.
+    } else if ($rate >= 60) {
+        $pdf->SetFillColor(204, 229, 255); // Blue.
+    } else if ($rate >= 40) {
+        $pdf->SetFillColor(255, 243, 205); // Orange.
     } else {
-        $pdf->SetFillColor(248, 215, 218); // Red
+        $pdf->SetFillColor(248, 215, 218); // Red.
     }
 
     $desc = $row['description'];
-    $descHeight = $pdf->getStringHeight(100, $desc);
-    $lineHeight = max(10, $descHeight);
+    $desc_height = $pdf->getStringHeight(100, $desc);
+    $line_height = max(10, $desc_height);
 
     // MultiCell handles long text.
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    $pdf->MultiCell(40, $lineHeight, $row['shortname'], 1, 'C', true, 0, $x, $y, true);
-    $pdf->MultiCell(100, $lineHeight, $desc, 1, 'L', true, 0, $x + 40, $y, true);
-    $pdf->MultiCell(40, $lineHeight, '%' . $rate, 1, 'C', true, 1, $x + 140, $y, true);
+    $pdf->MultiCell(40, $line_height, $row['shortname'], 1, 'C', true, 0, $x, $y, true);
+    $pdf->MultiCell(100, $line_height, $desc, 1, 'L', true, 0, $x + 40, $y, true);
+    $pdf->MultiCell(40, $line_height, '%' . $rate, 1, 'C', true, 1, $x + 140, $y, true);
 }
 
 // AI Comment Section.
