@@ -159,8 +159,17 @@ if (empty($coursedata)) {
     }
     echo '</tbody></table>';
 
-    // Grafik.
+    // Grafik alanı.
     echo html_writer::div('<canvas id="compareChart" height="120"></canvas>', 'card mt-4 p-4 shadow-sm border-0 bg-light');
+
+    // JavaScript verilerini önceden hazırlıyoruz.
+    $labelsjson = json_encode($labels);
+    $courseratesjson = json_encode($courserates);
+    $classratesjson = json_encode($classrates);
+    $myratesjson = json_encode($myrates);
+    $courseavglabel = get_string('courseavg', 'local_yetkinlik');
+    $classavglabel = get_string('classavg', 'local_yetkinlik');
+    $myavglabel = get_string('myavg', 'local_yetkinlik');
     ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -172,23 +181,23 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: <?php echo json_encode($labels); ?>,
+            labels: <?php echo $labelsjson; ?>,
             datasets: [
                 {
-                    label: '<?php echo get_string('courseavg', 'local_yetkinlik'); ?>',
-                    data: <?php echo json_encode($courserates); ?>,
+                    label: '<?php echo $courseavglabel; ?>',
+                    data: <?php echo $courseratesjson; ?>,
                     backgroundColor: 'rgba(156, 39, 176, 0.4)',
                     borderRadius: 5
                 },
                 {
-                    label: '<?php echo get_string('classavg', 'local_yetkinlik'); ?>',
-                    data: <?php echo json_encode($classrates); ?>,
+                    label: '<?php echo $classavglabel; ?>',
+                    data: <?php echo $classratesjson; ?>,
                     backgroundColor: 'rgba(76, 175, 80, 0.4)',
                     borderRadius: 5
                 },
                 {
-                    label: '<?php echo get_string('myavg', 'local_yetkinlik'); ?>',
-                    data: <?php echo json_encode($myrates); ?>,
+                    label: '<?php echo $myavglabel; ?>',
+                    data: <?php echo $myratesjson; ?>,
                     backgroundColor: 'rgba(33, 150, 243, 0.8)',
                     borderColor: '#1976d2',
                     borderWidth: 1,
