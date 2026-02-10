@@ -40,7 +40,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-/* Ogrencinin bu derste sahip olduğu yetkinlikler. */
+// Ogrencinin bu derste sahip olduğu yetkinlikler.
 $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname, c.description
     FROM {local_yetkinlik_qmap} m
@@ -58,7 +58,7 @@ foreach ($competencies as $c) {
     $options[$c->id] = format_string($c->shortname);
 }
 
-// Select menüsünü oluştur (ID ekledik ki JavaScript ile yakalayalım).
+// Select menüsünü oluştur.
 echo html_writer::select($options, 'competencyid', $competencyid, false, [
     'id' => 'id_competency_select',
     'class' => 'form-control mr-2',
@@ -72,10 +72,10 @@ echo html_writer::end_tag('form');
 
 // Autocomplete özelliğini aktifleştiren JavaScript (AMD).
 $PAGE->requires->js_call_amd('core/form-autocomplete', 'enhance', [
-    '#id_competency_select', // Seçici.
-    false, // Coklu seçim kapalı.
-    false, // Yeni giriş ekleme kapalı.
-    get_string('selectcompetency', 'local_yetkinlik'), // Placeholder.
+    '#id_competency_select',
+    false,
+    false,
+    get_string('selectcompetency', 'local_yetkinlik'),
 ]);
 
 echo html_writer::empty_tag('hr');
@@ -84,8 +84,8 @@ if ($competencyid) {
     // Yetkinlik açıklamasını güvenli bir şekilde çekelim.
     if ($competency = $DB->get_record('competency', ['id' => $competencyid])) {
         // HTML etiketlerini temizleyip gösterelim.
-        $clean_desc = strip_tags(html_entity_decode($competency->description, ENT_QUOTES, 'UTF-8'));
-        echo html_writer::tag('div', $clean_desc, [
+        $cleandesc = strip_tags(html_entity_decode($competency->description, ENT_QUOTES, 'UTF-8'));
+        echo html_writer::tag('div', $cleandesc, [
             'class' => 'alert alert-info competency-description mb-3',
         ]);
     }
@@ -133,8 +133,8 @@ if ($competencyid) {
         ];
         $table->attributes['class'] = 'generaltable mt-3';
 
-        $total_q = 0;
-        $total_c = 0;
+        $totalq = 0;
+        $totalc = 0;
 
         foreach ($rows as $r) {
             $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
@@ -149,11 +149,11 @@ if ($competencyid) {
                 $color = 'text-danger';
             }
 
-            $total_q += $r->questions;
-            $total_c += $r->correct;
+            $totalq += $r->questions;
+            $totalc += $r->correct;
 
             // Son girişimi bulma mantığı.
-            $last_attempt = $DB->get_record_sql("
+            $lastattempt = $DB->get_record_sql("
                 SELECT id
                 FROM {quiz_attempts}
                 WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
@@ -162,8 +162,8 @@ if ($competencyid) {
             ", ['quizid' => $r->quizid, 'userid' => $USER->id]);
 
             $link = s($r->quizname);
-            if ($last_attempt) {
-                $url = new moodle_url('/mod/quiz/review.php', ['attempt' => $last_attempt->id]);
+            if ($lastattempt) {
+                $url = new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]);
                 $link = html_writer::link($url, $r->quizname, ['target' => '_blank']);
             }
 
@@ -176,14 +176,14 @@ if ($competencyid) {
         }
 
         // Toplam satırı.
-        $total_rate = $total_q ? number_format(($total_c / $total_q) * 100, 1) : 0;
-        $t_color = ($total_rate >= 80) ? 'text-success' : (($total_rate >= 40) ? 'text-warning' : 'text-danger');
+        $totalrate = $totalq ? number_format(($totalc / $totalq) * 100, 1) : 0;
+        $tcolor = ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger');
 
         $table->data[] = new html_table_row([
             html_writer::tag('strong', get_string('total', 'local_yetkinlik')),
-            html_writer::tag('strong', $total_q),
-            html_writer::tag('strong', $total_c),
-            html_writer::tag('strong', "%$total_rate", ['class' => $t_color]),
+            html_writer::tag('strong', $totalq),
+            html_writer::tag('strong', $totalc),
+            html_writer::tag('strong', "%$totalrate", ['class' => $tcolor]),
         ]);
 
         echo html_writer::table($table);
