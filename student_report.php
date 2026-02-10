@@ -123,9 +123,9 @@ echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
 
 // PDF report button.
-$pdfUrl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid]);
+$pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid]);
 echo html_writer::start_tag('div', ['class' => 'mt-4']);
-echo html_writer::link($pdfUrl, get_string('pdfmystudent', 'local_yetkinlik'), [
+echo html_writer::link($pdfurl, get_string('pdfmystudent', 'local_yetkinlik'), [
     'class' => 'btn btn-secondary',
     'target' => '_blank',
 ]);
