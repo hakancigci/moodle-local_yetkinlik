@@ -40,6 +40,7 @@ $PAGE->set_title(get_string('studentreport', 'local_yetkinlik'));
 $PAGE->set_heading($course->fullname);
 
 echo $OUTPUT->header();
+
 global $DB;
 
 // Student data SQL query.
@@ -47,6 +48,7 @@ $sql = "
     SELECT c.id,
            c.shortname,
            c.description,
+           c.descriptionformat,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS questions,
            CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
     FROM {quiz_attempts} quiza
@@ -62,12 +64,12 @@ $sql = "
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
     WHERE quiz.course = :courseid AND u.id = :userid
-    GROUP BY c.id, c.shortname, c.description
+    GROUP BY c.id, c.shortname, c.description, c.descriptionformat
 ";
 
 $rows = $DB->get_records_sql($sql, ['courseid' => $courseid, 'userid' => $userid]);
 
-echo html_writer::start_tag('table', ['class' => 'generaltable']);
+echo html_writer::start_tag('table', ['class' => 'generaltable mt-3 w-100']);
 echo html_writer::start_tag('thead');
 echo html_writer::start_tag('tr');
 echo html_writer::tag('th', get_string('competencycode', 'local_yetkinlik'));
@@ -86,18 +88,22 @@ foreach ($rows as $r) {
     $rates[$r->shortname] = $rate;
 
     if ($rate >= 80) {
-        $color = 'green';
+        $color = '#28a745'; // Green
     } else if ($rate >= 60) {
-        $color = 'blue';
+        $color = '#007bff'; // Blue
     } else if ($rate >= 40) {
-        $color = 'orange';
+        $color = '#fd7e14'; // Orange
     } else {
-        $color = 'red';
+        $color = '#dc3545'; // Red
     }
 
     echo html_writer::start_tag('tr');
     echo html_writer::tag('td', s($r->shortname));
-    echo html_writer::tag('td', s($r->description));
+    
+    // Düzenlenen Kısım: HTML taglarını render eder.
+    $description = format_text($r->description, $r->descriptionformat, ['context' => $context]);
+    echo html_writer::tag('td', $description);
+    
     echo html_writer::tag('td', $r->questions);
     echo html_writer::tag('td', $r->correct);
     echo html_writer::tag('td', '%' . $rate, [
@@ -105,6 +111,11 @@ foreach ($rows as $r) {
     ]);
     echo html_writer::end_tag('tr');
 }
+
+if (empty($rows)) {
+    echo html_writer::tag('tr', html_writer::tag('td', get_string('nodatafound', 'local_yetkinlik'), ['colspan' => 5, 'class' => 'text-center']));
+}
+
 echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
 
@@ -119,9 +130,11 @@ echo html_writer::end_tag('div');
 
 // AI Comment section.
 require_once(__DIR__ . '/ai.php');
-echo html_writer::tag('h3', get_string('generalcomment', 'local_yetkinlik'), ['class' => 'mt-4']);
-echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), [
-    'class' => 'alert alert-info',
-]);
+if (!empty($rates)) {
+    echo html_writer::tag('h3', get_string('generalcomment', 'local_yetkinlik'), ['class' => 'mt-4']);
+    echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), [
+        'class' => 'alert alert-info',
+    ]);
+}
 
 echo $OUTPUT->footer();
