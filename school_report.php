@@ -1,21 +1,6 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
- * School wide competency performance report.
+ * Report for competency.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -23,32 +8,30 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
-
 require_login();
 
 $context = context_system::instance();
 require_capability('moodle/site:config', $context);
 
 $PAGE->set_url('/local/yetkinlik/school_report.php');
-$PAGE->set_title(get_string('schoolreport', 'local_yetkinlik'));
-$PAGE->set_heading(get_string('schoolreport', 'local_yetkinlik'));
+$PAGE->set_title('Okul Genel Kazanım Raporu');
+$PAGE->set_heading('Okul Genel Kazanım Raporu');
 
 echo $OUTPUT->header();
-
 global $DB;
 
-/** @var \moodle_database $DB */
+// PDF Butonu - Üst Kısım
+$pdfurl = new moodle_url('/local/yetkinlik/school_pdf.php');
+echo $OUTPUT->single_button($pdfurl, 'Raporu PDF Olarak İndir', 'get', ['class' => 'btn btn-primary mb-3']);
 
-// Fetch all school competency success rates.
+/* Tüm okul yetkinlik başarısı SQL */
 $sql = "
     SELECT c.id, c.shortname, c.description,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
            CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
     FROM {quiz_attempts} quiza
-    JOIN {user} u ON quiza.userid = u.id
     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-    JOIN {quiz} quiz ON quiz.id = quiza.quiz
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
@@ -58,17 +41,18 @@ $sql = "
     ) qas ON qas.questionattemptid = qa.id
     WHERE quiza.state = 'finished'
     GROUP BY c.id, c.shortname, c.description
+    ORDER BY c.shortname ASC
 ";
 
 $rows = $DB->get_records_sql($sql);
 
-echo '<table class="generaltable">';
+echo '<table class="generaltable" style="width:100%">';
 echo '<thead><tr>
-        <th>' . get_string('competencycode', 'local_yetkinlik') . '</th>
-        <th>' . get_string('competency', 'local_yetkinlik') . '</th>
-        <th>' . get_string('attempts', 'local_yetkinlik') . '</th>
-        <th>' . get_string('correct', 'local_yetkinlik') . '</th>
-        <th>' . get_string('success', 'local_yetkinlik') . '</th>
+        <th>Kazanım Kodu</th>
+        <th>Kazanım</th>
+        <th>Çözülen</th>
+        <th>Doğru</th>
+        <th>Başarı</th>
       </tr></thead><tbody>';
 
 $labels = [];
@@ -77,27 +61,29 @@ foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
     $labels[] = $r->shortname;
     $data[] = $rate;
-    $color = $rate >= 70 ? 'green' : ($rate >= 50 ? 'orange' : 'red');
+    
+    $color = $rate >= 70 ? '#28a745' : ($rate >= 50 ? '#ffc107' : '#dc3545');
 
     echo "<tr>
-            <td>" . s($r->shortname) . "</td>
-            <td>" . s($r->description) . "</td>
+            <td><strong>{$r->shortname}</strong></td>
+            <td>{$r->description}</td>
             <td>{$r->attempts}</td>
             <td>{$r->correct}</td>
-            <td style='color: $color'>%{$rate}</td>
+            <td style='color: $color; font-weight: bold;'>%{$rate}</td>
           </tr>";
 }
 echo '</tbody></table>';
 
 $labelsjs = json_encode($labels);
 $datajs = json_encode($data);
-
-/**
- * Inline chart implementation.
- */
 ?>
 
-<canvas id="schoolchart"></canvas>
+<div class="card mt-4">
+    <div class="card-body">
+        <canvas id="schoolchart" style="max-height: 400px;"></canvas>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     new Chart(document.getElementById('schoolchart'), {
@@ -105,17 +91,16 @@ $datajs = json_encode($data);
         data: {
             labels: <?php echo $labelsjs; ?>,
             datasets: [{
-                label: 'Okul Başarı %',
+                label: 'Okul Başarı Yüzdesi (%)',
                 data: <?php echo $datajs; ?>,
-                backgroundColor: '#673ab7'
+                backgroundColor: '#673ab7',
+                borderWidth: 1
             }]
         },
         options: {
+            responsive: true,
             scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
+                y: { beginAtZero: true, max: 100 }
             }
         }
     });
