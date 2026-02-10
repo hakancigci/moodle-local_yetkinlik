@@ -94,8 +94,9 @@ echo html_writer::end_tag('table');
 $labelsjs = json_encode($labels);
 $datajs = json_encode($data);
 
+// Chart display section for student competency performance.
 /**
- * Chart display section for student competency performance.
+ * Chart display template.
  */
 ?>
 
@@ -136,4 +137,7 @@ $datajs = json_encode($data);
 </script>
 
 <?php
+/**
+ * Footer of the page.
+ */
 echo $OUTPUT->footer();
