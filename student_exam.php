@@ -134,11 +134,11 @@ if ($quizid) {
 
         echo html_writer::table($table);
 
+        // Verileri JS bloğundan önce hazırlayarak DocBlock hatalarını engelliyoruz.
         $labelsjs = json_encode($labels);
         $datajs = json_encode($chartdata);
         $colorsjs = json_encode($bgcolors);
-
-        // Student exam success chart display.
+        $chartlabel = get_string('successpercent', 'local_yetkinlik') . ' (%)';
         ?>
 
         <div class="chart-container mt-4" style="position: relative; height:40vh; width:100%">
@@ -155,7 +155,7 @@ if ($quizid) {
                 data: {
                     labels: <?php echo $labelsjs; ?>,
                     datasets: [{
-                        label: '<?php echo get_string('successpercent', 'local_yetkinlik'); ?> (%)',
+                        label: '<?php echo $chartlabel; ?>',
                         // Chart success data points.
                         data: <?php echo $datajs; ?>,
                         // Background colors for each bar.
