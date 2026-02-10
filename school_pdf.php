@@ -153,6 +153,6 @@ if (!empty($comment)) {
     $pdf->MultiCell(0, 7, $cleancomment, 0, 'L', false, 1);
 }
 
-// Çıktı.
+// Cıktı.
 $pdf->Output("kazanim_raporu.pdf", "I");
 exit;
