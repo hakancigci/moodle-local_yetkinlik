@@ -115,29 +115,36 @@ foreach ($data as $comp => $vals) {
     $i++;
 }
 
+// Prepare data for JS to avoid "Missing docblock" errors.
 $labelsjs = json_encode($periods);
 $datasetsjs = json_encode($datasets);
+$successlabel = get_string('successrate', 'local_yetkinlik');
+$filterlabel = get_string('filterlabel', 'local_yetkinlik');
+$last30days = get_string('last30days', 'local_yetkinlik');
+$last90days = get_string('last90days', 'local_yetkinlik');
+$alltime = get_string('alltime', 'local_yetkinlik');
+$showlabel = get_string('show', 'local_yetkinlik');
 
-// Timeline filter form and chart display.
+// Render the UI.
 ?>
 
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="form-inline">
             <input type="hidden" name="courseid" value="<?php echo $courseid; ?>">
-            <label class="mr-2" for="days"><?php echo get_string('filterlabel', 'local_yetkinlik'); ?></label>
+            <label class="mr-2" for="days"><?php echo $filterlabel; ?></label>
             <select name="days" id="days" class="form-control mr-2">
                 <option value="30" <?php echo ($days == 30) ? 'selected' : ''; ?>>
-                    <?php echo get_string('last30days', 'local_yetkinlik'); ?>
+                    <?php echo $last30days; ?>
                 </option>
                 <option value="90" <?php echo ($days == 90) ? 'selected' : ''; ?>>
-                    <?php echo get_string('last90days', 'local_yetkinlik'); ?>
+                    <?php echo $last90days; ?>
                 </option>
                 <option value="0" <?php echo ($days == 0) ? 'selected' : ''; ?>>
-                    <?php echo get_string('alltime', 'local_yetkinlik'); ?>
+                    <?php echo $alltime; ?>
                 </option>
             </select>
-            <button type="submit" class="btn btn-primary"><?php echo get_string('show', 'local_yetkinlik'); ?></button>
+            <button type="submit" class="btn btn-primary"><?php echo $showlabel; ?></button>
         </form>
     </div>
 </div>
@@ -148,18 +155,13 @@ $datasetsjs = json_encode($datasets);
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // JavaScript to render the competency timeline chart.
     document.addEventListener('DOMContentLoaded', function() {
-        // Get context for the timeline chart.
         const ctx = document.getElementById('timeline').getContext('2d');
         
-        // Initialize the competency development line chart.
         new Chart(ctx, {
             type: 'line',
             data: {
-                // Labels represent the time periods.
                 labels: <?php echo $labelsjs; ?>,
-                // Datasets represent each competency progress.
                 datasets: <?php echo $datasetsjs; ?>
             },
             options: {
@@ -171,12 +173,11 @@ $datasetsjs = json_encode($datasets);
                         max: 100,
                         title: {
                             display: true,
-                            text: '<?php echo get_string('successrate', 'local_yetkinlik'); ?> (%)'
+                            text: '<?php echo $successlabel; ?> (%)'
                         }
                     }
                 },
                 plugins: {
-                    // Legend configuration.
                     legend: {
                         position: 'bottom'
                     }
