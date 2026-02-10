@@ -161,22 +161,14 @@ if (empty($coursedata)) {
 
     // Grafik.
     echo html_writer::div('<canvas id="compareChart" height="120"></canvas>', 'card mt-4 p-4 shadow-sm border-0 bg-light');
-
-    /**
-     * JavaScript for Chart rendering.
-     */
     ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    /**
-     * Get chart context.
-     */
+    // Get chart context.
     var ctx = document.getElementById('compareChart').getContext('2d');
     
-    /**
-     * Initialize comparison chart.
-     */
+    // Initialize comparison chart.
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -211,9 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
-                        /**
-                         * Add percentage sign to ticks.
-                         */
+                        // Add percentage sign to ticks.
                         callback: function(value) {
                             return '%' + value;
                         }
@@ -228,7 +218,5 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php
 }
 
-/**
- * Footer output.
- */
+// Footer output.
 echo $OUTPUT->footer();
