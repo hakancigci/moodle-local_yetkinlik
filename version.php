@@ -29,7 +29,7 @@ $plugin->component = 'local_yetkinlik';       // Eklentinin tam adı.
 $plugin->version   = 2026020991;              // Versiyon numarası (YYYYMMDDXX).
 $plugin->requires  = 2025041400;              // Minimum Moodle 5.0 gereksinimi.
 $plugin->maturity  = MATURITY_STABLE;          // Kararlı sürüm.
-$plugin->release   = '1.1.6';                 // İnsan tarafından okunabilir versiyon adı.
+$plugin->release   = '1.1.6';                 // Insan tarafından okunabilir versiyon adı.
 
 // Bağımlılıklar (Bu eklenti çalışmadan önce yüklü olması gereken diğer eklentiler).
 $plugin->dependencies = [
