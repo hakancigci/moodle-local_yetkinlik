@@ -94,7 +94,7 @@ if ($groupid) {
 
     // Her öğrenci için yetkinlik başarıları.
     foreach ($students as $s) {
-        // Öğrenci adı link olacak.
+        // Ogrenci adı link olacak.
         $url = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
             'courseid' => $courseid,
             'userid'   => $s->id,
