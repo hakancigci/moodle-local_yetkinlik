@@ -105,13 +105,13 @@ if ($quizid) {
         $table->attributes['class'] = 'generaltable mt-3';
 
         $labels = [];
-        $chartData = [];
-        $bgColors = [];
+        $chart_data = [];
+        $bg_colors = [];
 
         foreach ($rows as $r) {
             $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
             $labels[] = $r->shortname;
-            $chartData[] = $rate;
+            $chart_data[] = $rate;
 
             if ($rate >= 80) {
                 $color = 'green';
@@ -123,23 +123,22 @@ if ($quizid) {
                 $color = 'red';
             }
 
-            $bgColors[] = $color;
+            $bg_colors[] = $color;
 
-            $formattedRate = html_writer::tag('span', "%{$rate}", [
+            $formatted_rate = html_writer::tag('span', "%{$rate}", [
                 'style' => "color: $color; font-weight: bold;",
             ]);
 
-            $table->data[] = [$r->shortname, $r->description, $formattedRate];
+            $table->data[] = [$r->shortname, $r->description, $formatted_rate];
         }
 
         echo html_writer::table($table);
 
-        $labelsJs = json_encode($labels);
-        $dataJs = json_encode($chartData);
-        $colorsJs = json_encode($bgColors);
+        $labels_js = json_encode($labels);
+        $data_js = json_encode($chart_data);
+        $colors_js = json_encode($bg_colors);
 
         // Student exam success chart display.
-        // Chart output section.
         ?>
 
         <div class="chart-container mt-4" style="position: relative; height:40vh; width:100%">
@@ -149,15 +148,24 @@ if ($quizid) {
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
         document.addEventListener('DOMContentLoaded', function() {
+            /**
+             * Initialize the student exam competency chart.
+             */
             const ctx = document.getElementById('studentexamchart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: <?php echo $labelsJs; ?>,
+                    labels: <?php echo $labels_js; ?>,
                     datasets: [{
                         label: '<?php echo get_string('successpercent', 'local_yetkinlik'); ?> (%)',
-                        data: <?php echo $dataJs; ?>,
-                        backgroundColor: <?php echo $colorsJs; ?>
+                        /**
+                         * Chart success data points.
+                         */
+                        data: <?php echo $data_js; ?>,
+                        /**
+                         * Background colors for each bar.
+                         */
+                        backgroundColor: <?php echo $colors_js; ?>
                     }]
                 },
                 options: {
@@ -177,5 +185,7 @@ if ($quizid) {
     }
 }
 
-// Footer section.
+/**
+ * Footer section.
+ */
 echo $OUTPUT->footer();
