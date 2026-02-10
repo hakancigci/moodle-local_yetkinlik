@@ -46,14 +46,14 @@ $PAGE->set_context($context);
 
 echo $OUTPUT->header();
 
-/* Öğrenciler listesi */
+/* Öğrenciler listesi. */
 $students = get_enrolled_users($context);
 $studentoptions = [0 => get_string('selectstudent', 'local_yetkinlik')];
 foreach ($students as $s) {
     $studentoptions[$s->id] = fullname($s);
 }
 
-/* Yetkinlikler listesi */
+/* Yetkinlikler listesi. */
 $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname
     FROM {local_yetkinlik_qmap} m
@@ -97,7 +97,7 @@ class local_yetkinlik_teacher_form extends moodleform {
 $mform = new local_yetkinlik_teacher_form(null, [
     'courseid'       => $courseid,
     'studentoptions' => $studentoptions,
-    'compoptions'    => $compoptions
+    'compoptions'    => $compoptions,
 ]);
 
 if ($data = $mform->get_data()) {
@@ -121,12 +121,12 @@ if ($userid && $competencyid) {
         JOIN {quiz} quiz ON quiz.id = quiza.quiz
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
-        WHERE m.competencyid = :competencyid 
-          AND u.id = :userid 
+        WHERE m.competencyid = :competencyid
+          AND u.id = :userid
           AND quiz.course = :courseid
         GROUP BY quiz.id, quiz.name
         ORDER BY quiz.name
@@ -135,7 +135,7 @@ if ($userid && $competencyid) {
     $params = [
         'competencyid' => $competencyid,
         'userid'       => $userid,
-        'courseid'     => $courseid
+        'courseid'     => $courseid,
     ];
 
     $rows = $DB->get_records_sql($sql, $params);
@@ -182,7 +182,7 @@ if ($userid && $competencyid) {
             echo html_writer::tag('td', $r->questions);
             echo html_writer::tag('td', $r->correct);
             echo html_writer::tag('td', "%{$rate}", [
-                'style' => "color: $color; font-weight: bold;"
+                'style' => "color: $color; font-weight: bold;",
             ]);
             echo html_writer::end_tag('tr');
         }
