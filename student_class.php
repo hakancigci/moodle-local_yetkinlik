@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Student Comparison Report (Fully Internationalized).
@@ -162,9 +162,7 @@ if (empty($coursedata)) {
     // Grafik.
     echo html_writer::div('<canvas id="compareChart" height="120"></canvas>', 'card mt-4 p-4 shadow-sm border-0 bg-light');
 
-    /**
-     * JavaScript for Chart rendering.
-     */
+    // JavaScript for Chart rendering.
     ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -219,7 +217,12 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php
 }
 
+// Footer output.
 /**
  * Footer output.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 echo $OUTPUT->footer();
