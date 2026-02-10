@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Report for competency.
@@ -88,9 +88,9 @@ if ($groupid) {
     echo '</tr>';
 
     // Grup toplamları için hazırlık.
-    $group_totals = [];
+    $grouptotals = [];
     foreach ($competencies as $c) {
-        $group_totals[$c->id] = ['attempts' => 0, 'correct' => 0];
+        $grouptotals[$c->id] = ['attempts' => 0, 'correct' => 0];
     }
 
     // Her öğrenci için yetkinlik başarıları.
@@ -136,8 +136,8 @@ if ($groupid) {
                     $color = 'red';
                 }
                 echo "<td style='color: $color; font-weight: bold;'>%$rate</td>";
-                $group_totals[$c->id]['attempts'] += $data->attempts;
-                $group_totals[$c->id]['correct']  += $data->correct;
+                $grouptotals[$c->id]['attempts'] += $data->attempts;
+                $grouptotals[$c->id]['correct']  += $data->correct;
             } else {
                 echo "<td></td>"; // Girişim yoksa boş hücre.
             }
@@ -148,8 +148,8 @@ if ($groupid) {
     // Grup ortalama satırı.
     echo "<tr style='font-weight: bold; background: #eee;'><td>" . get_string('total', 'local_yetkinlik') . "</td>";
     foreach ($competencies as $c) {
-        $attempts = $group_totals[$c->id]['attempts'];
-        $correct  = $group_totals[$c->id]['correct'];
+        $attempts = $grouptotals[$c->id]['attempts'];
+        $correct  = $grouptotals[$c->id]['correct'];
         $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
 
         if ($rate !== '') {
