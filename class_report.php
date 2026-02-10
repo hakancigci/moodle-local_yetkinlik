@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Class Report for Competency Matching.
@@ -97,7 +97,7 @@ if ($userid) {
 
     if (!empty($userdept)) {
         $classsql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
-                             CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
+                              CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
                       FROM {quiz_attempts} quiza
                       JOIN {user} u ON quiza.userid = u.id
                       JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -120,7 +120,7 @@ if ($userid) {
 
     // Bireysel Öğrenci Ortalaması.
     $studentsql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
-                           CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
+                            CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
                     FROM {quiz_attempts} quiza
                     JOIN {user} u ON quiza.userid = u.id
                     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -154,28 +154,28 @@ echo html_writer::end_tag('thead');
 echo html_writer::start_tag('tbody');
 
 $labels = [];
-$courseRates = [];
-$classRates = [];
-$studentRates = [];
+$course_rates = [];
+$class_rates = [];
+$student_rates = [];
 
 foreach ($coursedata as $cid => $c) {
-    $courseRate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-    $classRate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts)
+    $course_rate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
+    $class_rate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts)
         ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
-    $studRate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts)
+    $stud_rate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts)
         ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
     echo html_writer::start_tag('tr');
     echo html_writer::tag('td', $c->shortname);
-    echo html_writer::tag('td', '%' . $courseRate, ['class' => 'font-weight-bold']);
-    echo html_writer::tag('td', '%' . $classRate, ['class' => 'text-muted']);
-    echo html_writer::tag('td', '%' . $studRate, ['class' => 'text-primary font-weight-bold']);
+    echo html_writer::tag('td', '%' . $course_rate, ['class' => 'font-weight-bold']);
+    echo html_writer::tag('td', '%' . $class_rate, ['class' => 'text-muted']);
+    echo html_writer::tag('td', '%' . $stud_rate, ['class' => 'text-primary font-weight-bold']);
     echo html_writer::end_tag('tr');
 
     $labels[] = $c->shortname;
-    $courseRates[] = $courseRate;
-    $classRates[] = $classRate;
-    $studentRates[] = $studRate;
+    $course_rates[] = $course_rate;
+    $class_rates[] = $class_rate;
+    $student_rates[] = $stud_rate;
 }
 echo html_writer::end_tag('tbody');
 echo html_writer::end_tag('table');
@@ -186,13 +186,13 @@ echo html_writer::tag('canvas', '', ['id' => 'competencyChart', 'height' => '100
 echo html_writer::end_tag('div');
 
 // ChartJS Script.
-$chartJsUrl = 'https://cdn.jsdelivr.net/npm/chart.js';
-echo html_writer::script('', $chartJsUrl);
+$chart_js_url = 'https://cdn.jsdelivr.net/npm/chart.js';
+echo html_writer::script('', $chart_js_url);
 
-$jsLabels = json_encode($labels);
-$jsCourse = json_encode($courseRates);
-$jsClass = json_encode($classRates);
-$jsStudent = json_encode($studentRates);
+$js_labels = json_encode($labels);
+$js_course = json_encode($course_rates);
+$js_class = json_encode($class_rates);
+$js_student = json_encode($student_rates);
 
 $script = "
 document.addEventListener('DOMContentLoaded', function() {
@@ -200,11 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: $jsLabels,
+            labels: $js_labels,
             datasets: [
-                { label: 'Kurs Ort.', data: $jsCourse, backgroundColor: 'rgba(156, 39, 176, 0.6)' },
-                { label: 'Sınıf Ort.', data: $jsClass, backgroundColor: 'rgba(76, 175, 80, 0.6)' },
-                { label: 'Öğrenci Ort.', data: $jsStudent, backgroundColor: 'rgba(33, 150, 243, 0.6)' }
+                { label: 'Kurs Ort.', data: $js_course, backgroundColor: 'rgba(156, 39, 176, 0.6)' },
+                { label: 'Sınıf Ort.', data: $js_class, backgroundColor: 'rgba(76, 175, 80, 0.6)' },
+                { label: 'Öğrenci Ort.', data: $js_student, backgroundColor: 'rgba(33, 150, 243, 0.6)' }
             ]
         },
         options: {
