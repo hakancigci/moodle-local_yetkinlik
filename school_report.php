@@ -1,4 +1,19 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Report for competency.
  *
@@ -20,11 +35,11 @@ $PAGE->set_heading('Okul Genel Kazanım Raporu');
 echo $OUTPUT->header();
 global $DB;
 
-// PDF Butonu - Üst Kısım
+// PDF Butonu - Üst Kısım.
 $pdfurl = new moodle_url('/local/yetkinlik/school_pdf.php');
 echo $OUTPUT->single_button($pdfurl, 'Raporu PDF Olarak İndir', 'get', ['class' => 'btn btn-primary mb-3']);
 
-/* Tüm okul yetkinlik başarısı SQL */
+/* Tüm okul yetkinlik başarısı SQL. */
 $sql = "
     SELECT c.id, c.shortname, c.description,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
@@ -61,7 +76,7 @@ foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
     $labels[] = $r->shortname;
     $data[] = $rate;
-    
+
     $color = $rate >= 70 ? '#28a745' : ($rate >= 50 ? '#ffc107' : '#dc3545');
 
     echo "<tr>
@@ -76,6 +91,10 @@ echo '</tbody></table>';
 
 $labelsjs = json_encode($labels);
 $datajs = json_encode($data);
+
+/**
+ * Chart display section.
+ */
 ?>
 
 <div class="card mt-4">
@@ -107,4 +126,7 @@ $datajs = json_encode($data);
 </script>
 
 <?php
+/**
+ * Footer section.
+ */
 echo $OUTPUT->footer();
