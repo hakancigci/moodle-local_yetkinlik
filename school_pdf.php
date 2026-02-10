@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * PDF Export for competency.
@@ -76,7 +76,7 @@ foreach ($rows as $r) {
     $rates[$r->shortname] = $rate;
 }
 
-// AI Yorumu Üretme.
+// AI yorumu üretme.
 $comment = local_yetkinlik_generate_comment($rates);
 
 /* PDF Hazırlığı. */
@@ -89,17 +89,17 @@ $pdf->SetMargins(15, 15, 15);
 $pdf->SetAutoPageBreak(true, PDF_MARGIN_BOTTOM);
 $pdf->AddPage();
 
-// Font Ayarı (Türkçe karakterler için).
+// Font ayarı (Türkçe karakterler için).
 $pdf->SetFont('freeserif', '', 12);
 
-// Başlık Bölümü.
+// Başlık bölümü.
 $pdf->SetFont('freeserif', 'B', 16);
 $pdf->Cell(0, 10, $reporttitle, 0, 1, 'C');
 $pdf->SetFont('freeserif', '', 9);
 $pdf->Cell(0, 5, "Oluşturma Tarihi: " . date('d.m.Y H:i'), 0, 1, 'R');
 $pdf->Ln(5);
 
-// Sabit Sütun Genişlikli HTML Tablo (Kaymayı Önler).
+// Sabit sütun genişlikli HTML tablo (Kaymayı önler).
 $html = '
 <table border="0.5" cellpadding="6" style="width: 100%;">
     <thead>
@@ -116,7 +116,7 @@ $html = '
 foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
 
-    // HTML Etiketlerini Temizle.
+    // HTML etiketlerini temizle.
     $cleandesc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
 
     // Renk skalası.
@@ -134,10 +134,10 @@ foreach ($rows as $r) {
 
 $html .= '</tbody></table>';
 
-// Tabloyu PDF'e Aktar.
+// Tabloyu PDF'e aktar.
 $pdf->writeHTML($html, true, false, true, false, '');
 
-// AI Analiz Notu (Eğer yorum varsa).
+// AI analiz notu (Eğer yorum varsa).
 if (!empty($comment)) {
     // AI yorumundaki HTML kodlarını temizle.
     $cleancomment = html_entity_decode(strip_tags($comment), ENT_QUOTES, 'UTF-8');
