@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Timeline report for competency development.
@@ -124,83 +124,20 @@ $datasetsjs = json_encode($datasets);
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="form-inline">
-            <input type="hidden" name="courseid" value="<?php
-            /**
-             * @package    local_yetkinlik
-             * @copyright  2026 Hakan Çiğci
-             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-             */
-            echo $courseid;
-            ?>">
-            <label class="mr-2" for="days"><?php
-            /**
-             * @package    local_yetkinlik
-             * @copyright  2026 Hakan Çiğci
-             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-             */
-            echo get_string('filterlabel', 'local_yetkinlik');
-            ?></label>
+            <input type="hidden" name="courseid" value="<?php echo $courseid; ?>">
+            <label class="mr-2" for="days"><?php echo get_string('filterlabel', 'local_yetkinlik'); ?></label>
             <select name="days" id="days" class="form-control mr-2">
-                <option value="30" <?php
-                /**
-                 * @package    local_yetkinlik
-                 * @copyright  2026 Hakan Çiğci
-                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                 */
-                echo ($days == 30) ? 'selected' : '';
-                ?>>
-                    <?php
-                    /**
-                     * @package    local_yetkinlik
-                     * @copyright  2026 Hakan Çiğci
-                     * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                     */
-                    echo get_string('last30days', 'local_yetkinlik');
-                    ?>
+                <option value="30" <?php echo ($days == 30) ? 'selected' : ''; ?>>
+                    <?php echo get_string('last30days', 'local_yetkinlik'); ?>
                 </option>
-                <option value="90" <?php
-                /**
-                 * @package    local_yetkinlik
-                 * @copyright  2026 Hakan Çiğci
-                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                 */
-                echo ($days == 90) ? 'selected' : '';
-                ?>>
-                    <?php
-                    /**
-                     * @package    local_yetkinlik
-                     * @copyright  2026 Hakan Çiğci
-                     * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                     */
-                    echo get_string('last90days', 'local_yetkinlik');
-                    ?>
+                <option value="90" <?php echo ($days == 90) ? 'selected' : ''; ?>>
+                    <?php echo get_string('last90days', 'local_yetkinlik'); ?>
                 </option>
-                <option value="0" <?php
-                /**
-                 * @package    local_yetkinlik
-                 * @copyright  2026 Hakan Çiğci
-                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                 */
-                echo ($days == 0) ? 'selected' : '';
-                ?>>
-                    <?php
-                    /**
-                     * @package    local_yetkinlik
-                     * @copyright  2026 Hakan Çiğci
-                     * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                     */
-                    echo get_string('alltime', 'local_yetkinlik');
-                    ?>
+                <option value="0" <?php echo ($days == 0) ? 'selected' : ''; ?>>
+                    <?php echo get_string('alltime', 'local_yetkinlik'); ?>
                 </option>
             </select>
-            <button type="submit" class="btn btn-primary"><?php
-            /**
-             * @package    local_yetkinlik
-             * @copyright  2026 Hakan Çiğci
-             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-             */
-            echo get_string('show', 'local_yetkinlik');
-            ?></button>
+            <button type="submit" class="btn btn-primary"><?php echo get_string('show', 'local_yetkinlik'); ?></button>
         </form>
     </div>
 </div>
@@ -209,33 +146,16 @@ $datasetsjs = json_encode($datasets);
     <canvas id="timeline"></canvas>
 </div>
 
-
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Initialize the timeline chart.
     // JavaScript to render the competency timeline chart.
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('timeline').getContext('2d');
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: <?php
-                /**
-                 * @package    local_yetkinlik
-                 * @copyright  2026 Hakan Çiğci
-                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                 */
-                echo $labelsjs;
-                ?>,
-                datasets: <?php
-                /**
-                 * @package    local_yetkinlik
-                 * @copyright  2026 Hakan Çiğci
-                 * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                 */
-                echo $datasetsjs;
-                ?>
+                labels: <?php echo $labelsjs; ?>,
+                datasets: <?php echo $datasetsjs; ?>
             },
             options: {
                 responsive: true,
@@ -246,14 +166,7 @@ $datasetsjs = json_encode($datasets);
                         max: 100,
                         title: {
                             display: true,
-                            text: '<?php
-                            /**
-                             * @package    local_yetkinlik
-                             * @copyright  2026 Hakan Çiğci
-                             * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-                             */
-                            echo get_string('successrate', 'local_yetkinlik');
-                            ?> (%)'
+                            text: '<?php echo get_string('successrate', 'local_yetkinlik'); ?> (%)'
                         }
                     }
                 },
@@ -268,11 +181,5 @@ $datasetsjs = json_encode($datasets);
 </script>
 
 <?php
-/**
- * Footer of the page.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+// Footer section.
 echo $OUTPUT->footer();
