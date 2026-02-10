@@ -40,7 +40,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-/* Öğrencinin bu derste sahip olduğu yetkinlikler */
+/* Öğrencinin bu derste sahip olduğu yetkinlikler. */
 $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname, c.description
     FROM {local_yetkinlik_qmap} m
@@ -48,34 +48,34 @@ $competencies = $DB->get_records_sql("
     ORDER BY c.shortname
 ");
 
-// Formu başlat
+// Formu başlat.
 echo html_writer::start_tag('form', ['method' => 'get', 'class' => 'form-inline mb-3', 'id' => 'competency_filter_form']);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'courseid', 'value' => $courseid]);
 
-// Select menüsü için seçenekleri hazırla
+// Select menüsü için seçenekleri hazırla.
 $options = [0 => get_string('selectcompetency', 'local_yetkinlik')];
 foreach ($competencies as $c) {
     $options[$c->id] = format_string($c->shortname);
 }
 
-// Select menüsünü oluştur (ID ekledik ki JavaScript ile yakalayalım)
+// Select menüsünü oluştur (ID ekledik ki JavaScript ile yakalayalım).
 echo html_writer::select($options, 'competencyid', $competencyid, false, [
     'id' => 'id_competency_select',
-    'class' => 'form-control mr-2'
+    'class' => 'form-control mr-2',
 ]);
 
 echo html_writer::tag('button', get_string('show', 'local_yetkinlik'), [
     'type' => 'submit',
-    'class' => 'btn btn-primary'
+    'class' => 'btn btn-primary',
 ]);
 echo html_writer::end_tag('form');
 
-// Autocomplete özelliğini aktifleştiren JavaScript (AMD)
+// Autocomplete özelliğini aktifleştiren JavaScript (AMD).
 $PAGE->requires->js_call_amd('core/form-autocomplete', 'enhance', [
-    '#id_competency_select', // Seçici
-    false,                   // Çoklu seçim kapalı
-    false,                   // Yeni giriş ekleme kapalı
-    get_string('selectcompetency', 'local_yetkinlik'), // Placeholder
+    '#id_competency_select', // Seçici.
+    false,                   // Çoklu seçim kapalı.
+    false,                   // Yeni giriş ekleme kapalı.
+    get_string('selectcompetency', 'local_yetkinlik'), // Placeholder.
 ]);
 
 echo html_writer::empty_tag('hr');
@@ -83,10 +83,10 @@ echo html_writer::empty_tag('hr');
 if ($competencyid) {
     // Yetkinlik açıklamasını güvenli bir şekilde çekelim.
     if ($competency = $DB->get_record('competency', ['id' => $competencyid])) {
-        // HTML etiketlerini temizleyip gösterelim
+        // HTML etiketlerini temizleyip gösterelim.
         $cleandesc = strip_tags(html_entity_decode($competency->description, ENT_QUOTES, 'UTF-8'));
         echo html_writer::tag('div', $cleandesc, [
-            'class' => 'alert alert-info competency-description mb-3'
+            'class' => 'alert alert-info competency-description mb-3',
         ]);
     }
 
@@ -103,8 +103,8 @@ if ($competencyid) {
         JOIN {quiz} quiz ON quiz.id = quiza.quiz
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE quiz.course = :courseid
@@ -118,7 +118,7 @@ if ($competencyid) {
     $params = [
         'courseid'     => $courseid,
         'competencyid' => $competencyid,
-        'userid'       => $USER->id
+        'userid'       => $USER->id,
     ];
 
     $rows = $DB->get_records_sql($sql, $params);
@@ -139,15 +139,20 @@ if ($competencyid) {
         foreach ($rows as $r) {
             $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
 
-            if ($rate >= 80) { $color = 'text-success'; }
-            elseif ($rate >= 60) { $color = 'text-primary'; }
-            elseif ($rate >= 40) { $color = 'text-warning'; }
-            else { $color = 'text-danger'; }
+            if ($rate >= 80) {
+                $color = 'text-success';
+            } else if ($rate >= 60) {
+                $color = 'text-primary';
+            } else if ($rate >= 40) {
+                $color = 'text-warning';
+            } else {
+                $color = 'text-danger';
+            }
 
             $totalq += $r->questions;
             $totalc += $r->correct;
 
-            // Son girişimi bulma mantığı korundu
+            // Son girişimi bulma mantığı korundu.
             $lastattempt = $DB->get_record_sql("
                 SELECT id
                 FROM {quiz_attempts}
@@ -166,11 +171,11 @@ if ($competencyid) {
                 $link,
                 $r->questions,
                 $r->correct,
-                html_writer::tag('span', "%$rate", ['class' => "$color font-weight-bold"])
+                html_writer::tag('span', "%$rate", ['class' => "$color font-weight-bold"]),
             ];
         }
 
-        // Toplam satırı
+        // Toplam satırı.
         $totalrate = $totalq ? number_format(($totalc / $totalq) * 100, 1) : 0;
         $tcolor = ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger');
 
@@ -178,7 +183,7 @@ if ($competencyid) {
             html_writer::tag('strong', get_string('total', 'local_yetkinlik')),
             html_writer::tag('strong', $totalq),
             html_writer::tag('strong', $totalc),
-            html_writer::tag('strong', "%$totalrate", ['class' => $tcolor])
+            html_writer::tag('strong', "%$totalrate", ['class' => $tcolor]),
         ]);
 
         echo html_writer::table($table);
