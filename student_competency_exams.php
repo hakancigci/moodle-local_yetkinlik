@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Report for competency exams.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -84,8 +84,8 @@ if ($competencyid) {
     // Yetkinlik açıklamasını güvenli bir şekilde çekelim.
     if ($competency = $DB->get_record('competency', ['id' => $competencyid])) {
         // HTML etiketlerini temizleyip gösterelim.
-        $cleandesc = strip_tags(html_entity_decode($competency->description, ENT_QUOTES, 'UTF-8'));
-        echo html_writer::tag('div', $cleandesc, [
+        $cleanDesc = strip_tags(html_entity_decode($competency->description, ENT_QUOTES, 'UTF-8'));
+        echo html_writer::tag('div', $cleanDesc, [
             'class' => 'alert alert-info competency-description mb-3',
         ]);
     }
@@ -118,7 +118,7 @@ if ($competencyid) {
     $params = [
         'courseid'     => $courseid,
         'competencyid' => $competencyid,
-        'userid'        => $USER->id,
+        'userid'       => $USER->id,
     ];
 
     $rows = $DB->get_records_sql($sql, $params);
@@ -133,8 +133,8 @@ if ($competencyid) {
         ];
         $table->attributes['class'] = 'generaltable mt-3';
 
-        $totalq = 0;
-        $totalc = 0;
+        $totalQ = 0;
+        $totalC = 0;
 
         foreach ($rows as $r) {
             $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
@@ -149,11 +149,11 @@ if ($competencyid) {
                 $color = 'text-danger';
             }
 
-            $totalq += $r->questions;
-            $totalc += $r->correct;
+            $totalQ += $r->questions;
+            $totalC += $r->correct;
 
-            // Son girişimi bulma mantığı korundu.
-            $lastattempt = $DB->get_record_sql("
+            // Son girişimi bulma mantığı (Düzeltildi: Yorum büyük harf).
+            $lastAttempt = $DB->get_record_sql("
                 SELECT id
                 FROM {quiz_attempts}
                 WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
@@ -162,8 +162,8 @@ if ($competencyid) {
             ", ['quizid' => $r->quizid, 'userid' => $USER->id]);
 
             $link = s($r->quizname);
-            if ($lastattempt) {
-                $url = new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]);
+            if ($lastAttempt) {
+                $url = new moodle_url('/mod/quiz/review.php', ['attempt' => $lastAttempt->id]);
                 $link = html_writer::link($url, $r->quizname, ['target' => '_blank']);
             }
 
@@ -176,14 +176,14 @@ if ($competencyid) {
         }
 
         // Toplam satırı.
-        $totalrate = $totalq ? number_format(($totalc / $totalq) * 100, 1) : 0;
-        $tcolor = ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger');
+        $totalRate = $totalQ ? number_format(($totalC / $totalQ) * 100, 1) : 0;
+        $tColor = ($totalRate >= 80) ? 'text-success' : (($totalRate >= 40) ? 'text-warning' : 'text-danger');
 
         $table->data[] = new html_table_row([
             html_writer::tag('strong', get_string('total', 'local_yetkinlik')),
-            html_writer::tag('strong', $totalq),
-            html_writer::tag('strong', $totalc),
-            html_writer::tag('strong', "%$totalrate", ['class' => $tcolor]),
+            html_writer::tag('strong', $totalQ),
+            html_writer::tag('strong', $totalC),
+            html_writer::tag('strong', "%$totalRate", ['class' => $tColor]),
         ]);
 
         echo html_writer::table($table);
