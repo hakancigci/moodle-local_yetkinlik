@@ -36,14 +36,14 @@ if ($courseid) {
     $context = context_course::instance($courseid);
     require_capability('moodle/course:view', $context);
     $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
-    $reporttitle = $course->fullname . " - Kazanım Başarı Raporu";
-    $wheresql = "WHERE quiz.course = :courseid AND quiza.state = 'finished'";
+    $reportTitle = $course->fullname . " - Kazanım Başarı Raporu";
+    $whereSql = "WHERE quiz.course = :courseid AND quiza.state = 'finished'";
     $params = ['courseid' => $courseid];
 } else {
     $context = context_system::instance();
     require_capability('moodle/site:config', $context);
-    $reporttitle = "Okul Genel Kazanım Başarı Raporu";
-    $wheresql = "WHERE quiza.state = 'finished'";
+    $reportTitle = "Okul Genel Kazanım Başarı Raporu";
+    $whereSql = "WHERE quiza.state = 'finished'";
     $params = [];
 }
 
@@ -63,7 +63,7 @@ $sql = "
         FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
-    $wheresql
+    $whereSql
     GROUP BY c.id, c.shortname, c.description
     ORDER BY c.shortname ASC
 ";
@@ -82,7 +82,7 @@ $comment = local_yetkinlik_generate_comment($rates);
 /* PDF Hazırlığı. */
 $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 $pdf->SetCreator('Moodle');
-$pdf->SetTitle($reporttitle);
+$pdf->SetTitle($reportTitle);
 $pdf->setPrintHeader(false);
 $pdf->setPrintFooter(true);
 $pdf->SetMargins(15, 15, 15);
@@ -94,7 +94,7 @@ $pdf->SetFont('freeserif', '', 12);
 
 // Başlık bölümü.
 $pdf->SetFont('freeserif', 'B', 16);
-$pdf->Cell(0, 10, $reporttitle, 0, 1, 'C');
+$pdf->Cell(0, 10, $reportTitle, 0, 1, 'C');
 $pdf->SetFont('freeserif', '', 9);
 $pdf->Cell(0, 5, "Oluşturma Tarihi: " . date('d.m.Y H:i'), 0, 1, 'R');
 $pdf->Ln(5);
@@ -117,15 +117,15 @@ foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
 
     // HTML etiketlerini temizle.
-    $cleandesc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
+    $cleanDesc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
 
     // Renk skalası.
-    $bgcolor = $rate >= 70 ? '#e6ffec' : ($rate >= 50 ? '#fff9e6' : '#ffe6e6');
+    $bgColor = $rate >= 70 ? '#e6ffec' : ($rate >= 50 ? '#fff9e6' : '#ffe6e6');
 
     $html .= '
-        <tr bgcolor="' . $bgcolor . '">
+        <tr bgcolor="' . $bgColor . '">
             <td width="15%" style="text-align: center;"><b>' . $r->shortname . '</b></td>
-            <td width="45%">' . $cleandesc . '</td>
+            <td width="45%">' . $cleanDesc . '</td>
             <td width="12%" style="text-align: center;">' . $r->attempts . '</td>
             <td width="12%" style="text-align: center;">' . $r->correct . '</td>
             <td width="16%" style="text-align: center; font-weight: bold;">%' . $rate . '</td>
@@ -140,7 +140,7 @@ $pdf->writeHTML($html, true, false, true, false, '');
 // AI analiz notu (Eğer yorum varsa).
 if (!empty($comment)) {
     // AI yorumundaki HTML kodlarını temizle.
-    $cleancomment = html_entity_decode(strip_tags($comment), ENT_QUOTES, 'UTF-8');
+    $cleanComment = html_entity_decode(strip_tags($comment), ENT_QUOTES, 'UTF-8');
 
     $pdf->Ln(8);
     $pdf->SetFont('freeserif', 'B', 12);
@@ -150,7 +150,7 @@ if (!empty($comment)) {
     $pdf->Ln(2);
     $pdf->SetFont('freeserif', '', 11);
     // MultiCell kullanımı metni otomatik olarak hizalar ve temizlenmiş içeriği basar.
-    $pdf->MultiCell(0, 7, $cleancomment, 0, 'L', false, 1);
+    $pdf->MultiCell(0, 7, $cleanComment, 0, 'L', false, 1);
 }
 
 // Çıktı.
