@@ -118,28 +118,74 @@ foreach ($data as $comp => $vals) {
 $labelsjs = json_encode($periods);
 $datasetsjs = json_encode($datasets);
 
+// Display filter form and chart container.
 /**
- * Display filter form and chart container.
+ * Timeline filter form and chart display.
  */
 ?>
 
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="form-inline">
-            <input type="hidden" name="courseid" value="<?php echo $courseid; ?>">
-            <label class="mr-2" for="days"><?php echo get_string('filterlabel', 'local_yetkinlik'); ?></label>
+            <input type="hidden" name="courseid" value="<?php
+            /**
+             * Output course id for form.
+             */
+            echo $courseid;
+            ?>">
+            <label class="mr-2" for="days"><?php
+            /**
+             * Output filter label.
+             */
+            echo get_string('filterlabel', 'local_yetkinlik');
+            ?></label>
             <select name="days" id="days" class="form-control mr-2">
-                <option value="30" <?php echo ($days == 30) ? 'selected' : ''; ?>>
-                    <?php echo get_string('last30days', 'local_yetkinlik'); ?>
+                <option value="30" <?php
+                /**
+                 * Selected attribute logic for 30 days.
+                 */
+                echo ($days == 30) ? 'selected' : '';
+                ?>>
+                    <?php
+                    /**
+                     * Output last 30 days string.
+                     */
+                    echo get_string('last30days', 'local_yetkinlik');
+                    ?>
                 </option>
-                <option value="90" <?php echo ($days == 90) ? 'selected' : ''; ?>>
-                    <?php echo get_string('last90days', 'local_yetkinlik'); ?>
+                <option value="90" <?php
+                /**
+                 * Selected attribute logic for 90 days.
+                 */
+                echo ($days == 90) ? 'selected' : '';
+                ?>>
+                    <?php
+                    /**
+                     * Output last 90 days string.
+                     */
+                    echo get_string('last90days', 'local_yetkinlik');
+                    ?>
                 </option>
-                <option value="0" <?php echo ($days == 0) ? 'selected' : ''; ?>>
-                    <?php echo get_string('alltime', 'local_yetkinlik'); ?>
+                <option value="0" <?php
+                /**
+                 * Selected attribute logic for all time.
+                 */
+                echo ($days == 0) ? 'selected' : '';
+                ?>>
+                    <?php
+                    /**
+                     * Output all time string.
+                     */
+                    echo get_string('alltime', 'local_yetkinlik');
+                    ?>
                 </option>
             </select>
-            <button type="submit" class="btn btn-primary"><?php echo get_string('show', 'local_yetkinlik'); ?></button>
+            <button type="submit" class="btn btn-primary"><?php
+            /**
+             * Output show button label.
+             */
+            echo get_string('show', 'local_yetkinlik');
+            ?></button>
         </form>
     </div>
 </div>
@@ -150,16 +196,27 @@ $datasetsjs = json_encode($datasets);
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Initialize the timeline chart.
     /**
-     * Initialize the timeline chart.
+     * JavaScript to render the competency timeline chart.
      */
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('timeline').getContext('2d');
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: <?php echo $labelsjs; ?>,
-                datasets: <?php echo $datasetsjs; ?>
+                labels: <?php
+                /**
+                 * Output chart labels.
+                 */
+                echo $labelsjs;
+                ?>,
+                datasets: <?php
+                /**
+                 * Output chart datasets.
+                 */
+                echo $datasetsjs;
+                ?>
             },
             options: {
                 responsive: true,
@@ -170,7 +227,12 @@ $datasetsjs = json_encode($datasets);
                         max: 100,
                         title: {
                             display: true,
-                            text: '<?php echo get_string('successrate', 'local_yetkinlik'); ?> (%)'
+                            text: '<?php
+                            /**
+                             * Output success rate string for chart axis.
+                             */
+                            echo get_string('successrate', 'local_yetkinlik');
+                            ?> (%)'
                         }
                     }
                 },
@@ -185,4 +247,7 @@ $datasetsjs = json_encode($datasets);
 </script>
 
 <?php
+/**
+ * Footer of the page.
+ */
 echo $OUTPUT->footer();
