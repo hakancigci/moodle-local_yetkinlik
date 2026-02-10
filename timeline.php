@@ -115,8 +115,8 @@ foreach ($data as $comp => $vals) {
     $i++;
 }
 
-$labelsjs = json_encode($periods);
-$datasetsjs = json_encode($datasets);
+$labels_js = json_encode($periods);
+$datasets_js = json_encode($datasets);
 
 // Timeline filter form and chart display.
 ?>
@@ -148,14 +148,29 @@ $datasetsjs = json_encode($datasets);
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // JavaScript to render the competency timeline chart.
+    /**
+     * JavaScript to render the competency timeline chart.
+     */
     document.addEventListener('DOMContentLoaded', function() {
+        /**
+         * Get context for the timeline chart.
+         */
         const ctx = document.getElementById('timeline').getContext('2d');
+        
+        /**
+         * Initialize the competency development line chart.
+         */
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: <?php echo $labelsjs; ?>,
-                datasets: <?php echo $datasetsjs; ?>
+                /**
+                 * Labels represent the time periods.
+                 */
+                labels: <?php echo $labels_js; ?>,
+                /**
+                 * Datasets represent each competency progress.
+                 */
+                datasets: <?php echo $datasets_js; ?>
             },
             options: {
                 responsive: true,
@@ -171,6 +186,9 @@ $datasetsjs = json_encode($datasets);
                     }
                 },
                 plugins: {
+                    /**
+                     * Legend configuration.
+                     */
                     legend: {
                         position: 'bottom'
                     }
@@ -181,5 +199,7 @@ $datasetsjs = json_encode($datasets);
 </script>
 
 <?php
-// Footer section.
+/**
+ * Footer section.
+ */
 echo $OUTPUT->footer();
