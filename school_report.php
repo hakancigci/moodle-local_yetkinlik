@@ -12,10 +12,10 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Report for competency.
+ * Student competency report.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -25,28 +25,37 @@
 require_once(__DIR__ . '/../../config.php');
 require_login();
 
-$context = context_system::instance();
-require_capability('moodle/site:config', $context);
+$courseid = required_param('courseid', PARAM_INT);
+require_login($courseid);
 
-$PAGE->set_url('/local/yetkinlik/school_report.php');
-$PAGE->set_title('Okul Genel Kazanım Raporu');
-$PAGE->set_heading('Okul Genel Kazanım Raporu');
+$context = context_course::instance($courseid);
+$userid = $USER->id;
+
+$course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+
+$PAGE->set_url('/local/yetkinlik/student_report.php', ['courseid' => $courseid]);
+$PAGE->set_context($context);
+$PAGE->set_pagelayout('course');
+$PAGE->set_title(get_string('studentreport', 'local_yetkinlik'));
+$PAGE->set_heading($course->fullname);
 
 echo $OUTPUT->header();
+
 global $DB;
 
-// PDF Butonu - Üst Kısım.
-$pdfurl = new moodle_url('/local/yetkinlik/school_pdf.php');
-echo $OUTPUT->single_button($pdfurl, 'Raporu PDF Olarak İndir', 'get', ['class' => 'btn btn-primary mb-3']);
-
-// Tüm okul yetkinlik başarıları SQL.
+// Student data SQL query.
 $sql = "
-    SELECT c.id, c.shortname, c.description,
-           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+    SELECT c.id,
+           c.shortname,
+           c.description,
+           c.descriptionformat,
+           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS questions,
            CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
     FROM {quiz_attempts} quiza
+    JOIN {user} u ON quiza.userid = u.id
     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+    JOIN {quiz} quiz ON quiz.id = quiza.quiz
     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
@@ -54,81 +63,78 @@ $sql = "
         FROM {question_attempt_steps}
         GROUP BY questionattemptid
     ) qas ON qas.questionattemptid = qa.id
-    WHERE quiza.state = 'finished'
-    GROUP BY c.id, c.shortname, c.description
-    ORDER BY c.shortname ASC
+    WHERE quiz.course = :courseid AND u.id = :userid
+    GROUP BY c.id, c.shortname, c.description, c.descriptionformat
 ";
 
-$rows = $DB->get_records_sql($sql);
+$rows = $DB->get_records_sql($sql, ['courseid' => $courseid, 'userid' => $userid]);
 
-echo '<table class="generaltable" style="width:100%">';
-echo '<thead><tr>
-        <th>Kazanım Kodu</th>
-        <th>Kazanım</th>
-        <th>Çözülen</th>
-        <th>Doğru</th>
-        <th>Başarı</th>
-      </tr></thead><tbody>';
+echo html_writer::start_tag('table', ['class' => 'generaltable mt-3 w-100']);
+echo html_writer::start_tag('thead');
+echo html_writer::start_tag('tr');
+echo html_writer::tag('th', get_string('competencycode', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('competency', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('questioncount', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('correctcount', 'local_yetkinlik'));
+echo html_writer::tag('th', get_string('successrate', 'local_yetkinlik'));
+echo html_writer::end_tag('tr');
+echo html_writer::end_tag('thead');
+echo html_writer::start_tag('tbody');
 
-$labels = [];
-$data = [];
+$rates = [];
+
 foreach ($rows as $r) {
-    $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
-    $labels[] = $r->shortname;
-    $data[] = $rate;
+    $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
+    $rates[$r->shortname] = $rate;
 
-    $color = $rate >= 70 ? '#28a745' : ($rate >= 50 ? '#ffc107' : '#dc3545');
+    if ($rate >= 80) {
+        $color = '#28a745'; // Green
+    } else if ($rate >= 60) {
+        $color = '#007bff'; // Blue
+    } else if ($rate >= 40) {
+        $color = '#fd7e14'; // Orange
+    } else {
+        $color = '#dc3545'; // Red
+    }
 
-    echo "<tr>
-            <td><strong>{$r->shortname}</strong></td>
-            <td>{$r->description}</td>
-            <td>{$r->attempts}</td>
-            <td>{$r->correct}</td>
-            <td style='color: $color; font-weight: bold;'>%{$rate}</td>
-          </tr>";
+    echo html_writer::start_tag('tr');
+    echo html_writer::tag('td', s($r->shortname));
+    
+    // Düzenlenen Kısım: HTML taglarını render eder.
+    $description = format_text($r->description, $r->descriptionformat, ['context' => $context]);
+    echo html_writer::tag('td', $description);
+    
+    echo html_writer::tag('td', $r->questions);
+    echo html_writer::tag('td', $r->correct);
+    echo html_writer::tag('td', '%' . $rate, [
+        'style' => "color: $color; font-weight: bold;",
+    ]);
+    echo html_writer::end_tag('tr');
 }
-echo '</tbody></table>';
 
-$labelsjs = json_encode($labels);
-$datajs = json_encode($data);
+if (empty($rows)) {
+    echo html_writer::tag('tr', html_writer::tag('td', get_string('nodatafound', 'local_yetkinlik'), ['colspan' => 5, 'class' => 'text-center']));
+}
 
-// Chart display section.
-?>
+echo html_writer::end_tag('tbody');
+echo html_writer::end_tag('table');
 
-<div class="card mt-4">
-    <div class="card-body">
-        <canvas id="schoolchart" style="max-height: 400px;"></canvas>
-    </div>
-</div>
+// PDF report button.
+$pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid]);
+echo html_writer::start_tag('div', ['class' => 'mt-4']);
+echo html_writer::link($pdfurl, get_string('pdfmystudent', 'local_yetkinlik'), [
+    'class' => 'btn btn-secondary',
+    'target' => '_blank',
+]);
+echo html_writer::end_tag('div');
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    new Chart(document.getElementById('schoolchart'), {
-        type: 'bar',
-        data: {
-            labels: <?php echo $labelsjs; ?>,
-            datasets: [{
-                label: 'Okul Başarı Yüzdesi (%)',
-                data: <?php echo $datajs; ?>,
-                backgroundColor: '#673ab7',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true, max: 100 }
-            }
-        }
-    });
-</script>
+// AI Comment section.
+require_once(__DIR__ . '/ai.php');
+if (!empty($rates)) {
+    echo html_writer::tag('h3', get_string('generalcomment', 'local_yetkinlik'), ['class' => 'mt-4']);
+    echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), [
+        'class' => 'alert alert-info',
+    ]);
+}
 
-<?php
-/**
- * Footer section.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 echo $OUTPUT->footer();
