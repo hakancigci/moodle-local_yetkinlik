@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Report for competency.
@@ -73,8 +73,8 @@ echo html_writer::end_tag('form');
 // Autocomplete özelliğini aktifleştiren JavaScript (AMD).
 $PAGE->requires->js_call_amd('core/form-autocomplete', 'enhance', [
     '#id_competency_select', // Seçici.
-    false,                   // Çoklu seçim kapalı.
-    false,                   // Yeni giriş ekleme kapalı.
+    false, // Çoklu seçim kapalı.
+    false, // Yeni giriş ekleme kapalı.
     get_string('selectcompetency', 'local_yetkinlik'), // Placeholder.
 ]);
 
@@ -118,7 +118,7 @@ if ($competencyid) {
     $params = [
         'courseid'     => $courseid,
         'competencyid' => $competencyid,
-        'userid'       => $USER->id,
+        'userid'        => $USER->id,
     ];
 
     $rows = $DB->get_records_sql($sql, $params);
