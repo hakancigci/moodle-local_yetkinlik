@@ -137,8 +137,10 @@ if ($quizid) {
         $labelsjs = json_encode($labels);
         $datajs = json_encode($data);
         $colorsjs = json_encode($bgcolors);
+
+        // Student exam success chart display.
         /**
-         * Student exam success chart display.
+         * Chart output section.
          */
         ?>
 
@@ -177,4 +179,7 @@ if ($quizid) {
     }
 }
 
+/**
+ * Footer section.
+ */
 echo $OUTPUT->footer();
