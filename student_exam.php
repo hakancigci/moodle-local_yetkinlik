@@ -1,26 +1,38 @@
 <?php
-// Öğrenci Sınav Yetkinlik Analiz Raporu.
-// Bu dosya öğrencinin girdiği sınavlara göre yetkinlik başarısını raporlar.
-// @package    local_yetkinlik
-// @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
-// @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-// Moodle ana yapılandırma dosyasını yükle.
+/**
+ * Student exam competency analysis report.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 require_once(__DIR__ . '/../../config.php');
 
-// Gerekli parametrelerin alınması.
 $courseid = required_param('courseid', PARAM_INT);
 $quizid   = optional_param('quizid', 0, PARAM_INT);
 
-// Kullanıcı oturum ve kurs erişim kontrolü.
 require_login($courseid);
 
-// Global nesne tanımlamaları.
 global $DB, $USER, $OUTPUT, $PAGE;
 
 $context = context_course::instance($courseid);
 
-// Sayfa URL ve tema yapılandırması.
 $PAGE->set_url('/local/yetkinlik/student_exam.php', ['courseid' => $courseid]);
 $PAGE->set_title(get_string('studentexam', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('studentexam', 'local_yetkinlik'));
@@ -28,7 +40,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// Öğrencinin bu kursta tamamladığı sınavları getir.
+// Fetch quizzes completed by the student.
 $quizzes = $DB->get_records_sql("
     SELECT DISTINCT q.id, q.name
       FROM {quiz} q
@@ -37,7 +49,7 @@ $quizzes = $DB->get_records_sql("
   ORDER BY q.name
 ", [$USER->id, $courseid]);
 
-// Seçim formu alanı.
+// Start Form.
 echo html_writer::start_tag('div', ['class' => 'card mb-4']);
 echo html_writer::start_tag('div', ['class' => 'card-body']);
 
@@ -57,7 +69,6 @@ echo html_writer::end_tag('form');
 echo html_writer::end_tag('div');
 echo html_writer::end_tag('div');
 
-// Eğer bir sınav seçilmişse yetkinlik verilerini hesapla.
 if ($quizid) {
     $sql = "
     SELECT
@@ -84,7 +95,6 @@ if ($quizid) {
 
     $rows = $DB->get_records_sql($sql, [$quizid, $USER->id]);
 
-    // Veri varsa tablo ve grafik oluştur.
     if ($rows) {
         $table = new html_table();
         $table->head = [
@@ -103,7 +113,6 @@ if ($quizid) {
             $labels[] = $r->shortname;
             $chartdata[] = $rate;
 
-            // Başarı oranına göre renk belirleme.
             if ($rate >= 80) {
                 $color = 'green';
             } else if ($rate >= 60) {
@@ -125,7 +134,7 @@ if ($quizid) {
 
         echo html_writer::table($table);
 
-        // JavaScript verilerini PHP tarafında hazırla.
+        // Verileri JS bloğundan önce hazırlayarak DocBlock hatalarını engelliyoruz.
         $labelsjs = json_encode($labels);
         $datajs = json_encode($chartdata);
         $colorsjs = json_encode($bgcolors);
@@ -138,21 +147,19 @@ if ($quizid) {
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-        // Sayfa hazır olduğunda sınav grafiğini çiz.
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the student exam competency chart.
             const ctx = document.getElementById('studentexamchart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: <?php // Grafik etiketleri.
-                        echo $labelsjs; ?>,
+                    labels: <?php echo $labelsjs; ?>,
                     datasets: [{
-                        label: '<?php // Grafik başlığı.
-                            echo $chartlabel; ?>',
-                        data: <?php // Başarı verileri.
-                            echo $datajs; ?>,
-                        backgroundColor: <?php // Dinamik renkler.
-                            echo $colorsjs; ?>
+                        label: '<?php echo $chartlabel; ?>',
+                        // Chart success data points.
+                        data: <?php echo $datajs; ?>,
+                        // Background colors for each bar.
+                        backgroundColor: <?php echo $colorsjs; ?>
                     }]
                 },
                 options: {
@@ -168,10 +175,9 @@ if ($quizid) {
 
         <?php
     } else {
-        // Sınav verisi bulunamadığında uyarı göster.
         echo $OUTPUT->notification(get_string('noexamdata', 'local_yetkinlik'), 'info');
     }
 }
 
-// Sayfa altbilgisini yazdır.
+// Footer section.
 echo $OUTPUT->footer();
