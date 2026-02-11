@@ -15,30 +15,30 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Ogrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
- * * Bu sayfa, öğrencinin sınav başarılarını kurs ve sınıf ortalamalarıyla
- * karşılaştırarak hem dinamik bir tablo hem de Chart.js grafiği sunar.
+ * Student Competency Performance Timeline Report.
+ *
+ * This page displays a line chart showing the competency performance
+ * of a student over a specific period of time using Chart.js.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 require_once(__DIR__ . '/../../config.php');
 
-// Gerekli parametrelerin ve filtrelerin alınması.
+// 1. Parameters and security checks.
 $courseid = required_param('courseid', PARAM_INT);
 $days     = optional_param('days', 90, PARAM_INT);
 
-// Kullanıcı oturumu ve kurs erişim kontrolü.
 require_login($courseid);
 
-// Global nesne tanımlamaları.
 global $USER, $DB, $PAGE, $OUTPUT;
 
 $userid = $USER->id;
 $context = context_course::instance($courseid);
 
-// Sayfa URL ve tema yapılandırması.
+// 2. Page configuration.
 $PAGE->set_url('/local/yetkinlik/timeline.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('timelineheading', 'local_yetkinlik'));
@@ -47,7 +47,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// Sorgu filtreleri ve SQL hazırlık aşaması.
+// 3. SQL Query preparation.
 $where = "quiz.course = :courseid AND u.id = :userid";
 $params = ['courseid' => $courseid, 'userid' => $userid];
 
@@ -56,7 +56,6 @@ if ($days > 0) {
     $params['days'] = $days;
 }
 
-// Zaman bazlı yetkinlik performansını getiren SQL sorgusu.
 $sql = "
 SELECT
   c.shortname,
@@ -87,7 +86,7 @@ ORDER BY period ASC
 
 $rows = $DB->get_records_sql($sql, $params);
 
-// Ham verilerin işlenmesi ve diziye aktarılması.
+// 4. Processing raw data.
 $data = [];
 $periods = [];
 
@@ -100,7 +99,7 @@ foreach ($rows as $r) {
 $periods = array_keys($periods);
 sort($periods);
 
-// Grafik için veri setlerinin hazırlanması.
+// 5. Preparing datasets for the chart.
 $datasets = [];
 $colors = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00897b'];
 $i = 0;
@@ -121,88 +120,77 @@ foreach ($data as $comp => $vals) {
     $i++;
 }
 
-// JavaScript tarafında kullanılacak dil dizgileri ve veriler.
+// 6. UI Components.
+echo html_writer::start_tag('div', ['class' => 'card mb-4']);
+echo html_writer::start_tag('div', ['class' => 'card-body']);
+
+$formurl = new moodle_url('/local/yetkinlik/timeline.php');
+echo html_writer::start_tag('form', ['method' => 'get', 'action' => $formurl, 'class' => 'form-inline']);
+echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'courseid', 'value' => $courseid]);
+
+echo html_writer::label(get_string('filterlabel', 'local_yetkinlik'), 'days', false, ['class' => 'mr-2']);
+
+$options = [
+    '30' => get_string('last30days', 'local_yetkinlik'),
+    '90' => get_string('last90days', 'local_yetkinlik'),
+    '0'  => get_string('alltime', 'local_yetkinlik'),
+];
+echo html_writer::select($options, 'days', $days, false, ['class' => 'form-control mr-2', 'id' => 'days']);
+
+echo html_writer::tag('button', get_string('show', 'local_yetkinlik'), [
+    'type' => 'submit',
+    'class' => 'btn btn-primary',
+]);
+
+echo html_writer::end_tag('form');
+echo html_writer::end_tag('div');
+echo html_writer::end_tag('div');
+
+// 7. Chart container and JavaScript.
+echo html_writer::div(
+    html_writer::tag('canvas', '', ['id' => 'timeline']),
+    'chart-container',
+    ['style' => 'position: relative; height:400px; width:100%']
+);
+
 $labelsjs = json_encode($periods);
 $datasetsjs = json_encode($datasets);
 $successlabel = get_string('successrate', 'local_yetkinlik');
-$filterlabel = get_string('filterlabel', 'local_yetkinlik');
-$last30days = get_string('last30days', 'local_yetkinlik');
-$last90days = get_string('last90days', 'local_yetkinlik');
-$alltime = get_string('alltime', 'local_yetkinlik');
-$showlabel = get_string('show', 'local_yetkinlik');
 
-// Kullanıcı arayüzü form alanı.
-?>
+// Injecting Chart.js and initialization script.
+$PAGE->requires->js_plugin_custom('https://cdn.jsdelivr.net/npm/chart.js');
 
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="form-inline">
-            <input type="hidden" name="courseid" value="<?php // Kurs ID verisi.
-                echo $courseid; ?>">
-            <label class="mr-2" for="days"><?php // Filtre etiketi.
-                echo $filterlabel; ?></label>
-            <select name="days" id="days" class="form-control mr-2">
-                <option value="30" <?php // 30 Gün seçeneği.
-                    echo ($days == 30) ? 'selected' : ''; ?>>
-                    <?php echo $last30days; ?>
-                </option>
-                <option value="90" <?php // 90 Gün seçeneği.
-                    echo ($days == 90) ? 'selected' : ''; ?>>
-                    <?php echo $last90days; ?>
-                </option>
-                <option value="0" <?php // Tüm zamanlar seçeneği.
-                    echo ($days == 0) ? 'selected' : ''; ?>>
-                    <?php echo $alltime; ?>
-                </option>
-            </select>
-            <button type="submit" class="btn btn-primary"><?php // Göster butonu.
-                echo $showlabel; ?></button>
-        </form>
-    </div>
-</div>
-
-<div class="chart-container" style="position: relative; height:400px; width:100%">
-    <canvas id="timeline"></canvas>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Sayfa yüklendiğinde zaman çizelgesi grafiğini başlat.
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('timeline').getContext('2d');
-        
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: <?php // Grafik zaman etiketleri.
-                    echo $labelsjs; ?>,
-                datasets: <?php // Grafik veri setleri.
-                    echo $datasetsjs; ?>
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: '<?php // Başarı oranı metni.
-                                echo $successlabel; ?> (%)'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+$chartinit = "
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('timeline').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: $labelsjs,
+            datasets: $datasetsjs
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: '$successlabel (%)'
                     }
                 }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
             }
-        });
+        }
     });
-</script>
+});";
 
-<?php
-// Sayfa altbilgisini yazdır.
+$PAGE->requires->js_init_code($chartinit);
+
 echo $OUTPUT->footer();

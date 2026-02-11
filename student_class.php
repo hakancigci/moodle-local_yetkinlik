@@ -15,9 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Oğrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
- * * Bu sayfa, öğrencinin sınav başarılarını kurs ve sınıf ortalamalarıyla
- * karşılaştırarak hem dinamik bir tablo hem de Chart.js grafiği sunar.
+ * Student Comparative Competency Analysis Report.
+ *
+ * This page provides a dynamic table and a Chart.js graph comparing
+ * student exam performance with course and class averages.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -28,15 +29,15 @@ require_once(__DIR__ . '/../../config.php');
 
 global $DB, $USER, $PAGE, $OUTPUT;
 
-// 1. Parametreleri al ve kurs bağlamını (context) doğrula.
+// 1. Get parameters and validate course context.
 $courseid = required_param('courseid', PARAM_INT);
 $course   = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 $context  = context_course::instance($courseid);
 
-// Güvenlik kontrolü: Kullanıcı kursa kayıtlı mı?
+// Security check: Ensure the user is logged into the course.
 require_login($course);
 
-// 2. Sayfa Yapılandırması (Moodle Standartları).
+// 2. Page Configuration (Moodle Standards).
 $PAGE->set_url('/local/yetkinlik/student_class.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('studentanalysis', 'local_yetkinlik'));
@@ -45,8 +46,8 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// 3. Veri Sorguları (SQL).
-// Kurs Genel Ortalaması.
+// 3. Data Queries (SQL).
+// General Course Average.
 $coursesql = "SELECT c.id, c.shortname,
                       CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
                       CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
@@ -69,19 +70,23 @@ $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid]);
 if (empty($coursedata)) {
     echo $OUTPUT->notification(get_string('nodatafound', 'local_yetkinlik'), 'info');
 } else {
-    // Sınıf (Departman) Ortalaması.
+    // Class (Department) Average.
     $classdata = [];
     if (!empty($USER->department)) {
         $classsql = str_replace("GROUP BY c.id, c.shortname", "AND u.department = :dept GROUP BY c.id", $coursesql);
-        $classsql = str_replace("FROM {quiz_attempts} quiza", "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $classsql);
+        $classsql = str_replace(
+            "FROM {quiz_attempts} quiza",
+            "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id",
+            $classsql
+        );
         $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
     }
 
-    // Oğrencinin Kendi Verisi.
+    // Student's Own Data.
     $studentsql = str_replace("GROUP BY c.id, c.shortname", "AND quiza.userid = :userid GROUP BY c.id", $coursesql);
     $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
 
-    // 4. Tablo Çıktısı.
+    // 4. Table Output.
     echo html_writer::start_tag('table', ['class' => 'generaltable table-hover mt-3 shadow-sm', 'style' => 'width:100%']);
     echo '<thead><tr>';
     echo html_writer::tag('th', get_string('competencyname', 'local_yetkinlik'));
@@ -90,14 +95,19 @@ if (empty($coursedata)) {
     echo html_writer::tag('th', get_string('myavg', 'local_yetkinlik'), ['class' => 'text-center']);
     echo '</tr></thead><tbody>';
 
-    $labels = []; $courserates = []; $classrates = []; $myrates = [];
+    $labels = [];
+    $courserates = [];
+    $classrates = [];
+    $myrates = [];
 
     foreach ($coursedata as $cid => $c) {
         $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
-        $myrate     = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
+        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts)
+            ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+        $myrate     = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts)
+            ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
-        // Karşılaştırmalı renklendirme.
+        // Comparative coloring based on course average.
         $colorclass = ($myrate >= $courserate) ? 'text-success' : 'text-danger';
 
         echo '<tr>';
@@ -117,15 +127,15 @@ if (empty($coursedata)) {
     }
     echo '</tbody></table>';
 
-    // 5. Grafik Alanı (Canvas).
-    // ONEMLİ: Grafik tetiklenmeden önce DOM'da hazır olmalıdır.
+    // 5. Chart Area (Canvas).
+    // IMPORTANT: The element must be ready in the DOM before the chart is triggered.
     echo html_writer::div(
-        '<canvas id="studentClassChart"></canvas>', 
-        'card mt-4 p-4 shadow-sm bg-light', 
+        '<canvas id="studentClassChart"></canvas>',
+        'card mt-4 p-4 shadow-sm bg-light',
         ['style' => 'height:400px; min-height:400px; width:100%;']
     );
 
-    // 6. JavaScript Hazırlığı ve AMD Çağrısı.
+    // 6. JavaScript Preparation and AMD Call.
     $chartparams = [
         'labels'     => $labels,
         'courseData' => $courserates,
@@ -134,14 +144,14 @@ if (empty($coursedata)) {
         'labelNames' => [
             'course' => get_string('courseavg', 'local_yetkinlik'),
             'class'  => get_string('classavg', 'local_yetkinlik'),
-            'my'     => get_string('myavg', 'local_yetkinlik')
-        ]
+            'my'     => get_string('myavg', 'local_yetkinlik'),
+        ],
     ];
 
-    // Veriyi data_for_js ile global konfigürasyona güvenli bir şekilde aktaralım.
+    // Transfer data to global configuration safely using data_for_js.
     $PAGE->requires->data_for_js('chartData', $chartparams);
 
-    // AMD modülünü tetikle ve veriyi parametre olarak gönder.
+    // Trigger the AMD module and pass the data as a parameter.
     $PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initStudentClass', [$chartparams]);
 }
 

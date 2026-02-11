@@ -15,8 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Orenci Sınav Yetkinlik Analiz Raporu.
- * * Bu dosya öğrencinin seçtiği sınava göre yetkinlik başarısını raporlar.
+ * Student Exam Competency Analysis Report.
+ *
+ * This file reports the competency success according to the exam selected by the student.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -25,18 +26,18 @@
 
 require_once(__DIR__ . '/../../config.php');
 
-// Gerekli parametrelerin alınması.
+// Required parameters.
 $courseid = required_param('courseid', PARAM_INT);
 $quizid   = optional_param('quizid', 0, PARAM_INT);
 
-// Kullanıcı oturum ve kurs erişim kontrolü.
+// User session and course access control.
 require_login($courseid);
 
 global $DB, $USER, $OUTPUT, $PAGE;
 
 $context = context_course::instance($courseid);
 
-// Sayfa URL ve Moodle yapılandırması.
+// Page URL and Moodle configuration.
 $PAGE->set_url('/local/yetkinlik/student_exam.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('studentexam', 'local_yetkinlik'));
@@ -45,8 +46,8 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// --- 1. SINAV SEÇİM FORMU ---
-// Oğrencinin bu kursta tamamladığı sınavları getir.
+// --- 1. EXAM SELECTION FORM ---.
+// Get the exams completed by the student in this course.
 $quizzes = $DB->get_records_sql("
     SELECT DISTINCT q.id, q.name
       FROM {quiz} q
@@ -74,7 +75,7 @@ echo html_writer::end_tag('form');
 echo html_writer::end_tag('div');
 echo html_writer::end_tag('div');
 
-// --- 2. VERİ HESAPLAMA VE GÖRÜNÜM ---
+// --- 2. DATA CALCULATION AND VIEW ---.
 if ($quizid) {
     $sql = "
     SELECT
@@ -102,7 +103,7 @@ if ($quizid) {
     $rows = $DB->get_records_sql($sql, [$quizid, $USER->id]);
 
     if ($rows) {
-        // Tablo hazırlığı.
+        // Table preparation.
         echo html_writer::start_tag('table', ['class' => 'generaltable table-hover mt-3 shadow-sm', 'style' => 'width:100%']);
         echo '<thead><tr>';
         echo html_writer::tag('th', get_string('competencycode', 'local_yetkinlik'));
@@ -116,16 +117,16 @@ if ($quizid) {
 
         foreach ($rows as $r) {
             $rate = $r->attempts ? round(($r->correct / $r->attempts) * 100, 1) : 0;
-            
-            // Başarı oranına göre renk belirleme (Bootstrap standartlarına uygun HEX kodları).
+
+            // Determine color based on success rate (Bootstrap standard HEX codes).
             if ($rate >= 80) {
-                $color = '#28a745'; // Başarılı (Yeşil)
+                $color = '#28a745'; // Successful (Green).
             } else if ($rate >= 60) {
-                $color = '#007bff'; // İyi (Mavi)
+                $color = '#007bff'; // Good (Blue).
             } else if ($rate >= 40) {
-                $color = '#fd7e14'; // Orta (Turuncu)
+                $color = '#fd7e14'; // Average (Orange).
             } else {
-                $color = '#dc3545'; // Düşük (Kırmızı)
+                $color = '#dc3545'; // Low (Red).
             }
 
             $labels[] = $r->shortname;
@@ -137,16 +138,16 @@ if ($quizid) {
             echo html_writer::tag('td', $r->description);
             echo html_writer::tag('td', '%' . $rate, [
                 'class' => 'text-center font-weight-bold',
-                'style' => "color: $color; font-size: 1.1em;"
+                'style' => "color: $color; font-size: 1.1em;",
             ]);
             echo '</tr>';
         }
         echo '</tbody></table>';
 
-        // --- 3. GRAFİK ALANI VE JS ÇAĞRISI ---
-       echo html_writer::div(
-            '<canvas id="studentexamchart"></canvas>', 
-            'card mt-4 p-4 shadow-sm bg-light', 
+        // --- 3. CHART AREA AND JS CALL ---.
+        echo html_writer::div(
+            '<canvas id="studentexamchart"></canvas>',
+            'card mt-4 p-4 shadow-sm bg-light',
             ['style' => 'height:400px; min-height:400px; width:100%;']
         );
 
@@ -154,14 +155,12 @@ if ($quizid) {
             'labels'     => $labels,
             'chartData'  => $chartdata,
             'bgColors'   => $bgcolors,
-            'chartLabel' => get_string('successpercent', 'local_yetkinlik') . ' (%)'
+            'chartLabel' => get_string('successpercent', 'local_yetkinlik') . ' (%)',
         ];
-         
 
-        // AMD modülündeki ilgili fonksiyonu çağır.
+        // Call relevant function in AMD module.
         $PAGE->requires->data_for_js('examData', $chartparams);
         $PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initStudentExam', [$chartparams]);
-
     } else {
         echo $OUTPUT->notification(get_string('noexamdata', 'local_yetkinlik'), 'info');
     }
