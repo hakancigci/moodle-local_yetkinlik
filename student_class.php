@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Öğrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
+ * Oğrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
  * * Bu sayfa, öğrencinin sınav başarılarını kurs ve sınıf ortalamalarıyla
  * karşılaştırarak hem dinamik bir tablo hem de Chart.js grafiği sunar.
  *
@@ -77,7 +77,7 @@ if (empty($coursedata)) {
         $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
     }
 
-    // Öğrencinin Kendi Verisi.
+    // Oğrencinin Kendi Verisi.
     $studentsql = str_replace("GROUP BY c.id, c.shortname", "AND quiza.userid = :userid GROUP BY c.id", $coursesql);
     $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
 
@@ -118,7 +118,7 @@ if (empty($coursedata)) {
     echo '</tbody></table>';
 
     // 5. Grafik Alanı (Canvas).
-    // ÖNEMLİ: Grafik tetiklenmeden önce DOM'da hazır olmalıdır.
+    // ONEMLİ: Grafik tetiklenmeden önce DOM'da hazır olmalıdır.
     echo html_writer::div(
         '<canvas id="studentClassChart"></canvas>', 
         'card mt-4 p-4 shadow-sm bg-light', 
