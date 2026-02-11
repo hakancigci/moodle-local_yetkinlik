@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Öğrenci Sınav Yetkinlik Analiz Raporu.
+ * Orenci Sınav Yetkinlik Analiz Raporu.
  * * Bu dosya öğrencinin seçtiği sınava göre yetkinlik başarısını raporlar.
  *
  * @package    local_yetkinlik
@@ -46,7 +46,7 @@ $PAGE->set_pagelayout('course');
 echo $OUTPUT->header();
 
 // --- 1. SINAV SEÇİM FORMU ---
-// Öğrencinin bu kursta tamamladığı sınavları getir.
+// Oğrencinin bu kursta tamamladığı sınavları getir.
 $quizzes = $DB->get_records_sql("
     SELECT DISTINCT q.id, q.name
       FROM {quiz} q
