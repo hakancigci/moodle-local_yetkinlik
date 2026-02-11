@@ -10,6 +10,9 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Student Competency Performance Timeline Report.
@@ -151,7 +154,7 @@ echo html_writer::div(
 $chartparams = [
     'labels'       => $periods,
     'datasets'     => $datasets,
-    'successLabel' => get_string('successrate', 'local_yetkinlik')
+    'successLabel' => get_string('successrate', 'local_yetkinlik'),
 ];
 
 $PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initTimeline', [$chartparams]);
