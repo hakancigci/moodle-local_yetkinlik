@@ -10,15 +10,9 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Student Competency Performance Timeline Report.
- *
- * This page displays a line chart showing the competency performance
- * of a student over a specific period of time using Chart.js.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -27,7 +21,7 @@
 
 require_once(__DIR__ . '/../../config.php');
 
-// 1. Parameters and security checks.
+// 1. Parametreler ve güvenlik kontrolleri.
 $courseid = required_param('courseid', PARAM_INT);
 $days     = optional_param('days', 90, PARAM_INT);
 
@@ -38,7 +32,7 @@ global $USER, $DB, $PAGE, $OUTPUT;
 $userid = $USER->id;
 $context = context_course::instance($courseid);
 
-// 2. Page configuration.
+// 2. Sayfa yapılandırması.
 $PAGE->set_url('/local/yetkinlik/timeline.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('timelineheading', 'local_yetkinlik'));
@@ -47,7 +41,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// 3. SQL Query preparation.
+// 3. SQL Sorgusu.
 $where = "quiz.course = :courseid AND u.id = :userid";
 $params = ['courseid' => $courseid, 'userid' => $userid];
 
@@ -86,12 +80,12 @@ ORDER BY period ASC
 
 $rows = $DB->get_records_sql($sql, $params);
 
-// 4. Processing raw data.
+// 4. Veri işleme.
 $data = [];
 $periods = [];
 
 foreach ($rows as $r) {
-    $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
+    $rate = $r->attempts ? round(($r->correct / $r->attempts) * 100, 1) : 0;
     $data[$r->shortname][$r->period] = $rate;
     $periods[$r->period] = true;
 }
@@ -99,7 +93,7 @@ foreach ($rows as $r) {
 $periods = array_keys($periods);
 sort($periods);
 
-// 5. Preparing datasets for the chart.
+// 5. Grafik için Dataset hazırlığı.
 $datasets = [];
 $colors = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00897b'];
 $i = 0;
@@ -107,7 +101,7 @@ $i = 0;
 foreach ($data as $comp => $vals) {
     $line = [];
     foreach ($periods as $p) {
-        $line[] = isset($vals[$p]) ? $vals[$p] : 0;
+        $line[] = isset($vals[$p]) ? (float)$vals[$p] : 0;
     }
     $datasets[] = [
         'label' => $comp,
@@ -115,13 +109,13 @@ foreach ($data as $comp => $vals) {
         'borderColor' => $colors[$i % count($colors)],
         'backgroundColor' => $colors[$i % count($colors)],
         'fill' => false,
-        'tension' => 0.1,
+        'tension' => 0.3,
     ];
     $i++;
 }
 
-// 6. UI Components.
-echo html_writer::start_tag('div', ['class' => 'card mb-4']);
+// 6. Filtreleme Formu (UI).
+echo html_writer::start_tag('div', ['class' => 'card mb-4 shadow-sm']);
 echo html_writer::start_tag('div', ['class' => 'card-body']);
 
 $formurl = new moodle_url('/local/yetkinlik/timeline.php');
@@ -146,51 +140,20 @@ echo html_writer::end_tag('form');
 echo html_writer::end_tag('div');
 echo html_writer::end_tag('div');
 
-// 7. Chart container and JavaScript.
+// 7. Grafik Alanı.
 echo html_writer::div(
-    html_writer::tag('canvas', '', ['id' => 'timeline']),
-    'chart-container',
-    ['style' => 'position: relative; height:400px; width:100%']
+    '<canvas id="timeline"></canvas>',
+    'card p-4 shadow-sm bg-light',
+    ['style' => 'height:450px; width:100%;']
 );
 
-$labelsjs = json_encode($periods);
-$datasetsjs = json_encode($datasets);
-$successlabel = get_string('successrate', 'local_yetkinlik');
+// 8. AMD Modülünü Çağırma.
+$chartparams = [
+    'labels'       => $periods,
+    'datasets'     => $datasets,
+    'successLabel' => get_string('successrate', 'local_yetkinlik')
+];
 
-// Injecting Chart.js and initialization script.
-$PAGE->requires->js_plugin_custom('https://cdn.jsdelivr.net/npm/chart.js');
-
-$chartinit = "
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('timeline').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: $labelsjs,
-            datasets: $datasetsjs
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: '$successlabel (%)'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-});";
-
-$PAGE->requires->js_init_code($chartinit);
+$PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initTimeline', [$chartparams]);
 
 echo $OUTPUT->footer();
