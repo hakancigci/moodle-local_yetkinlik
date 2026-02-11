@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Student Comparison Report (Fully Internationalized).
+ * Öğrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
+ * * Bu sayfa, öğrencinin sınav başarılarını kurs ve sınıf ortalamalarıyla
+ * karşılaştırarak hem dinamik bir tablo hem de Chart.js grafiği sunar.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -24,16 +26,17 @@
 
 require_once(__DIR__ . '/../../config.php');
 
+global $DB, $USER, $PAGE, $OUTPUT;
+
+// 1. Parametreleri al ve kurs bağlamını (context) doğrula.
 $courseid = required_param('courseid', PARAM_INT);
 $course   = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 $context  = context_course::instance($courseid);
 
-// Güvenlik ve Kurs Kaydı Kontrolü.
+// Güvenlik kontrolü: Kullanıcı kursa kayıtlı mı?
 require_login($course);
 
-global $DB, $USER, $PAGE, $OUTPUT;
-
-// Sayfa Yapılandırması.
+// 2. Sayfa Yapılandırması (Moodle Standartları).
 $PAGE->set_url('/local/yetkinlik/student_class.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('studentanalysis', 'local_yetkinlik'));
@@ -42,7 +45,8 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// 1. VERİ SORGULARI.
+// 3. Veri Sorguları (SQL).
+// Kurs Genel Ortalaması.
 $coursesql = "SELECT c.id, c.shortname,
                       CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
                       CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
@@ -62,64 +66,22 @@ $coursesql = "SELECT c.id, c.shortname,
 
 $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid]);
 
-$classdata = [];
-$studentdata = [];
-
-if (!empty($coursedata)) {
-    // Sınıf Ortalaması (Departman bazlı).
-    if (!empty($USER->department)) {
-        $classsql = "SELECT c.id,
-                            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                            CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-                     FROM {quiz_attempts} quiza
-                     JOIN {user} u ON quiza.userid = u.id
-                     JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                     JOIN {competency} c ON c.id = m.competencyid
-                     JOIN (
-                         SELECT MAX(fraction) AS fraction, questionattemptid
-                         FROM {question_attempt_steps}
-                         GROUP BY questionattemptid
-                     ) qas ON qas.questionattemptid = qa.id
-                     WHERE quiz.course = :courseid AND u.department = :dept AND quiza.state = 'finished'
-                     GROUP BY c.id";
-        $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
-    }
-
-    // Ogrencinin Kendi Verisi.
-    $studentsql = "SELECT c.id,
-                          CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                          CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-                    FROM {quiz_attempts} quiza
-                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                    JOIN {competency} c ON c.id = m.competencyid
-                    JOIN (
-                        SELECT MAX(fraction) AS fraction, questionattemptid
-                        FROM {question_attempt_steps}
-                        GROUP BY questionattemptid
-                    ) qas ON qas.questionattemptid = qa.id
-                    WHERE quiz.course = :courseid AND quiza.userid = :userid AND quiza.state = 'finished'
-                    GROUP BY c.id";
-    $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
-}
-
-// 2. EKRAN ÇIKTISI.
 if (empty($coursedata)) {
     echo $OUTPUT->notification(get_string('nodatafound', 'local_yetkinlik'), 'info');
 } else {
-    // Bilgi Kutusu.
-    $infotext = get_string('compareinfo', 'local_yetkinlik');
+    // Sınıf (Departman) Ortalaması.
+    $classdata = [];
     if (!empty($USER->department)) {
-        $infotext .= ' ' . get_string('classinfo', 'local_yetkinlik', $USER->department);
+        $classsql = str_replace("GROUP BY c.id, c.shortname", "AND u.department = :dept GROUP BY c.id", $coursesql);
+        $classsql = str_replace("FROM {quiz_attempts} quiza", "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $classsql);
+        $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
     }
-    echo html_writer::div($infotext, 'alert alert-info border-0 shadow-sm mb-4');
 
-    // Tablo.
+    // Öğrencinin Kendi Verisi.
+    $studentsql = str_replace("GROUP BY c.id, c.shortname", "AND quiza.userid = :userid GROUP BY c.id", $coursesql);
+    $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
+
+    // 4. Tablo Çıktısı.
     echo html_writer::start_tag('table', ['class' => 'generaltable table-hover mt-3 shadow-sm', 'style' => 'width:100%']);
     echo '<thead><tr>';
     echo html_writer::tag('th', get_string('competencyname', 'local_yetkinlik'));
@@ -128,18 +90,14 @@ if (empty($coursedata)) {
     echo html_writer::tag('th', get_string('myavg', 'local_yetkinlik'), ['class' => 'text-center']);
     echo '</tr></thead><tbody>';
 
-    $labels = [];
-    $courserates = [];
-    $classrates = [];
-    $myrates = [];
+    $labels = []; $courserates = []; $classrates = []; $myrates = [];
 
     foreach ($coursedata as $cid => $c) {
         $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts)
-            ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
-        $myrate     = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts)
-            ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
+        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+        $myrate     = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
+        // Karşılaştırmalı renklendirme.
         $colorclass = ($myrate >= $courserate) ? 'text-success' : 'text-danger';
 
         echo '<tr>';
@@ -159,73 +117,32 @@ if (empty($coursedata)) {
     }
     echo '</tbody></table>';
 
-    // Grafik alanı.
-    echo html_writer::div('<canvas id="compareChart" height="120"></canvas>', 'card mt-4 p-4 shadow-sm border-0 bg-light');
+    // 5. Grafik Alanı (Canvas).
+    // ÖNEMLİ: Grafik tetiklenmeden önce DOM'da hazır olmalıdır.
+    echo html_writer::div(
+        '<canvas id="studentClassChart"></canvas>', 
+        'card mt-4 p-4 shadow-sm bg-light', 
+        ['style' => 'height:400px; min-height:400px; width:100%;']
+    );
 
-    // JavaScript verilerini önceden hazırlıyoruz.
-    $labelsjson = json_encode($labels);
-    $courseratesjson = json_encode($courserates);
-    $classratesjson = json_encode($classrates);
-    $myratesjson = json_encode($myrates);
-    $courseavglabel = get_string('courseavg', 'local_yetkinlik');
-    $classavglabel = get_string('classavg', 'local_yetkinlik');
-    $myavglabel = get_string('myavg', 'local_yetkinlik');
-    ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get chart context.
-    var ctx = document.getElementById('compareChart').getContext('2d');
-    
-    // Initialize comparison chart.
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: <?php echo $labelsjson; ?>,
-            datasets: [
-                {
-                    label: '<?php echo $courseavglabel; ?>',
-                    data: <?php echo $courseratesjson; ?>,
-                    backgroundColor: 'rgba(156, 39, 176, 0.4)',
-                    borderRadius: 5
-                },
-                {
-                    label: '<?php echo $classavglabel; ?>',
-                    data: <?php echo $classratesjson; ?>,
-                    backgroundColor: 'rgba(76, 175, 80, 0.4)',
-                    borderRadius: 5
-                },
-                {
-                    label: '<?php echo $myavglabel; ?>',
-                    data: <?php echo $myratesjson; ?>,
-                    backgroundColor: 'rgba(33, 150, 243, 0.8)',
-                    borderColor: '#1976d2',
-                    borderWidth: 1,
-                    borderRadius: 5
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        // Add percentage sign to ticks.
-                        callback: function(value) {
-                            return '%' + value;
-                        }
-                    }
-                }
-            }
-        }
-    });
-});
-</script>
+    // 6. JavaScript Hazırlığı ve AMD Çağrısı.
+    $chartparams = [
+        'labels'     => $labels,
+        'courseData' => $courserates,
+        'classData'  => $classrates,
+        'myData'     => $myrates,
+        'labelNames' => [
+            'course' => get_string('courseavg', 'local_yetkinlik'),
+            'class'  => get_string('classavg', 'local_yetkinlik'),
+            'my'     => get_string('myavg', 'local_yetkinlik')
+        ]
+    ];
 
-    <?php
+    // Veriyi data_for_js ile global konfigürasyona güvenli bir şekilde aktaralım.
+    $PAGE->requires->data_for_js('chartData', $chartparams);
+
+    // AMD modülünü tetikle ve veriyi parametre olarak gönder.
+    $PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initStudentClass', [$chartparams]);
 }
 
-// Footer output.
 echo $OUTPUT->footer();
