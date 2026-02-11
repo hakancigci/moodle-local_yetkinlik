@@ -1,24 +1,39 @@
 <?php
-// Öğrenci Karşılaştırma Raporu.
-// Bu dosya öğrenci yetkinliklerini ders ve sınıf ortalamalarıyla karşılaştırır.
-// @package    local_yetkinlik
-// @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
-// @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-// Moodle ana yapılandırma dosyasını yükle.
+/**
+ * Student Comparison Report (Fully Internationalized).
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 require_once(__DIR__ . '/../../config.php');
-
-// Global nesne tanımlamaları ve girdi parametreleri.
-global $DB, $USER, $PAGE, $OUTPUT;
 
 $courseid = required_param('courseid', PARAM_INT);
 $course   = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 $context  = context_course::instance($courseid);
 
-// Güvenlik kontrolü ve kurs kaydı doğrulaması.
+// Güvenlik ve Kurs Kaydı Kontrolü.
 require_login($course);
 
-// Sayfa URL ve başlık yapılandırması.
+global $DB, $USER, $PAGE, $OUTPUT;
+
+// Sayfa Yapılandırması.
 $PAGE->set_url('/local/yetkinlik/student_class.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('studentanalysis', 'local_yetkinlik'));
@@ -27,23 +42,23 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// Veri tabanı üzerinden yetkinlik puanlarını hesaplayan SQL sorgusu.
+// 1. VERİ SORGULARI.
 $coursesql = "SELECT c.id, c.shortname,
-                     CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                     CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-              FROM {quiz_attempts} quiza
-              JOIN {quiz} quiz ON quiz.id = quiza.quiz
-              JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-              JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-              JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-              JOIN {competency} c ON c.id = m.competencyid
-              JOIN (
-                  SELECT MAX(fraction) AS fraction, questionattemptid
-                  FROM {question_attempt_steps}
-                  GROUP BY questionattemptid
-              ) qas ON qas.questionattemptid = qa.id
-              WHERE quiz.course = :courseid AND quiza.state = 'finished'
-              GROUP BY c.id, c.shortname";
+                      CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+                      CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+               FROM {quiz_attempts} quiza
+               JOIN {quiz} quiz ON quiz.id = quiza.quiz
+               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+               JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+               JOIN {competency} c ON c.id = m.competencyid
+               JOIN (
+                   SELECT MAX(fraction) AS fraction, questionattemptid
+                   FROM {question_attempt_steps}
+                   GROUP BY questionattemptid
+               ) qas ON qas.questionattemptid = qa.id
+               WHERE quiz.course = :courseid AND quiza.state = 'finished'
+               GROUP BY c.id, c.shortname";
 
 $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid]);
 
@@ -51,7 +66,7 @@ $classdata = [];
 $studentdata = [];
 
 if (!empty($coursedata)) {
-    // Sınıf bazlı ortalamaların departmana göre çekilmesi.
+    // Sınıf Ortalaması (Departman bazlı).
     if (!empty($USER->department)) {
         $classsql = "SELECT c.id,
                             CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
@@ -73,7 +88,7 @@ if (!empty($coursedata)) {
         $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
     }
 
-    // Aktif öğrencinin kendi performans verileri.
+    // Ogrencinin Kendi Verisi.
     $studentsql = "SELECT c.id,
                           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
                           CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
@@ -93,18 +108,18 @@ if (!empty($coursedata)) {
     $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
 }
 
-// Görsel raporlama ve tablo çıktısı.
+// 2. EKRAN ÇIKTISI.
 if (empty($coursedata)) {
     echo $OUTPUT->notification(get_string('nodatafound', 'local_yetkinlik'), 'info');
 } else {
-    // Bilgilendirme kutusu.
+    // Bilgi Kutusu.
     $infotext = get_string('compareinfo', 'local_yetkinlik');
     if (!empty($USER->department)) {
         $infotext .= ' ' . get_string('classinfo', 'local_yetkinlik', $USER->department);
     }
     echo html_writer::div($infotext, 'alert alert-info border-0 shadow-sm mb-4');
 
-    // Karşılaştırmalı veri tablosu oluşturma.
+    // Tablo.
     echo html_writer::start_tag('table', ['class' => 'generaltable table-hover mt-3 shadow-sm', 'style' => 'width:100%']);
     echo '<thead><tr>';
     echo html_writer::tag('th', get_string('competencyname', 'local_yetkinlik'));
@@ -144,10 +159,10 @@ if (empty($coursedata)) {
     }
     echo '</tbody></table>';
 
-    // Grafik alanı için canvas oluşturulması.
+    // Grafik alanı.
     echo html_writer::div('<canvas id="compareChart" height="120"></canvas>', 'card mt-4 p-4 shadow-sm border-0 bg-light');
 
-    // JavaScript verilerinin PHP üzerinden JSON formatına dönüştürülmesi.
+    // JavaScript verilerini önceden hazırlıyoruz.
     $labelsjson = json_encode($labels);
     $courseratesjson = json_encode($courserates);
     $classratesjson = json_encode($classrates);
@@ -156,39 +171,33 @@ if (empty($coursedata)) {
     $classavglabel = get_string('classavg', 'local_yetkinlik');
     $myavglabel = get_string('myavg', 'local_yetkinlik');
     ?>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Sayfa yüklendiğinde grafiği başlatan fonksiyon.
 document.addEventListener('DOMContentLoaded', function() {
+    // Get chart context.
     var ctx = document.getElementById('compareChart').getContext('2d');
+    
+    // Initialize comparison chart.
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: <?php // Grafik etiketleri.
-                echo $labelsjson; ?>,
+            labels: <?php echo $labelsjson; ?>,
             datasets: [
                 {
-                    label: '<?php // Kurs ortalaması etiketi.
-                        echo $courseavglabel; ?>',
-                    data: <?php // Kurs ortalaması verisi.
-                        echo $courseratesjson; ?>,
+                    label: '<?php echo $courseavglabel; ?>',
+                    data: <?php echo $courseratesjson; ?>,
                     backgroundColor: 'rgba(156, 39, 176, 0.4)',
                     borderRadius: 5
                 },
                 {
-                    label: '<?php // Sınıf ortalaması etiketi.
-                        echo $classavglabel; ?>',
-                    data: <?php // Sınıf ortalaması verisi.
-                        echo $classratesjson; ?>,
+                    label: '<?php echo $classavglabel; ?>',
+                    data: <?php echo $classratesjson; ?>,
                     backgroundColor: 'rgba(76, 175, 80, 0.4)',
                     borderRadius: 5
                 },
                 {
-                    label: '<?php // Kişisel ortalama etiketi.
-                        echo $myavglabel; ?>',
-                    data: <?php // Kişisel ortalama verisi.
-                        echo $myratesjson; ?>,
+                    label: '<?php echo $myavglabel; ?>',
+                    data: <?php echo $myratesjson; ?>,
                     backgroundColor: 'rgba(33, 150, 243, 0.8)',
                     borderColor: '#1976d2',
                     borderWidth: 1,
@@ -203,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
+                        // Add percentage sign to ticks.
                         callback: function(value) {
                             return '%' + value;
                         }
@@ -217,5 +227,5 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php
 }
 
-// Sayfa altbilgisini yazdır ve sonlandır.
+// Footer output.
 echo $OUTPUT->footer();
