@@ -1,15 +1,7 @@
-/**
- * Yetkinlik Raporları Görselleştirme Modülü.
- * @module local_yetkinlik/visualizer
- */
 define(['jquery', 'core/chartjs'], function($, Chart) {
     "use strict";
 
     return {
-        /**
-         * 1. Sınıf Karşılaştırma Grafiği
-         * @param {Object|Array} params Grafik verileri ve etiketleri.
-         */
         initStudentClass: function(params) {
             var data = Array.isArray(params) ? params[0] : params;
             var canvas = document.getElementById('studentClassChart');
@@ -27,19 +19,15 @@ define(['jquery', 'core/chartjs'], function($, Chart) {
                 data: {
                     labels: data.labels,
                     datasets: [
-                        { label: data.labelNames.course, data: data.courseData, backgroundColor: 'rgba(156, 39, 176, 0.4)' },
-                        { label: data.labelNames.class, data: data.classData, backgroundColor: 'rgba(76, 175, 80, 0.4)' },
-                        { label: data.labelNames.my, data: data.myData, backgroundColor: 'rgba(33, 150, 243, 0.8)' }
+                        {label: data.labelNames.course, data: data.courseData, backgroundColor: 'rgba(156, 39, 176, 0.4)'},
+                        {label: data.labelNames.class, data: data.classData, backgroundColor: 'rgba(76, 175, 80, 0.4)'},
+                        {label: data.labelNames.my, data: data.myData, backgroundColor: 'rgba(33, 150, 243, 0.8)'}
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+                options: {responsive: true, maintainAspectRatio: false, scales: {y: {beginAtZero: true, max: 100}}}
             });
         },
 
-        /**
-         * 2. Sınav Analiz Grafiği
-         * @param {Object|Array} params Grafik verileri ve etiketleri.
-         */
         initStudentExam: function(params) {
             var data = Array.isArray(params) ? params[0] : params;
             var canvas = document.getElementById('studentexamchart');
@@ -62,14 +50,10 @@ define(['jquery', 'core/chartjs'], function($, Chart) {
                         backgroundColor: data.bgColors
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+                options: {responsive: true, maintainAspectRatio: false, scales: {y: {beginAtZero: true, max: 100}}}
             });
         },
 
-        /**
-         * 3. Zaman Çizelgesi Grafiği
-         * @param {Object|Array} params Grafik verileri ve etiketleri.
-         */
         initTimeline: function(params) {
             var data = Array.isArray(params) ? params[0] : params;
             var canvas = document.getElementById('timeline');
@@ -92,9 +76,9 @@ define(['jquery', 'core/chartjs'], function($, Chart) {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, max: 100, title: { display: true, text: data.successLabel + ' (%)' } }
+                        y: {beginAtZero: true, max: 100, title: {display: true, text: data.successLabel + ' (%)'}}
                     },
-                    plugins: { legend: { position: 'bottom' } }
+                    plugins: {legend: {position: 'bottom'}}
                 }
             });
         }
