@@ -15,25 +15,30 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Timeline report for competency development.
+ * Öğrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
+ * * Bu sayfa, öğrencinin sınav başarılarını kurs ve sınıf ortalamalarıyla
+ * karşılaştırarak hem dinamik bir tablo hem de Chart.js grafiği sunar.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 require_once(__DIR__ . '/../../config.php');
 
+// Gerekli parametrelerin ve filtrelerin alınması.
 $courseid = required_param('courseid', PARAM_INT);
-$days     = optional_param('days', 90, PARAM_INT); // 30 / 90 / 0 (all).
+$days     = optional_param('days', 90, PARAM_INT);
 
+// Kullanıcı oturumu ve kurs erişim kontrolü.
 require_login($courseid);
 
+// Global nesne tanımlamaları.
 global $USER, $DB, $PAGE, $OUTPUT;
 
 $userid = $USER->id;
 $context = context_course::instance($courseid);
 
+// Sayfa URL ve tema yapılandırması.
 $PAGE->set_url('/local/yetkinlik/timeline.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('timelineheading', 'local_yetkinlik'));
@@ -42,7 +47,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// Filters and SQL preparation.
+// Sorgu filtreleri ve SQL hazırlık aşaması.
 $where = "quiz.course = :courseid AND u.id = :userid";
 $params = ['courseid' => $courseid, 'userid' => $userid];
 
@@ -51,6 +56,7 @@ if ($days > 0) {
     $params['days'] = $days;
 }
 
+// Zaman bazlı yetkinlik performansını getiren SQL sorgusu.
 $sql = "
 SELECT
   c.shortname,
@@ -81,12 +87,11 @@ ORDER BY period ASC
 
 $rows = $DB->get_records_sql($sql, $params);
 
-// Process the data rows.
+// Ham verilerin işlenmesi ve diziye aktarılması.
 $data = [];
 $periods = [];
 
 foreach ($rows as $r) {
-    // Number_format with one decimal place.
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
     $data[$r->shortname][$r->period] = $rate;
     $periods[$r->period] = true;
@@ -95,6 +100,7 @@ foreach ($rows as $r) {
 $periods = array_keys($periods);
 sort($periods);
 
+// Grafik için veri setlerinin hazırlanması.
 $datasets = [];
 $colors = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00897b'];
 $i = 0;
@@ -115,7 +121,7 @@ foreach ($data as $comp => $vals) {
     $i++;
 }
 
-// Prepare data for JS to avoid "Missing docblock" errors.
+// JavaScript tarafında kullanılacak dil dizgileri ve veriler.
 $labelsjs = json_encode($periods);
 $datasetsjs = json_encode($datasets);
 $successlabel = get_string('successrate', 'local_yetkinlik');
@@ -125,26 +131,32 @@ $last90days = get_string('last90days', 'local_yetkinlik');
 $alltime = get_string('alltime', 'local_yetkinlik');
 $showlabel = get_string('show', 'local_yetkinlik');
 
-// Render the UI.
+// Kullanıcı arayüzü form alanı.
 ?>
 
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="form-inline">
-            <input type="hidden" name="courseid" value="<?php echo $courseid; ?>">
-            <label class="mr-2" for="days"><?php echo $filterlabel; ?></label>
+            <input type="hidden" name="courseid" value="<?php // Kurs ID verisi.
+                echo $courseid; ?>">
+            <label class="mr-2" for="days"><?php // Filtre etiketi.
+                echo $filterlabel; ?></label>
             <select name="days" id="days" class="form-control mr-2">
-                <option value="30" <?php echo ($days == 30) ? 'selected' : ''; ?>>
+                <option value="30" <?php // 30 Gün seçeneği.
+                    echo ($days == 30) ? 'selected' : ''; ?>>
                     <?php echo $last30days; ?>
                 </option>
-                <option value="90" <?php echo ($days == 90) ? 'selected' : ''; ?>>
+                <option value="90" <?php // 90 Gün seçeneği.
+                    echo ($days == 90) ? 'selected' : ''; ?>>
                     <?php echo $last90days; ?>
                 </option>
-                <option value="0" <?php echo ($days == 0) ? 'selected' : ''; ?>>
+                <option value="0" <?php // Tüm zamanlar seçeneği.
+                    echo ($days == 0) ? 'selected' : ''; ?>>
                     <?php echo $alltime; ?>
                 </option>
             </select>
-            <button type="submit" class="btn btn-primary"><?php echo $showlabel; ?></button>
+            <button type="submit" class="btn btn-primary"><?php // Göster butonu.
+                echo $showlabel; ?></button>
         </form>
     </div>
 </div>
@@ -155,14 +167,17 @@ $showlabel = get_string('show', 'local_yetkinlik');
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Sayfa yüklendiğinde zaman çizelgesi grafiğini başlat.
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('timeline').getContext('2d');
         
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: <?php echo $labelsjs; ?>,
-                datasets: <?php echo $datasetsjs; ?>
+                labels: <?php // Grafik zaman etiketleri.
+                    echo $labelsjs; ?>,
+                datasets: <?php // Grafik veri setleri.
+                    echo $datasetsjs; ?>
             },
             options: {
                 responsive: true,
@@ -173,7 +188,8 @@ $showlabel = get_string('show', 'local_yetkinlik');
                         max: 100,
                         title: {
                             display: true,
-                            text: '<?php echo $successlabel; ?> (%)'
+                            text: '<?php // Başarı oranı metni.
+                                echo $successlabel; ?> (%)'
                         }
                     }
                 },
@@ -188,5 +204,5 @@ $showlabel = get_string('show', 'local_yetkinlik');
 </script>
 
 <?php
-// Footer section.
+// Sayfa altbilgisini yazdır.
 echo $OUTPUT->footer();
