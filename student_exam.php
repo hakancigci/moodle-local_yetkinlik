@@ -46,7 +46,7 @@ $PAGE->set_pagelayout('course');
 
 echo $OUTPUT->header();
 
-// --- 1. EXAM SELECTION FORM ---.
+// 1. EXAM SELECTION FORM ---.
 // Get the exams completed by the student in this course.
 $quizzes = $DB->get_records_sql("
     SELECT DISTINCT q.id, q.name
@@ -75,7 +75,7 @@ echo html_writer::end_tag('form');
 echo html_writer::end_tag('div');
 echo html_writer::end_tag('div');
 
-// --- 2. DATA CALCULATION AND VIEW ---.
+// 2. DATA CALCULATION AND VIEW ---.
 if ($quizid) {
     $sql = "
     SELECT
@@ -144,7 +144,7 @@ if ($quizid) {
         }
         echo '</tbody></table>';
 
-        // --- 3. CHART AREA AND JS CALL ---.
+        // 3. CHART AREA AND JS CALL ---.
         echo html_writer::div(
             '<canvas id="studentexamchart"></canvas>',
             'card mt-4 p-4 shadow-sm bg-light',
