@@ -8,14 +8,19 @@ define(['jquery', 'core/chartjs'], function($, Chart) {
     return {
         /**
          * 1. Sınıf Karşılaştırma Grafiği
+         * @param {Object|Array} params Grafik verileri ve etiketleri.
          */
         initStudentClass: function(params) {
             var data = Array.isArray(params) ? params[0] : params;
             var canvas = document.getElementById('studentClassChart');
-            if (!canvas || !data) return;
+            if (!canvas || !data) {
+                return;
+            }
 
             var existingChart = Chart.getChart(canvas);
-            if (existingChart) { existingChart.destroy(); }
+            if (existingChart) {
+                existingChart.destroy();
+            }
 
             new Chart(canvas.getContext('2d'), {
                 type: 'bar',
@@ -33,14 +38,19 @@ define(['jquery', 'core/chartjs'], function($, Chart) {
 
         /**
          * 2. Sınav Analiz Grafiği
+         * @param {Object|Array} params Grafik verileri ve etiketleri.
          */
         initStudentExam: function(params) {
             var data = Array.isArray(params) ? params[0] : params;
             var canvas = document.getElementById('studentexamchart');
-            if (!canvas || !data) return;
+            if (!canvas || !data) {
+                return;
+            }
 
             var existingChart = Chart.getChart(canvas);
-            if (existingChart) { existingChart.destroy(); }
+            if (existingChart) {
+                existingChart.destroy();
+            }
 
             new Chart(canvas.getContext('2d'), {
                 type: 'bar',
@@ -58,14 +68,19 @@ define(['jquery', 'core/chartjs'], function($, Chart) {
 
         /**
          * 3. Zaman Çizelgesi Grafiği
+         * @param {Object|Array} params Grafik verileri ve etiketleri.
          */
         initTimeline: function(params) {
             var data = Array.isArray(params) ? params[0] : params;
             var canvas = document.getElementById('timeline');
-            if (!canvas || !data) return;
+            if (!canvas || !data) {
+                return;
+            }
 
             var existingChart = Chart.getChart(canvas);
-            if (existingChart) { existingChart.destroy(); }
+            if (existingChart) {
+                existingChart.destroy();
+            }
 
             new Chart(canvas.getContext('2d'), {
                 type: 'line',
