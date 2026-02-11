@@ -110,6 +110,7 @@ $string['student'] = 'Student';
 $string['studentanalysis'] = 'My Competency Comparison Report';
 $string['studentclass'] = 'Competency Analysis';
 $string['studentcompetencydetail'] = 'Student Competency Detail';
+$string['studentcompetencyexams'] = 'Student Competency Exams';
 $string['studentexam'] = 'My Exam Competency Analysis';
 $string['studentpdfreport'] = 'Competency Report';
 $string['studentreport'] = 'My Competency Report';
