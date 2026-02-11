@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Öğrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
+ * Ogrenci Karşılaştırmalı Yetkinlik Analiz Raporu.
  * * Bu sayfa, öğrencinin sınav başarılarını kurs ve sınıf ortalamalarıyla
  * karşılaştırarak hem dinamik bir tablo hem de Chart.js grafiği sunar.
  *
