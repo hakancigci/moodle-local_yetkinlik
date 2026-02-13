@@ -108,6 +108,7 @@ $string['structured_orange'] = '{$a->shortname}: Başarı oranı %{$a->rate}. K�
 $string['structured_red'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Henüz yeterli gelişim sağlanamadı. Öneri: Konuyu tekrar et ve ek kaynaklardan yararlan.';
 $string['student'] = 'Öğrenci';
 $string['studentanalysis'] = 'Kazanım Karşılaştırma Raporum';
+$string['studentavg'] = 'Öğrenci Ortalaması';
 $string['studentclass'] = 'Yetkinlik Durumu';
 $string['studentcompetencydetail'] = 'Öğrenci Yetkinlik Detayı';
 $string['studentcompetencyexams'] = 'Yetkinlik Bazlı Sınav Analizim';
