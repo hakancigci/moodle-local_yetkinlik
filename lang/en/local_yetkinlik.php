@@ -108,6 +108,7 @@ $string['structured_orange'] = '{$a->shortname}: Success rate %{$a->rate}. Parti
 $string['structured_red'] = '{$a->shortname}: Success rate %{$a->rate}. Not enough progress yet. Recommendation: review and use extra resources.';
 $string['student'] = 'Student';
 $string['studentanalysis'] = 'My Competency Comparison Report';
+$string['studentavg'] = 'Student average';
 $string['studentclass'] = 'Competency Analysis';
 $string['studentcompetencydetail'] = 'Student Competency Detail';
 $string['studentcompetencyexams'] = 'Student Competency Exams';
