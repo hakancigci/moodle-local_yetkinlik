@@ -104,7 +104,7 @@ if (empty($coursedata)) {
             $classdata = $DB->get_records_sql($classsql, [
                 'courseid' => $courseid,
                 'dept' => $userdept,
-                'competencyid' => $competency
+                'competencyid' => $competency,
             ]);
         }
 
@@ -112,7 +112,7 @@ if (empty($coursedata)) {
         $studentdata = $DB->get_records_sql($studentsql, [
             'courseid' => $courseid,
             'userid' => $userid,
-            'competencyid' => $competency
+            'competencyid' => $competency,
         ]);
     }
 
