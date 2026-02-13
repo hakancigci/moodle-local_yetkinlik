@@ -25,51 +25,45 @@
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/forms/selector_form.php');
 
-require_login();
-
 $courseid = required_param('courseid', PARAM_INT);
 $context  = context_course::instance($courseid);
+
+require_login();
 require_capability('moodle/course:view', $context);
 
-global $DB, $CFG, $OUTPUT, $PAGE, $COURSE;
+global $DB, $OUTPUT, $PAGE, $USER;
 
-$COURSE = get_course($courseid);
+$course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
 $PAGE->set_url('/local/yetkinlik/class_report.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
-$PAGE->set_course($COURSE);
+$PAGE->set_course($course);
 $PAGE->set_pagelayout('course');
 $PAGE->set_title(get_string('report_title', 'local_yetkinlik'));
-$PAGE->set_heading($COURSE->fullname . " - " . get_string('report_heading', 'local_yetkinlik'));
+$PAGE->set_heading($course->fullname . " - " . get_string('report_heading', 'local_yetkinlik'));
 
 echo $OUTPUT->header();
 
-// 1. Parametre Yönetimi.
+// 1. Parametre Yönetimi ve Form.
 $userid     = optional_param('userid', 0, PARAM_INT);
 $competency = optional_param('competencyid', 0, PARAM_INT);
 
 $mform = new local_yetkinlik_selector_form(null, ['courseid' => $courseid]);
-
-// Form gönderildiyse değerleri formdan güncelle.
 if ($data = $mform->get_data()) {
     $userid     = $data->userid;
     $competency = $data->competencyid;
 }
-
-// Formun seçili kalmasını sağla.
 $mform->set_data(['userid' => $userid, 'competencyid' => $competency]);
 
-// PDF Butonu.
+// Üst Butonlar Grubu.
+echo html_writer::start_div('d-flex justify-content-between align-items-center mb-3');
 $pdfurl = new moodle_url('/local/yetkinlik/pdf_report.php', ['courseid' => $courseid]);
-echo html_writer::start_tag('div', ['class' => 'mb-3']);
-echo html_writer::link($pdfurl, 'PDF Rapor Al', ['class' => 'btn btn-secondary', 'target' => '_blank']);
-echo html_writer::end_tag('div');
+echo html_writer::link($pdfurl, get_string('getpdfreport', 'local_yetkinlik'), ['class' => 'btn btn-secondary', 'target' => '_blank']);
+echo html_writer::end_div();
 
 $mform->display();
 
-// 2. Veri Hesaplama.
-
-// Kurs Ortalaması SQL.
+// 2. Veri Sorguları.
 $coursesql = "SELECT c.id, c.shortname,
                      CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
                      CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
@@ -80,139 +74,90 @@ $coursesql = "SELECT c.id, c.shortname,
               JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
               JOIN {competency} c ON c.id = m.competencyid
               JOIN (SELECT MAX(fraction) AS fraction, questionattemptid
-                       FROM {question_attempt_steps}
-                   GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
+                      FROM {question_attempt_steps}
+                  GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
               WHERE quiz.course = :courseid AND quiza.state = 'finished' "
               . ($competency ? " AND c.id = :competencyid " : "") .
               " GROUP BY c.id, c.shortname";
 
 $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid, 'competencyid' => $competency]);
 
-$classdata = [];
-$studentdata = [];
+if (empty($coursedata)) {
+    echo $OUTPUT->notification(get_string('nodatafound', 'local_yetkinlik'), 'info');
+} else {
+    $classdata = [];
+    $studentdata = [];
 
-if ($userid) {
-    // Sınıf (Bölüm) Ortalaması.
-    $userdept = $DB->get_field('user', 'department', ['id' => $userid]);
+    if ($userid) {
+        $userdept = $DB->get_field('user', 'department', ['id' => $userid]);
+        if (!empty($userdept)) {
+            $classsql = str_replace("FROM {quiz_attempts} quiza", "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $coursesql);
+            $classsql = str_replace("WHERE quiz.course", "WHERE u.department = :dept AND quiz.course", $classsql);
+            $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $userdept, 'competencyid' => $competency]);
+        }
 
-    if (!empty($userdept)) {
-        $classsql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
-                            CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
-                     FROM {quiz_attempts} quiza
-                     JOIN {user} u ON quiza.userid = u.id
-                     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                     JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                     JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                     JOIN {competency} c ON c.id = m.competencyid
-                     JOIN (SELECT MAX(fraction) AS fraction, questionattemptid
-                              FROM {question_attempt_steps}
-                          GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
-                     WHERE quiz.course = :courseid AND u.department = :dept AND quiza.state = 'finished' "
-                     . ($competency ? " AND c.id = :competencyid " : "") .
-                     " GROUP BY c.id, c.shortname";
-        $classdata = $DB->get_records_sql($classsql, [
-            'courseid' => $courseid,
-            'dept' => $userdept,
-            'competencyid' => $competency,
-        ]);
+        $studentsql = str_replace("WHERE quiz.course", "WHERE quiza.userid = :userid AND quiz.course", $coursesql);
+        $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $userid, 'competencyid' => $competency]);
     }
 
-    // Bireysel Öğrenci Ortalaması.
-    $studentsql = "SELECT c.id, c.shortname, CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
-                            CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
-                    FROM {quiz_attempts} quiza
-                    JOIN {user} u ON quiza.userid = u.id
-                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                    JOIN {competency} c ON c.id = m.competencyid
-                    JOIN (SELECT MAX(fraction) AS fraction, questionattemptid
-                            FROM {question_attempt_steps}
-                        GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
-                    WHERE quiz.course = :courseid AND u.id = :userid AND quiza.state = 'finished' "
-                    . ($competency ? " AND c.id = :competencyid " : "") .
-                    " GROUP BY c.id, c.shortname";
-    $studentdata = $DB->get_records_sql($studentsql, [
-        'courseid' => $courseid,
-        'userid' => $userid,
-        'competencyid' => $competency,
-    ]);
-}
-
-// 3. Tablo ve Grafik Çıktısı.
-echo html_writer::start_tag('table', ['class' => 'generaltable mt-4', 'style' => 'width:100%']);
-echo html_writer::start_tag('thead');
-echo html_writer::start_tag('tr');
-echo html_writer::tag('th', 'Yetkinlik Adı');
-echo html_writer::tag('th', 'Kurs Ort.');
-echo html_writer::tag('th', 'Sınıf Ort.');
-echo html_writer::tag('th', 'Öğrenci Ort.');
-echo html_writer::end_tag('tr');
-echo html_writer::end_tag('thead');
-echo html_writer::start_tag('tbody');
-
-$labels = [];
-$courserates = [];
-$classrates = [];
-$studentrates = [];
-
-foreach ($coursedata as $cid => $c) {
-    $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-    $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts)
-        ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
-    $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts)
-        ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
-
+    // 3. Tablo Çıktısı.
+    echo html_writer::start_tag('table', ['class' => 'generaltable mt-4 shadow-sm', 'style' => 'width:100%']);
+    echo html_writer::start_tag('thead');
     echo html_writer::start_tag('tr');
-    echo html_writer::tag('td', $c->shortname);
-    echo html_writer::tag('td', '%' . $courserate, ['class' => 'font-weight-bold']);
-    echo html_writer::tag('td', '%' . $classrate, ['class' => 'text-muted']);
-    echo html_writer::tag('td', '%' . $studrate, ['class' => 'text-primary font-weight-bold']);
+    echo html_writer::tag('th', get_string('competencyname', 'local_yetkinlik'));
+    echo html_writer::tag('th', get_string('courseavg', 'local_yetkinlik'), ['class' => 'text-center']);
+    echo html_writer::tag('th', get_string('classavg', 'local_yetkinlik'), ['class' => 'text-center']);
+    echo html_writer::tag('th', get_string('studentavg', 'local_yetkinlik'), ['class' => 'text-center']);
     echo html_writer::end_tag('tr');
+    echo html_writer::end_tag('thead');
+    echo html_writer::start_tag('tbody');
 
-    $labels[] = $c->shortname;
-    $courserates[] = $courserate;
-    $classrates[] = $classrate;
-    $studentrates[] = $studrate;
+    $labels = [];
+    $courserates = [];
+    $classrates = [];
+    $studentrates = [];
+
+    foreach ($coursedata as $cid => $c) {
+        $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
+        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+        $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
+
+        echo html_writer::start_tag('tr');
+        echo html_writer::tag('td', html_writer::tag('strong', $c->shortname));
+        echo html_writer::tag('td', '%' . $courserate, ['class' => 'text-center font-weight-bold']);
+        echo html_writer::tag('td', '%' . $classrate, ['class' => 'text-center text-muted']);
+        echo html_writer::tag('td', '%' . $studrate, ['class' => 'text-center text-primary font-weight-bold']);
+        echo html_writer::end_tag('tr');
+
+        $labels[] = $c->shortname;
+        $courserates[] = $courserate;
+        $classrates[] = $classrate;
+        $studentrates[] = $studrate;
+    }
+    echo html_writer::end_tag('tbody');
+    echo html_writer::end_tag('table');
+
+    // 4. Grafik Alanı (Visualizer.js uyumlu).
+    echo html_writer::div(
+        '<canvas id="studentClassChart"></canvas>',
+        'card mt-4 p-4 shadow-sm bg-light',
+        ['style' => 'height:400px; width:100%;']
+    );
+
+    // 5. Veri Hazırlığı ve AMD Modülü Çağrısı.
+    $chartparams = [
+        'labels'     => $labels,
+        'courseData' => $courserates,
+        'classData'  => $classrates,
+        'myData'     => $studentrates,
+        'labelNames' => [
+            'course' => get_string('courseavg', 'local_yetkinlik'),
+            'class'  => get_string('classavg', 'local_yetkinlik'),
+            'my'     => get_string('studentavg', 'local_yetkinlik'),
+        ],
+    ];
+
+    $PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initStudentClass', [$chartparams]);
 }
-echo html_writer::end_tag('tbody');
-echo html_writer::end_tag('table');
-
-// Grafik Alanı.
-echo html_writer::start_tag('div', ['class' => 'mt-5']);
-echo html_writer::tag('canvas', '', ['id' => 'competencyChart', 'height' => '100']);
-echo html_writer::end_tag('div');
-
-// ChartJS Script.
-$chartjsurl = 'https://cdn.jsdelivr.net/npm/chart.js';
-echo html_writer::script('', $chartjsurl);
-
-$jslabels = json_encode($labels);
-$jscourse = json_encode($courserates);
-$jsclass = json_encode($classrates);
-$jsstudent = json_encode($studentrates);
-
-$script = "
-document.addEventListener('DOMContentLoaded', function() {
-    var ctx = document.getElementById('competencyChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: $jslabels,
-            datasets: [
-                { label: 'Kurs Ort.', data: $jscourse, backgroundColor: 'rgba(156, 39, 176, 0.6)' },
-                { label: 'Sınıf Ort.', data: $jsclass, backgroundColor: 'rgba(76, 175, 80, 0.6)' },
-                { label: 'Öğrenci Ort.', data: $jsstudent, backgroundColor: 'rgba(33, 150, 243, 0.6)' }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: { y: { beginAtZero: true, max: 100 } }
-        }
-    });
-});";
-echo html_writer::script($script);
 
 echo $OUTPUT->footer();
