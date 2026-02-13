@@ -44,7 +44,7 @@ $PAGE->set_heading($course->fullname . " - " . get_string('report_heading', 'loc
 
 echo $OUTPUT->header();
 
-// 1. Parametre Yönetimi ve Form.
+// 1. Parameter Management and Form.
 $userid     = optional_param('userid', 0, PARAM_INT);
 $competency = optional_param('competencyid', 0, PARAM_INT);
 
@@ -55,18 +55,19 @@ if ($data = $mform->get_data()) {
 }
 $mform->set_data(['userid' => $userid, 'competencyid' => $competency]);
 
-// Üst Butonlar Grubu.
+// Upper Buttons Group.
 echo html_writer::start_div('d-flex justify-content-between align-items-center mb-3');
-$pdfurl = new moodle_url('/local/yetkinlik/pdf_report.php', ['courseid' => $courseid]);
+$pdfparams = ['courseid' => $courseid];
+$pdfurl = new moodle_url('/local/yetkinlik/pdf_report.php', $pdfparams);
 echo html_writer::link($pdfurl, get_string('pdfreport', 'local_yetkinlik'), ['class' => 'btn btn-secondary', 'target' => '_blank']);
 echo html_writer::end_div();
 
 $mform->display();
 
-// 2. Veri Sorguları.
+// 2. Data Queries.
 $coursesql = "SELECT c.id, c.shortname,
-                     CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
-                     CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
+                     CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+                     CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
               FROM {quiz_attempts} quiza
               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
@@ -76,9 +77,12 @@ $coursesql = "SELECT c.id, c.shortname,
               JOIN (SELECT MAX(fraction) AS fraction, questionattemptid
                       FROM {question_attempt_steps}
                   GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
-              WHERE quiz.course = :courseid AND quiza.state = 'finished' "
-              . ($competency ? " AND c.id = :competencyid " : "") .
-              " GROUP BY c.id, c.shortname";
+              WHERE quiz.course = :courseid AND quiza.state = 'finished' ";
+
+if ($competency) {
+    $coursesql .= " AND c.id = :competencyid ";
+}
+$coursesql .= " GROUP BY c.id, c.shortname";
 
 $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid, 'competencyid' => $competency]);
 
@@ -91,16 +95,28 @@ if (empty($coursedata)) {
     if ($userid) {
         $userdept = $DB->get_field('user', 'department', ['id' => $userid]);
         if (!empty($userdept)) {
-            $classsql = str_replace("FROM {quiz_attempts} quiza", "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $coursesql);
+            $classsql = str_replace(
+                "FROM {quiz_attempts} quiza",
+                "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id",
+                $coursesql
+            );
             $classsql = str_replace("WHERE quiz.course", "WHERE u.department = :dept AND quiz.course", $classsql);
-            $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $userdept, 'competencyid' => $competency]);
+            $classdata = $DB->get_records_sql($classsql, [
+                'courseid' => $courseid,
+                'dept' => $userdept,
+                'competencyid' => $competency
+            ]);
         }
 
         $studentsql = str_replace("WHERE quiz.course", "WHERE quiza.userid = :userid AND quiz.course", $coursesql);
-        $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $userid, 'competencyid' => $competency]);
+        $studentdata = $DB->get_records_sql($studentsql, [
+            'courseid' => $courseid,
+            'userid' => $userid,
+            'competencyid' => $competency
+        ]);
     }
 
-    // 3. Tablo Çıktısı.
+    // 3. Table Output.
     echo html_writer::start_tag('table', ['class' => 'generaltable mt-4 shadow-sm', 'style' => 'width:100%']);
     echo html_writer::start_tag('thead');
     echo html_writer::start_tag('tr');
@@ -119,8 +135,10 @@ if (empty($coursedata)) {
 
     foreach ($coursedata as $cid => $c) {
         $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ? round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
-        $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ? round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
+        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ?
+            round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+        $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ?
+            round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
         echo html_writer::start_tag('tr');
         echo html_writer::tag('td', html_writer::tag('strong', $c->shortname));
@@ -137,14 +155,14 @@ if (empty($coursedata)) {
     echo html_writer::end_tag('tbody');
     echo html_writer::end_tag('table');
 
-    // 4. Grafik Alanı (Visualizer.js uyumlu).
+    // 4. Chart Area (Visualizer.js compatible).
     echo html_writer::div(
         '<canvas id="studentClassChart"></canvas>',
         'card mt-4 p-4 shadow-sm bg-light',
         ['style' => 'height:400px; width:100%;']
     );
 
-    // 5. Veri Hazırlığı ve AMD Modülü Çağrısı.
+    // 5. Data Preparation and AMD Module Call.
     $chartparams = [
         'labels'     => $labels,
         'courseData' => $courserates,
