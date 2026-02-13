@@ -58,7 +58,7 @@ $mform->set_data(['userid' => $userid, 'competencyid' => $competency]);
 // Üst Butonlar Grubu.
 echo html_writer::start_div('d-flex justify-content-between align-items-center mb-3');
 $pdfurl = new moodle_url('/local/yetkinlik/pdf_report.php', ['courseid' => $courseid]);
-echo html_writer::link($pdfurl, get_string('getpdfreport', 'local_yetkinlik'), ['class' => 'btn btn-secondary', 'target' => '_blank']);
+echo html_writer::link($pdfurl, get_string('pdfreport', 'local_yetkinlik'), ['class' => 'btn btn-secondary', 'target' => '_blank']);
 echo html_writer::end_div();
 
 $mform->display();
