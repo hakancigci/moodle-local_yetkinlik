@@ -52,6 +52,7 @@ $string['competencyname'] = 'Competency / Skill';
 $string['correct'] = 'Correct';
 $string['correctcount'] = 'Number of Correct';
 $string['courseavg'] = 'Course Average';
+$string['creation_date'] = 'Creation Date';
 $string['enable_ai'] = 'Enable AI integration';
 $string['enable_ai_desc'] = 'Enable AI-based pedagogical comments. API key and model selection are required below.';
 $string['error_no_enrolment'] = 'You are not enrolled in this course, therefore you cannot view this report.';
