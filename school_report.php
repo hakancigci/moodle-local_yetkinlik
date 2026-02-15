@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * PDF Export for competency.
+ * Competency success report page.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -55,9 +55,9 @@ $PAGE->set_heading($reporttitle);
 echo $OUTPUT->header();
 echo $OUTPUT->heading($reporttitle);
 
-// SQL Sorgusu (Ayn覺 kald覺)...
-$sql = "SELECT c.id, c.shortname, c.description, 
-               CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts, 
+// SQL Sorgusu.
+$sql = "SELECT c.id, c.shortname, c.description,
+               CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
                CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
         FROM {quiz_attempts} quiza
         JOIN {quiz} quiz ON quiz.id = quiza.quiz
@@ -65,7 +65,11 @@ $sql = "SELECT c.id, c.shortname, c.description,
         JOIN {question_attempts} qa ON qa.questionusageid = qu.id
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
-        JOIN (SELECT MAX(fraction) AS fraction, questionattemptid FROM {question_attempt_steps} GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
+        JOIN (
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
+            GROUP BY questionattemptid
+        ) qas ON qas.questionattemptid = qa.id
         $wheresql
         GROUP BY c.id, c.shortname, c.description
         ORDER BY c.shortname ASC";
@@ -80,9 +84,9 @@ if ($rows) {
         get_string('competencyname', 'local_yetkinlik'),
         get_string('questioncount', 'local_yetkinlik'),
         get_string('correctcount', 'local_yetkinlik'),
-        get_string('successrate', 'local_yetkinlik')
+        get_string('successrate', 'local_yetkinlik'),
     ];
-    
+
     foreach ($rows as $r) {
         $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
         $rates[$r->shortname] = $rate;
@@ -93,7 +97,7 @@ if ($rows) {
             format_text($r->description, FORMAT_HTML),
             $r->attempts,
             $r->correct,
-            '<strong>%' . $rate . '</strong>'
+            '<strong>%' . $rate . '</strong>',
         ]);
         $row->attributes['class'] = $rowclass;
         $table->data[] = $row;
@@ -102,14 +106,22 @@ if ($rows) {
     $comment = local_yetkinlik_generate_comment($rates);
     if (!empty($comment)) {
         echo $OUTPUT->box_start('generalbox mb-4');
-        echo '<h4 class="text-info"><i class="fa fa-magic"></i> ' . get_string('generalcomment', 'local_yetkinlik') . '</h4>';
+        $aicaption = '<h4 class="text-info"><i class="fa fa-magic"></i> ' .
+            get_string('generalcomment', 'local_yetkinlik') . '</h4>';
+        echo $aicaption;
         echo format_text($comment, FORMAT_HTML);
         echo $OUTPUT->box_end();
     }
 
     echo html_writer::table($table);
-    echo html_writer::div(html_writer::link(new moodle_url('/local/yetkinlik/school_pdf.php', ['courseid' => $courseid]), 
-         '<i class="fa fa-file-pdf-o"></i> ' . get_string('schoolpdf', 'local_yetkinlik'), ['class' => 'btn btn-secondary']), 'text-right');
+
+    $pdfurl = new moodle_url('/local/yetkinlik/school_pdf.php', ['courseid' => $courseid]);
+    $pdflink = html_writer::link(
+        $pdfurl,
+        '<i class="fa fa-file-pdf-o"></i> ' . get_string('schoolpdf', 'local_yetkinlik'),
+        ['class' => 'btn btn-secondary']
+    );
+    echo html_writer::div($pdflink, 'text-right');
 } else {
     echo $OUTPUT->notification(get_string('no_data_found', 'local_yetkinlik'), 'info');
 }
