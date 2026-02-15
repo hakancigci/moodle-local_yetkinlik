@@ -36,19 +36,19 @@ if ($courseid) {
     $context = context_course::instance($courseid);
     require_capability('moodle/course:view', $context);
     $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
-    
+
     // Dil dosyasından ders bazlı başlığı çekiyoruz.
     $reporttitle = get_string('report_title', 'local_yetkinlik', $course->fullname);
-    
+
     $wheresql = "WHERE quiz.course = :courseid AND quiza.state = 'finished'";
     $params = ['courseid' => $courseid];
 } else {
     $context = context_system::instance();
     require_capability('moodle/site:config', $context);
-    
+
     // Dil dosyasından genel başlığı çekiyoruz.
     $reporttitle = get_string('report_title', 'local_yetkinlik');
-    
+
     $wheresql = "WHERE quiza.state = 'finished'";
     $params = [];
 }
@@ -157,6 +157,6 @@ if (!empty($comment)) {
     $pdf->MultiCell(0, 7, $cleancomment, 0, 'L', false, 1);
 }
 
-// Çıktı.
+// Cıktı.
 $pdf->Output("kazanim_raporu.pdf", "I");
 exit;
