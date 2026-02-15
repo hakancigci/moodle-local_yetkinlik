@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Student competency report.
+ * PDF Export for competency.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -23,119 +23,95 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/ai.php');
+
 require_login();
 
-$courseid = required_param('courseid', PARAM_INT);
-require_login($courseid);
+$courseid = optional_param('courseid', 0, PARAM_INT);
+global $DB, $OUTPUT, $PAGE;
 
-$context = context_course::instance($courseid);
-$userid = $USER->id;
+if ($courseid) {
+    $context = context_course::instance($courseid);
+    require_capability('moodle/course:view', $context);
+    $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+    $reporttitle = get_string('report_title', 'local_yetkinlik', $course->fullname);
+    $wheresql = "WHERE quiz.course = :courseid AND quiza.state = 'finished'";
+    $params = ['courseid' => $courseid];
+    $url = new moodle_url('/local/yetkinlik/school_report.php', ['courseid' => $courseid]);
+} else {
+    $context = context_system::instance();
+    require_capability('moodle/site:config', $context);
+    $reporttitle = get_string('report_title', 'local_yetkinlik');
+    $wheresql = "WHERE quiza.state = 'finished'";
+    $params = [];
+    $url = new moodle_url('/local/yetkinlik/school_report.php');
+}
 
-$course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
-
-$PAGE->set_url('/local/yetkinlik/student_report.php', ['courseid' => $courseid]);
+$PAGE->set_url($url);
 $PAGE->set_context($context);
-$PAGE->set_pagelayout('course');
-$PAGE->set_title(get_string('studentreport', 'local_yetkinlik'));
-$PAGE->set_heading($course->fullname);
+$PAGE->set_title($reporttitle);
+$PAGE->set_heading($reporttitle);
 
 echo $OUTPUT->header();
+echo $OUTPUT->heading($reporttitle);
 
-global $DB;
+// SQL Sorgusu (Ayn覺 kald覺)...
+$sql = "SELECT c.id, c.shortname, c.description, 
+               CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts, 
+               CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+        FROM {quiz_attempts} quiza
+        JOIN {quiz} quiz ON quiz.id = quiza.quiz
+        JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+        JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+        JOIN {competency} c ON c.id = m.competencyid
+        JOIN (SELECT MAX(fraction) AS fraction, questionattemptid FROM {question_attempt_steps} GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
+        $wheresql
+        GROUP BY c.id, c.shortname, c.description
+        ORDER BY c.shortname ASC";
 
-// Student data SQL query.
-$sql = "
-    SELECT c.id,
-           c.shortname,
-           c.description,
-           c.descriptionformat,
-           CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS questions,
-           CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-    FROM {quiz_attempts} quiza
-    JOIN {user} u ON quiza.userid = u.id
-    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-    JOIN {quiz} quiz ON quiz.id = quiza.quiz
-    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-    JOIN {competency} c ON c.id = m.competencyid
-    JOIN (
-        SELECT MAX(fraction) AS fraction, questionattemptid
-        FROM {question_attempt_steps}
-        GROUP BY questionattemptid
-    ) qas ON qas.questionattemptid = qa.id
-    WHERE quiz.course = :courseid AND u.id = :userid
-    GROUP BY c.id, c.shortname, c.description, c.descriptionformat
-";
-
-$rows = $DB->get_records_sql($sql, ['courseid' => $courseid, 'userid' => $userid]);
-
-echo html_writer::start_tag('table', ['class' => 'generaltable mt-3 w-100']);
-echo html_writer::start_tag('thead');
-echo html_writer::start_tag('tr');
-echo html_writer::tag('th', get_string('competencycode', 'local_yetkinlik'));
-echo html_writer::tag('th', get_string('competency', 'local_yetkinlik'));
-echo html_writer::tag('th', get_string('questioncount', 'local_yetkinlik'));
-echo html_writer::tag('th', get_string('correctcount', 'local_yetkinlik'));
-echo html_writer::tag('th', get_string('successrate', 'local_yetkinlik'));
-echo html_writer::end_tag('tr');
-echo html_writer::end_tag('thead');
-echo html_writer::start_tag('tbody');
-
+$rows = $DB->get_records_sql($sql, $params);
 $rates = [];
 
-foreach ($rows as $r) {
-    $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
-    $rates[$r->shortname] = $rate;
+if ($rows) {
+    $table = new html_table();
+    $table->head = [
+        get_string('competencycode', 'local_yetkinlik'),
+        get_string('competencyname', 'local_yetkinlik'),
+        get_string('questioncount', 'local_yetkinlik'),
+        get_string('correctcount', 'local_yetkinlik'),
+        get_string('successrate', 'local_yetkinlik')
+    ];
+    
+    foreach ($rows as $r) {
+        $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
+        $rates[$r->shortname] = $rate;
+        $rowclass = ($rate >= 70) ? 'table-success' : (($rate >= 50) ? 'table-warning' : 'table-danger');
 
-    if ($rate >= 80) {
-        $color = '#28a745'; // Green.
-    } else if ($rate >= 60) {
-        $color = '#007bff'; // Blue.
-    } else if ($rate >= 40) {
-        $color = '#fd7e14'; // Orange.
-    } else {
-        $color = '#dc3545'; // Red.
+        $row = new html_table_row([
+            '<strong>' . $r->shortname . '</strong>',
+            format_text($r->description, FORMAT_HTML),
+            $r->attempts,
+            $r->correct,
+            '<strong>%' . $rate . '</strong>'
+        ]);
+        $row->attributes['class'] = $rowclass;
+        $table->data[] = $row;
     }
 
-    echo html_writer::start_tag('tr');
-    echo html_writer::tag('td', s($r->shortname));
+    $comment = local_yetkinlik_generate_comment($rates);
+    if (!empty($comment)) {
+        echo $OUTPUT->box_start('generalbox mb-4');
+        echo '<h4 class="text-info"><i class="fa fa-magic"></i> ' . get_string('generalcomment', 'local_yetkinlik') . '</h4>';
+        echo format_text($comment, FORMAT_HTML);
+        echo $OUTPUT->box_end();
+    }
 
-    // Düzenlenen Kısım: HTML taglarını render eder.
-    $description = format_text($r->description, $r->descriptionformat, ['context' => $context]);
-    echo html_writer::tag('td', $description);
-
-    echo html_writer::tag('td', $r->questions);
-    echo html_writer::tag('td', $r->correct);
-    echo html_writer::tag('td', '%' . $rate, [
-        'style' => "color: $color; font-weight: bold;",
-    ]);
-    echo html_writer::end_tag('tr');
-}
-
-if (empty($rows)) {
-    $nodata = get_string('nodatafound', 'local_yetkinlik');
-    echo html_writer::tag('tr', html_writer::tag('td', $nodata, ['colspan' => 5, 'class' => 'text-center']));
-}
-
-echo html_writer::end_tag('tbody');
-echo html_writer::end_tag('table');
-
-// PDF report button.
-$pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid]);
-echo html_writer::start_tag('div', ['class' => 'mt-4']);
-echo html_writer::link($pdfurl, get_string('pdfmystudent', 'local_yetkinlik'), [
-    'class' => 'btn btn-secondary',
-    'target' => '_blank',
-]);
-echo html_writer::end_tag('div');
-
-// AI Comment section.
-require_once(__DIR__ . '/ai.php');
-if (!empty($rates)) {
-    echo html_writer::tag('h3', get_string('generalcomment', 'local_yetkinlik'), ['class' => 'mt-4']);
-    echo html_writer::tag('div', local_yetkinlik_generate_comment($rates, 'student'), [
-        'class' => 'alert alert-info',
-    ]);
+    echo html_writer::table($table);
+    echo html_writer::div(html_writer::link(new moodle_url('/local/yetkinlik/school_pdf.php', ['courseid' => $courseid]), 
+         '<i class="fa fa-file-pdf-o"></i> ' . get_string('schoolpdf', 'local_yetkinlik'), ['class' => 'btn btn-secondary']), 'text-right');
+} else {
+    echo $OUTPUT->notification(get_string('no_data_found', 'local_yetkinlik'), 'info');
 }
 
 echo $OUTPUT->footer();
