@@ -52,6 +52,7 @@ $string['competencyname'] = 'Kazanım / Yetkinlik';
 $string['correct'] = 'Doğru';
 $string['correctcount'] = 'Doğru Sayısı';
 $string['courseavg'] = 'Kurs Ortalaması';
+$string['creation_date'] = 'Oluşturulma Tarihi';
 $string['enable_ai'] = 'Yapay Zeka Entegrasyonunu Aktif Et';
 $string['enable_ai_desc'] = 'Yapay zeka tabanlı pedagojik yorumları aktif eder. API anahtarı ve model seçimi aşağıdan yapılmalıdır.';
 $string['error_no_enrolment'] = 'Bu kursa kayıtlı olmadığınız için raporu görüntüleyemezsiniz.';
