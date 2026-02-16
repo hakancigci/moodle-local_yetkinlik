@@ -142,3 +142,4 @@ class process_competency_rates_task extends \core\task\adhoc_task {
         return null;
     }
 }
+
