@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * AI and Rule-based commentary logic for competencies.
+ * Class Report for Competency Matching.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -62,3 +62,4 @@ if ($run) {
 }
 
 echo $OUTPUT->footer();
+
