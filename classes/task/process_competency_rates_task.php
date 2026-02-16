@@ -44,7 +44,6 @@ class process_competency_rates_task extends \core\task\adhoc_task {
         $adminid = $data->adminid;
         $contextid = \context_course::instance($courseid)->id;
 
-        // Yetkinlikleri al.
         $sql = "SELECT DISTINCT c.id, c.shortname
                   FROM {local_yetkinlik_qmap} m
                   JOIN {competency} c ON c.id = m.competencyid
@@ -61,7 +60,6 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                     continue;
                 }
 
-                // 1. competency_userevidence.
                 $evidence = new \stdClass();
                 $evidence->userid = $student->id;
                 $evidence->name = get_string('process_success_title', 'local_yetkinlik') . " (" . date('d.m.Y') . ")";
@@ -73,7 +71,6 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                 $evidence->usermodified = $adminid;
                 $evidenceid = $DB->insert_record('competency_userevidence', $evidence);
 
-                // 2. competency_userevidencecomp.
                 $link = new \stdClass();
                 $link->userevidenceid = $evidenceid;
                 $link->competencyid = $c->id;
@@ -82,7 +79,6 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                 $link->usermodified = $adminid;
                 $DB->insert_record('competency_userevidencecomp', $link);
 
-                // 3. competency_usercomp.
                 $uc = $DB->get_record('competency_usercomp', ['userid' => $student->id, 'competencyid' => $c->id]);
                 if (!$uc) {
                     $uc = new \stdClass();
@@ -94,7 +90,6 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                     $uc->id = $DB->insert_record('competency_usercomp', $uc);
                 }
 
-                // 4. competency_evidence.
                 $cevidence = new \stdClass();
                 $cevidence->usercompetencyid = $uc->id;
                 $cevidence->contextid = $contextid;
