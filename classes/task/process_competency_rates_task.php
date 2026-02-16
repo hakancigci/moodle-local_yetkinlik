@@ -60,10 +60,16 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                     continue;
                 }
 
+                // Dil dosyasından metinleri alalım.
+                $ratestr = number_format($rate, 1);
+                $a = new \stdClass();
+                $a->competency = $c->shortname;
+                $a->rate = $ratestr;
+
                 $evidence = new \stdClass();
                 $evidence->userid = $student->id;
                 $evidence->name = get_string('process_success_title', 'local_yetkinlik') . " (" . date('d.m.Y') . ")";
-                $evidence->description = "Yetkinlik {$c->shortname} için başarı: %" . number_format($rate, 1);
+                $evidence->description = get_string('evidence_description', 'local_yetkinlik', $a);
                 $evidence->descriptionformat = FORMAT_HTML;
                 $evidence->url = '';
                 $evidence->timecreated = time();
@@ -100,7 +106,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                 $cevidence->desca = null;
                 $cevidence->url = '';
                 $cevidence->grade = (int)$rate;
-                $cevidence->note = "Yetkinlik {$c->shortname} için başarı: %" . number_format($rate, 1);
+                $cevidence->note = get_string('evidence_note', 'local_yetkinlik', $a);
                 $cevidence->timecreated = time();
                 $cevidence->timemodified = time();
                 $cevidence->usermodified = $adminid;
