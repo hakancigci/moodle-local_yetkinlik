@@ -15,19 +15,29 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Local plugin "yetkinlik" - Privacy provider.
+ * Adhoc task to process competency success rates and add evidence.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
- 
+
 namespace local_yetkinlik\task;
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Class process_competency_rates_task
+ *
+ * Background task to calculate quiz-based competency success rates.
+ *
+ * @package    local_yetkinlik
+ */
 class process_competency_rates_task extends \core\task\adhoc_task {
 
+    /**
+     * Run the task to process competency rates.
+     */
     public function execute() {
         global $DB;
 
@@ -36,13 +46,12 @@ class process_competency_rates_task extends \core\task\adhoc_task {
         $adminid = $data->adminid;
         $contextid = \context_course::instance($courseid)->id;
 
-        // Yetkinlikleri al
-        $competencies = $DB->get_records_sql("
-            SELECT DISTINCT c.id, c.shortname
-            FROM {local_yetkinlik_qmap} m
-            JOIN {competency} c ON c.id = m.competencyid
-            ORDER BY c.shortname
-        ");
+        // Yetkinlikleri al.
+        $sql = "SELECT DISTINCT c.id, c.shortname
+                  FROM {local_yetkinlik_qmap} m
+                  JOIN {competency} c ON c.id = m.competencyid
+              ORDER BY c.shortname";
+        $competencies = $DB->get_records_sql($sql);
 
         $students = $DB->get_records('user', ['deleted' => 0, 'suspended' => 0]);
 
@@ -54,19 +63,19 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                     continue;
                 }
 
-                // 1. competency_userevidence
+                // 1. competency_userevidence.
                 $evidence = new \stdClass();
                 $evidence->userid = $student->id;
-                $evidence->name = "Otomatik Başarı Kanıtı (" . date('d.m.Y') . ")";
+                $evidence->name = get_string('process_success_title', 'local_yetkinlik') . " (" . date('d.m.Y') . ")";
                 $evidence->description = "Yetkinlik {$c->shortname} için başarı: %" . number_format($rate, 1);
                 $evidence->descriptionformat = FORMAT_HTML;
-                $evidence->url = ''; 
+                $evidence->url = '';
                 $evidence->timecreated = time();
                 $evidence->timemodified = time();
                 $evidence->usermodified = $adminid;
                 $evidenceid = $DB->insert_record('competency_userevidence', $evidence);
 
-                // 2. competency_userevidencecomp
+                // 2. competency_userevidencecomp.
                 $link = new \stdClass();
                 $link->userevidenceid = $evidenceid;
                 $link->competencyid = $c->id;
@@ -75,7 +84,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                 $link->usermodified = $adminid;
                 $DB->insert_record('competency_userevidencecomp', $link);
 
-                // 3. competency_usercomp
+                // 3. competency_usercomp.
                 $uc = $DB->get_record('competency_usercomp', ['userid' => $student->id, 'competencyid' => $c->id]);
                 if (!$uc) {
                     $uc = new \stdClass();
@@ -87,7 +96,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                     $uc->id = $DB->insert_record('competency_usercomp', $uc);
                 }
 
-                // 4. competency_evidence
+                // 4. competency_evidence.
                 $cevidence = new \stdClass();
                 $cevidence->usercompetencyid = $uc->id;
                 $cevidence->contextid = $contextid;
@@ -97,7 +106,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                 $cevidence->desccomponent = 'core_competency';
                 $cevidence->desca = null;
                 $cevidence->url = '';
-                $cevidence->grade = $rate;
+                $cevidence->grade = (int)$rate;
                 $cevidence->note = "Yetkinlik {$c->shortname} için başarı: %" . number_format($rate, 1);
                 $cevidence->timecreated = time();
                 $cevidence->timemodified = time();
@@ -107,24 +116,32 @@ class process_competency_rates_task extends \core\task\adhoc_task {
         }
     }
 
+    /**
+     * Calculate user competency rate based on quiz attempts.
+     *
+     * @param int $userid
+     * @param int $competencyid
+     * @param int $courseid
+     * @return float|null
+     */
     private function get_user_competency_rate($userid, $competencyid, $courseid) {
         global $DB;
-        $sql = "
-            SELECT
-              CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS questions,
-              CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
-            FROM {quiz_attempts} quiza
-            JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-            JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-            JOIN {quiz} quiz ON quiz.id = quiza.quiz
-            JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-            JOIN (
-                SELECT MAX(fraction) AS fraction, questionattemptid  
-                FROM {question_attempt_steps}  
-                GROUP BY questionattemptid
-            ) qas ON qas.questionattemptid = qa.id
-            WHERE quiz.course = :courseid AND quiza.userid = :userid AND m.competencyid = :competencyid
-        ";
+        $sql = "SELECT CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS questions,
+                       CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
+                  FROM {quiz_attempts} quiza
+                  JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                  JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                  JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                  JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+                  JOIN (
+                       SELECT MAX(fraction) AS fraction, questionattemptid
+                         FROM {question_attempt_steps}
+                     GROUP BY questionattemptid
+                  ) qas ON qas.questionattemptid = qa.id
+                 WHERE quiz.course = :courseid
+                   AND quiza.userid = :userid
+                   AND m.competencyid = :competencyid";
+
         $row = $DB->get_record_sql($sql, ['courseid' => $courseid, 'userid' => $userid, 'competencyid' => $competencyid]);
         if ($row && $row->questions > 0) {
             return ($row->correct / $row->questions) * 100;
