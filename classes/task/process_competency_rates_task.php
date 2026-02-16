@@ -24,8 +24,6 @@
 
 namespace local_yetkinlik\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Class process_competency_rates_task
  *
