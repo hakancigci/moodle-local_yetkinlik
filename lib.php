@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Library functions for the local_yetkinlik plugin.
@@ -21,8 +21,6 @@
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Add custom JS to the question editing page.
@@ -102,7 +100,6 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
     }
 
     // 3. Admin Only: Background Tasks.
-    // Sadece site yöneticileri görebilir.
     if (has_capability('moodle/site:config', context_system::instance())) {
         if (!$navigation->find('yetkinlik_admin_process', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/add_success_to_evidence.php', ['courseid' => $course->id]);
@@ -119,7 +116,6 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
 
     // 4. Student Specific Menus.
     if (isloggedin() && !isguestuser()) {
-        // Create a parent node for student reports if it doesn't exist.
         $studentnode = $navigation->find('yetkinlik_student_parent', navigation_node::TYPE_CUSTOM);
         if (!$studentnode) {
             $studentnode = $navigation->add(
