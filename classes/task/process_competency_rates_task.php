@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Adhoc task to process competency success rates and add evidence.
+ * Class Report for Competency Matching.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -142,4 +142,5 @@ class process_competency_rates_task extends \core\task\adhoc_task {
         return null;
     }
 }
+
 
