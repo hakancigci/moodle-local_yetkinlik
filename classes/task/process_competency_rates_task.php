@@ -101,8 +101,8 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                 $cevidence->contextid = $contextid;
                 $cevidence->action = 1;
                 $cevidence->actionuserid = $adminid;
-                $cevidence->descidentifier = 'evidence_evidenceofpriorlearninglinked';
-                $cevidence->desccomponent = 'core_competency';
+                $cevidence->descidentifier = 'evidence';
+                $cevidence->desccomponent = 'local_yetkinlik';
                 $cevidence->desca = null;
                 $cevidence->url = '';
                 $cevidence->grade = (int)$rate;
