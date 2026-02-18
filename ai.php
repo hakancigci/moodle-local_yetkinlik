@@ -29,6 +29,8 @@
  * @param string $context The context of the comment (student or school).
  * @return string
  */
+defined('MOODLE_INTERNAL') || die();
+
 function local_yetkinlik_generate_comment(array $stats, $context = 'student') {
     if (!get_config('local_yetkinlik', 'enable_ai')) {
         return local_yetkinlik_rule_based_comment($stats);
