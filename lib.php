@@ -30,6 +30,9 @@
  * @param context_course $context
  * @return void
  */
+
+defined('MOODLE_INTERNAL') || die();
+
 function local_yetkinlik_extend_navigation_course($navigation, $course, $context) {
     global $USER;
 
