@@ -33,5 +33,5 @@ $plugin->release   = '2.0.8';                 // Insan tarafından okunabilir ve
 
 // Bağımlılıklar (Bu eklenti çalışmadan önce yüklü olması gereken diğer eklentiler).
 $plugin->dependencies = [
-    'qbank_yetkinlik' => 2026020995,
+    'qbank_yetkinlik' => 2026030102,
 ];
