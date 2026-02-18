@@ -23,18 +23,6 @@
  */
 
 /**
- * Add custom JS to the question editing page.
- *
- * @return void
- */
-function local_yetkinlik_before_standard_html_head() {
-    global $PAGE;
-    if ($PAGE->url->compare(new moodle_url('/question/edit.php'), URL_MATCH_BASE)) {
-        $PAGE->requires->js_call_amd('local_yetkinlik/mapping', 'init');
-    }
-}
-
-/**
  * Extend course navigation with competency analysis links.
  *
  * @param global_navigation $navigation
