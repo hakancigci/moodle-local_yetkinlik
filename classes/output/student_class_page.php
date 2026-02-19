@@ -29,12 +29,20 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Output class for student class comparison page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class student_class_page implements renderable, templatable {
+
     /** @var stdClass Data object containing performance statistics. */
     protected $data;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param stdClass $data
      */
@@ -62,11 +70,11 @@ class student_class_page implements renderable, templatable {
             foreach ($this->data->coursedata as $cid => $c) {
                 // Calculate success rates for course, class, and individual student.
                 $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-                
-                $classrate  = (isset($this->data->classdata[$cid]) && $this->data->classdata[$cid]->attempts)
+
+                $classrate = (isset($this->data->classdata[$cid]) && $this->data->classdata[$cid]->attempts)
                     ? round(($this->data->classdata[$cid]->correct / $this->data->classdata[$cid]->attempts) * 100, 1) : 0;
-                
-                $myrate     = (isset($this->data->studentdata[$cid]) && $this->data->studentdata[$cid]->attempts)
+
+                $myrate = (isset($this->data->studentdata[$cid]) && $this->data->studentdata[$cid]->attempts)
                     ? round(($this->data->studentdata[$cid]->correct / $this->data->studentdata[$cid]->attempts) * 100, 1) : 0;
 
                 // Color coding based on whether the student's rate is above or below the course average.
@@ -77,7 +85,7 @@ class student_class_page implements renderable, templatable {
                     'courserate' => $courserate,
                     'classrate'  => $classrate,
                     'myrate'     => $myrate,
-                    'colorclass' => $colorclass
+                    'colorclass' => $colorclass,
                 ];
 
                 // Prepare arrays for visual chart data.
