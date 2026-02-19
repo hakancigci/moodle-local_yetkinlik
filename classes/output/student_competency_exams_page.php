@@ -28,15 +28,21 @@ use renderable;
 use templatable;
 use renderer_base;
 use stdClass;
-use moodle_url;
 
+/**
+ * Output class for student competency exams page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class student_competency_exams_page implements renderable, templatable {
-    
-    /** @var stdClass Data object passed from the script */
+
+    /** @var stdClass Data object passed from the script. */
     protected $data;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param stdClass $data
      */
@@ -56,17 +62,17 @@ class student_competency_exams_page implements renderable, templatable {
         $export->competencyid = $this->data->competencyid;
         $export->competencies = $this->data->competencies;
         $export->has_selection = ($this->data->competencyid > 0);
-        
+
         if ($export->has_selection) {
             $export->description = $this->data->description;
             $export->rows = [];
-            $totalq = 0; 
+            $totalq = 0;
             $totalc = 0;
 
             foreach ($this->data->rows as $r) {
                 // Calculate success rate for each quiz attempt.
                 $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
-                
+
                 // Define Bootstrap text color classes based on success thresholds.
                 $colorclass = 'text-danger';
                 if ($rate >= 80) {
@@ -83,7 +89,7 @@ class student_competency_exams_page implements renderable, templatable {
                     'correct' => (float)$r->correct,
                     'rate' => $rate,
                     'colorclass' => $colorclass,
-                    'review_url' => $r->review_url
+                    'review_url' => $r->review_url,
                 ];
 
                 $totalq += $r->questions;
@@ -97,7 +103,7 @@ class student_competency_exams_page implements renderable, templatable {
                     'questions' => $totalq,
                     'correct' => $totalc,
                     'rate' => $totalrate,
-                    'colorclass' => ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger')
+                    'colorclass' => ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger'),
                 ];
             }
         }
