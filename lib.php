@@ -34,8 +34,8 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
 
     // 1. Teacher Reports Section.
     if (has_capability('mod/quiz:viewreports', $context)) {
-        
-        // Genel Sınıf Raporu
+
+        // General class report.
         if (!$navigation->find('yetkinlik_teacher', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/class_report.php', ['courseid' => $course->id]);
             $navigation->add(
@@ -48,7 +48,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             );
         }
 
-        // Öğrenci Analizi (Genel)
+        // Student analysis (General).
         if (!$navigation->find('yetkinlik_teacher_student', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/teacher_student_competency.php', ['courseid' => $course->id]);
             $navigation->add(
@@ -61,7 +61,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             );
         }
 
-        // Öğrenci Sınav Analizi (Yeni Eklenen)
+        // Student exam analysis (Newly added).
         if (!$navigation->find('yetkinlik_teacher_student_exam', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/teacher_student_exam.php', ['courseid' => $course->id]);
             $navigation->add(
@@ -131,7 +131,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             );
         }
 
-        // Student Report (Karnem).
+        // Student report (Karnem).
         $studentnode->add(
             get_string('myreportcard', 'local_yetkinlik'),
             new moodle_url('/local/yetkinlik/student_report.php', ['courseid' => $course->id]),
@@ -140,7 +140,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             'yetkinlik_student'
         );
 
-        // Exam Analysis (Sınav Kazanım Analizim).
+        // Exam analysis (Sınav Kazanım Analizim).
         $studentnode->add(
             get_string('myexamanalysis', 'local_yetkinlik'),
             new moodle_url('/local/yetkinlik/student_exam.php', ['courseid' => $course->id]),
@@ -149,7 +149,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             'yetkinlik_student_exam'
         );
 
-        // Competency Based Exams (Yetkinlik Bazlı Sınavlarım).
+        // Competency based exams (Yetkinlik Bazlı Sınavlarım).
         $studentnode->add(
             get_string('mycompetencyexams', 'local_yetkinlik'),
             new moodle_url('/local/yetkinlik/student_competency_exams.php', ['courseid' => $course->id]),
@@ -158,7 +158,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             'yetkinlik_student_competency'
         );
 
-        // Competency State (Yetkinlik Durumu).
+        // Competency state (Yetkinlik Durumu).
         $studentnode->add(
             get_string('mycompetencystate', 'local_yetkinlik'),
             new moodle_url('/local/yetkinlik/student_class.php', ['courseid' => $course->id]),
