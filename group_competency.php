@@ -77,19 +77,19 @@ if ($groupid) {
     // 4. Performance data query optimized with unique key for easier mapping.
     $scoremap = [];
     $rawscores = (array) $DB->get_records_sql("
-        SELECT 
-            CONCAT(quiza.userid, '_', m.competencyid) as unique_key, 
-            quiza.userid, 
+        SELECT
+            CONCAT(quiza.userid, '_', m.competencyid) as unique_key,
+            quiza.userid,
             m.competencyid,
-            SUM(qa.maxfraction) AS total_max, 
+            SUM(qa.maxfraction) AS total_max,
             SUM(qas.fraction) AS total_fraction
         FROM {quiz_attempts} quiza
         JOIN {question_usages} qu ON qu.id = quiza.uniqueid
         JOIN {question_attempts} qa ON qa.questionusageid = qu.id
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN (
-            SELECT questionattemptid, MAX(fraction) AS fraction 
-            FROM {question_attempt_steps} 
+            SELECT questionattemptid, MAX(fraction) AS fraction
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE quiza.state = 'finished'
@@ -100,8 +100,8 @@ if ($groupid) {
     // Construct the score map: $scoremap[userid][competencyid].
     foreach ($rawscores as $rs) {
         $scoremap[$rs->userid][$rs->competencyid] = [
-            'att' => (float)$rs->total_max, 
-            'cor' => (float)$rs->total_fraction
+            'att' => (float)$rs->total_max,
+            'cor' => (float)$rs->total_fraction,
         ];
     }
 
@@ -111,24 +111,33 @@ if ($groupid) {
 
     foreach ($students as $s) {
         $row = new stdClass();
-        $detailurl = new moodle_url('/local/yetkinlik/student_competency_detail.php', ['courseid' => $courseid, 'userid' => $s->id]);
+        $detailurl = new moodle_url('/local/yetkinlik/student_competency_detail.php',
+            ['courseid' => $courseid, 'userid' => $s->id]);
         $row->studentlink = html_writer::link($detailurl, fullname($s), ['target' => '_blank']);
         $row->scores = [];
 
         foreach ($renderdata->competencies as $c) {
             $scoreobj = new stdClass();
-            
+
             if (isset($scoremap[$s->id][$c->id])) {
                 $att = $scoremap[$s->id][$c->id]['att'];
                 $cor = $scoremap[$s->id][$c->id]['cor'];
-                
+
                 if ($att > 0) {
                     $rate = number_format(($cor / $att) * 100, 1);
                     $scoreobj->rate = $rate;
-                    
+
                     // Logic for visual indicator colors based on performance.
-                    $scoreobj->color = ($rate >= 80) ? 'green' : (($rate >= 60) ? 'blue' : (($rate >= 40) ? 'orange' : 'red'));
-                    
+                    if ($rate >= 80) {
+                        $scoreobj->color = 'green';
+                    } else if ($rate >= 60) {
+                        $scoreobj->color = 'blue';
+                    } else if ($rate >= 40) {
+                        $scoreobj->color = 'orange';
+                    } else {
+                        $scoreobj->color = 'red';
+                    }
+
                     // Aggregate totals for the group average.
                     $grouptotals[$c->id]['att'] = ($grouptotals[$c->id]['att'] ?? 0) + $att;
                     $grouptotals[$c->id]['cor'] = ($grouptotals[$c->id]['cor'] ?? 0) + $cor;
@@ -147,11 +156,11 @@ if ($groupid) {
     $renderdata->totals = [];
     foreach ($renderdata->competencies as $c) {
         $total = new stdClass();
-        $t_att = $grouptotals[$c->id]['att'] ?? 0;
-        $t_cor = $grouptotals[$c->id]['cor'] ?? 0;
-        
-        if ($t_att > 0) {
-            $trate = number_format(($t_cor / $t_att) * 100, 1);
+        $tatt = $grouptotals[$c->id]['att'] ?? 0;
+        $tcor = $grouptotals[$c->id]['cor'] ?? 0;
+
+        if ($tatt > 0) {
+            $trate = number_format(($tcor / $tatt) * 100, 1);
             $total->rate = $trate;
             $total->color = ($trate >= 80) ? 'green' : (($trate >= 60) ? 'blue' : (($trate >= 40) ? 'orange' : 'red'));
         } else {
