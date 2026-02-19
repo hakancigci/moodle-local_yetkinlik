@@ -29,13 +29,20 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Teacher's student exam analysis output class.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class teacher_student_exam_page implements renderable, templatable {
 
     /** @var stdClass Data storage for the analysis results and filter options. */
     protected $data;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param stdClass $data
      */
@@ -61,7 +68,7 @@ class teacher_student_exam_page implements renderable, templatable {
             $export->students[] = [
                 'id' => $s->id,
                 'name' => fullname($s),
-                'selected' => ($s->id == $this->data->userid)
+                'selected' => ($s->id == $this->data->userid),
             ];
         }
 
@@ -71,7 +78,7 @@ class teacher_student_exam_page implements renderable, templatable {
             $export->quizzes[] = [
                 'id' => $q->id,
                 'name' => format_string($q->name),
-                'selected' => ($q->id == $this->data->quizid)
+                'selected' => ($q->id == $this->data->quizid),
             ];
         }
 
@@ -82,13 +89,13 @@ class teacher_student_exam_page implements renderable, templatable {
         if (!empty($this->data->rows)) {
             foreach ($this->data->rows as $r) {
                 // Calculate raw achievement rate.
-                $raw_rate = $r->attempts ? ($r->correct / $r->attempts) * 100 : 0;
-                
+                $rawrate = $r->attempts ? ($r->correct / $r->attempts) * 100 : 0;
+
                 // Assign Bootstrap contextual classes based on performance thresholds.
                 $rowclass = 'table-danger';
-                if ($raw_rate >= 70) {
+                if ($rawrate >= 70) {
                     $rowclass = 'table-success';
-                } else if ($raw_rate >= 50) {
+                } else if ($rawrate >= 50) {
                     $rowclass = 'table-warning';
                 }
 
@@ -96,13 +103,13 @@ class teacher_student_exam_page implements renderable, templatable {
                     'shortname' => s($r->shortname),
                     'attempts'  => number_format($r->attempts, 0),
                     'correct'   => number_format($r->correct, 1),
-                    'rate'      => number_format($raw_rate, 1),
-                    'rowclass'  => $rowclass
+                    'rate'      => number_format($rawrate, 1),
+                    'rowclass'  => $rowclass,
                 ];
 
                 // Arrays for chart visualization data.
                 $labels[] = $r->shortname;
-                $values[] = round($raw_rate, 1);
+                $values[] = round($rawrate, 1);
             }
             $export->has_rows = true;
         }
@@ -111,10 +118,9 @@ class teacher_student_exam_page implements renderable, templatable {
         $export->chart_config = json_encode([
             'labels' => $labels,
             'values' => $values,
-            'label'  => get_string('successrate', 'local_yetkinlik') . ' %'
+            'label'  => get_string('successrate', 'local_yetkinlik') . ' %',
         ]);
 
         return $export;
     }
-
 }
