@@ -16,7 +16,8 @@
 
 /**
  * Detailed competency report for a specific student.
- * * @package    local_yetkinlik
+ *
+ * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -58,8 +59,8 @@ $sql = "SELECT c.id, c.shortname, c.description,
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE quiz.course = :courseid AND quiza.userid = :userid AND quiza.state = 'finished'
@@ -75,7 +76,8 @@ foreach ($rows as $r) {
 
 $renderdata = new stdClass();
 $renderdata->rows = $rows;
-$renderdata->pdf_url = (new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid, 'userid' => $userid]))->out(false);
+$pdfurl = new moodle_url('/local/yetkinlik/parent_pdf.php', ['courseid' => $courseid, 'userid' => $userid]);
+$renderdata->pdf_url = $pdfurl->out(false);
 
 // Generate personalized AI feedback for the student.
 $renderdata->ai_comment = local_yetkinlik_generate_comment($rates, 'student');
