@@ -56,24 +56,38 @@ $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname
     FROM {local_yetkinlik_qmap} m
     JOIN {competency} c ON c.id = m.competencyid
-    ORDER BY c.shortname
-");
+    ORDER BY c.shortname");
+
 $compoptions = [0 => get_string('selectcompetency', 'local_yetkinlik')];
 foreach ($competencies as $c) {
     $compoptions[$c->id] = $c->shortname;
 }
 
-// 2. Filter Form Definition.
+/**
+ * Filter form for student and competency selection.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class local_yetkinlik_teacher_form extends moodleform {
+    /**
+     * Form definition.
+     */
     public function definition() {
         $mform = $this->_form;
         $mform->addElement('hidden', 'courseid');
         $mform->setType('courseid', PARAM_INT);
 
         // Using autocomplete for better UX with large student/competency lists.
-        $mform->addElement('autocomplete', 'userid', get_string('selectstudent', 'local_yetkinlik'), $this->_customdata['studentoptions']);
-        $mform->addElement('autocomplete', 'competencyid', get_string('selectcompetency', 'local_yetkinlik'), $this->_customdata['compoptions']);
-        
+        $mform->addElement('autocomplete', 'userid',
+            get_string('selectstudent', 'local_yetkinlik'),
+            $this->_customdata['studentoptions']);
+
+        $mform->addElement('autocomplete', 'competencyid',
+            get_string('selectcompetency', 'local_yetkinlik'),
+            $this->_customdata['compoptions']);
+
         $this->add_action_buttons(false, get_string('show', 'local_yetkinlik'));
     }
 }
@@ -106,32 +120,33 @@ if ($userid && $competencyid) {
             JOIN {quiz} quiz ON quiz.id = quiza.quiz
             JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
             JOIN (
-                SELECT MAX(fraction) AS fraction, questionattemptid 
-                FROM {question_attempt_steps} 
+                SELECT MAX(fraction) AS fraction, questionattemptid
+                FROM {question_attempt_steps}
                 GROUP BY questionattemptid
             ) qas ON qas.questionattemptid = qa.id
-            WHERE m.competencyid = :competencyid 
-              AND quiza.userid = :userid 
-              AND quiz.course = :courseid 
+            WHERE m.competencyid = :competencyid
+              AND quiza.userid = :userid
+              AND quiz.course = :courseid
               AND quiza.state = 'finished'
-            GROUP BY quiz.id, quiz.name 
+            GROUP BY quiz.id, quiz.name
             ORDER BY quiz.name";
 
     $rows = $DB->get_records_sql($sql, [
-        'competencyid' => $competencyid, 
-        'userid' => $userid, 
-        'courseid' => $courseid
+        'competencyid' => $competencyid,
+        'userid' => $userid,
+        'courseid' => $courseid,
     ]);
 
-    $tq = 0; $tc = 0;
+    $tq = 0;
+    $tc = 0;
     foreach ($rows as $r) {
         $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
-        
+
         // Find the last finished attempt to generate a review link.
         $lastattempt = $DB->get_record_sql("
-            SELECT id FROM {quiz_attempts} 
-            WHERE quiz = :quizid AND userid = :userid AND state = 'finished' 
-            ORDER BY attempt DESC", 
+            SELECT id FROM {quiz_attempts}
+            WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
+            ORDER BY attempt DESC",
             ['quizid' => $r->quizid, 'userid' => $userid], IGNORE_MULTIPLE);
 
         $renderdata->rows[] = [
@@ -140,9 +155,10 @@ if ($userid && $competencyid) {
             'correct'    => (float)$r->correct,
             'rate'       => $rate,
             'color'      => ($rate >= 80) ? 'green' : (($rate >= 60) ? 'blue' : (($rate >= 40) ? 'orange' : 'red')),
-            'review_url' => $lastattempt ? (new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]))->out(false) : null
+            'review_url' => $lastattempt ?
+                (new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]))->out(false) : null,
         ];
-        $tq += $r->questions; 
+        $tq += $r->questions;
         $tc += $r->correct;
     }
 
@@ -150,10 +166,10 @@ if ($userid && $competencyid) {
     if ($tq > 0) {
         $trate = number_format(($tc / $tq) * 100, 1);
         $renderdata->total = [
-            'questions' => $tq, 
-            'correct' => $tc, 
+            'questions' => $tq,
+            'correct' => $tc,
             'rate' => $trate,
-            'color' => ($trate >= 80) ? 'green' : (($trate >= 60) ? 'blue' : (($trate >= 40) ? 'orange' : 'red'))
+            'color' => ($trate >= 80) ? 'green' : (($trate >= 60) ? 'blue' : (($trate >= 40) ? 'orange' : 'red')),
         ];
     }
 }
