@@ -100,7 +100,7 @@ if ($groupid && $quizid) {
         FROM {quiz_attempts} quiza
         JOIN {question_usages} qu ON qu.id = quiza.uniqueid
         JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+        JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         WHERE quiza.quiz = :quizid
         ORDER BY c.shortname", ['quizid' => $quizid]);
@@ -116,7 +116,7 @@ if ($groupid && $quizid) {
         FROM {quiz_attempts} quiza
         JOIN {question_usages} qu ON qu.id = quiza.uniqueid
         JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+        JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN (
             SELECT questionattemptid, MAX(fraction) AS fraction
             FROM {question_attempt_steps}

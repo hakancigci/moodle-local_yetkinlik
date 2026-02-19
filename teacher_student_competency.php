@@ -54,7 +54,7 @@ foreach ($students as $s) {
 // Get competencies that have been mapped to questions.
 $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname
-    FROM {local_yetkinlik_qmap} m
+    FROM {qbank_yetkinlik_qmap} m
     JOIN {competency} c ON c.id = m.competencyid
     ORDER BY c.shortname");
 
@@ -118,7 +118,7 @@ if ($userid && $competencyid) {
             JOIN {question_usages} qu ON qu.id = quiza.uniqueid
             JOIN {question_attempts} qa ON qa.questionusageid = qu.id
             JOIN {quiz} quiz ON quiz.id = quiza.quiz
-            JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+            JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
             JOIN (
                 SELECT MAX(fraction) AS fraction, questionattemptid
                 FROM {question_attempt_steps}

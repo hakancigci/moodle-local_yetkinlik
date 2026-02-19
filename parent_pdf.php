@@ -53,7 +53,7 @@ $sql = "
     JOIN {question_usages} qu ON qu.id = quiza.uniqueid
     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
     JOIN {quiz} quiz ON quiz.id = quiza.quiz
-    JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+    JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
     JOIN {competency} c ON c.id = m.competencyid
     JOIN (
         SELECT MAX(fraction) AS fraction, questionattemptid

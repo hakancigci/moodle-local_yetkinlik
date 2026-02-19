@@ -56,7 +56,7 @@ $sql = "SELECT c.shortname, FROM_UNIXTIME(qas2.timecreated, '%Y-%m') AS period,
         JOIN {question_usages} qu ON qu.id = quiza.uniqueid
         JOIN {question_attempts} qa ON qa.questionusageid = qu.id
         JOIN {quiz} quiz ON quiz.id = quiza.quiz
-        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+        JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
             SELECT questionattemptid, MAX(timecreated) AS timecreated
