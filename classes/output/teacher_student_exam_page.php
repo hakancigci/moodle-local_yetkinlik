@@ -95,7 +95,7 @@ class teacher_student_exam_page implements renderable, templatable {
                 $export->rows[] = [
                     'shortname' => s($r->shortname),
                     'attempts'  => number_format($r->attempts, 0),
-                    'correct'   => number_format($r->correct, 0),
+                    'correct'   => number_format($r->correct, 1),
                     'rate'      => number_format($raw_rate, 1),
                     'rowclass'  => $rowclass
                 ];
@@ -116,4 +116,5 @@ class teacher_student_exam_page implements renderable, templatable {
 
         return $export;
     }
+
 }
