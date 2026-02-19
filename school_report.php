@@ -21,7 +21,7 @@
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
- 
+
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/ai.php');
 
@@ -65,8 +65,8 @@ $sql = "SELECT c.id, c.shortname, c.description,
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         $wheresql
