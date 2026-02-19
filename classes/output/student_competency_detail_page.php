@@ -29,14 +29,22 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Output class for student competency detail page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class student_competency_detail_page implements renderable, templatable {
-    
-    /** @var stdClass Raw data to be processed for the template */
+
+    /** @var stdClass Raw data to be processed for the template. */
     protected $data;
 
     /**
-     * Constructor
-     * * @param stdClass $data
+     * Constructor.
+     *
+     * @param stdClass $data
      */
     public function __construct($data) {
         $this->data = $data;
@@ -51,11 +59,11 @@ class student_competency_detail_page implements renderable, templatable {
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
         $export->rows = [];
-        
+
         foreach ($this->data->rows as $r) {
             // Calculate success rate as a percentage.
             $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
-            
+
             // Define visual indicators (colors) based on performance thresholds.
             if ($rate >= 80) {
                 $color = 'green';
@@ -69,15 +77,15 @@ class student_competency_detail_page implements renderable, templatable {
 
             $row = new stdClass();
             $row->shortname = $r->shortname;
-            
+
             // Clean up description: decode HTML entities and strip tags for clean text rendering.
             $row->description = strip_tags(html_entity_decode($r->description, ENT_QUOTES, 'UTF-8'));
-            
+
             $row->questions = (float)$r->questions;
             $row->correct = (float)$r->correct;
             $row->rate = $rate;
             $row->color = $color;
-            
+
             $export->rows[] = $row;
         }
 
