@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Selector form for competency report.
+ * Modular selector form for competency and quiz reports.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -27,36 +27,34 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/formslib.php');
 
 /**
- * Selector form class for local_yetkinlik competency analysis.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Selector form class for local_yetkinlik reports.
  */
 class local_yetkinlik_selector_form extends moodleform {
+
     /**
-     * Define the form elements.
+     * Define the form elements based on custom data flags.
      */
     protected function definition() {
         global $DB;
 
         $mform = $this->_form;
         $courseid = $this->_customdata['courseid'];
+        
+        // Control flags for different report types.
+        $showcompetency = isset($this->_customdata['showcompetency']) ? $this->_customdata['showcompetency'] : true;
+        $showquiz = isset($this->_customdata['showquiz']) ? $this->_customdata['showquiz'] : false;
+
         $context = context_course::instance($courseid);
 
-        // 1. Öğrenci Seçimi (Sadece Öğrenciler).
+        // 1. Student Selection (Always visible).
         $users = [0 => get_string('selectuser', 'local_yetkinlik')];
-
-        // Kursa kayıtlı tüm kullanıcıları alalım.
         $enrolled = get_enrolled_users($context, '', 0, 'u.id, u.firstname, u.lastname, u.department');
 
         if (!empty($enrolled)) {
             foreach ($enrolled as $u) {
-                // Eğer kullanıcı yöneticiyse veya kursu düzenleme yetkisi (öğretmen vb.) varsa listede gösterme.
                 if (is_siteadmin($u->id) || has_capability('moodle/course:update', $context, $u->id)) {
                     continue;
                 }
-
                 $name = fullname($u);
                 if (!empty($u->department)) {
                     $name .= " (" . $u->department . ")";
@@ -71,7 +69,31 @@ class local_yetkinlik_selector_form extends moodleform {
         ]);
         $mform->setType('userid', PARAM_INT);
 
-        // 2. Yetkinlik Seçimi.
+        // 2. Competency Selection.
+        if ($showcompetency) {
+            $this->add_competency_selector($courseid);
+        }
+
+        // 3. Quiz Selection.
+        if ($showquiz) {
+            $this->add_quiz_selector($courseid);
+        }
+
+        // Hidden course ID.
+        $mform->addElement('hidden', 'courseid', $courseid);
+        $mform->setType('courseid', PARAM_INT);
+
+        // Action buttons.
+        $this->add_action_buttons(false, get_string('filter', 'local_yetkinlik'));
+    }
+
+    /**
+     * Helper to add competency autocomplete element.
+     */
+    protected function add_competency_selector($courseid) {
+        global $DB;
+        $mform = $this->_form;
+
         $competencies = [0 => get_string('allcompetencies', 'local_yetkinlik')];
         $sql = "SELECT DISTINCT c.id, c.shortname
                 FROM {competency} c
@@ -90,10 +112,28 @@ class local_yetkinlik_selector_form extends moodleform {
             'multiple' => false,
         ]);
         $mform->setType('competencyid', PARAM_INT);
+    }
 
-        $mform->addElement('hidden', 'courseid', $courseid);
-        $mform->setType('courseid', PARAM_INT);
+    /**
+     * Helper to add quiz autocomplete element.
+     */
+    protected function add_quiz_selector($courseid) {
+        global $DB;
+        $mform = $this->_form;
 
-        $this->add_action_buttons(false, get_string('filter', 'local_yetkinlik'));
+        $quizzes = [0 => get_string('selectquiz', 'local_yetkinlik')];
+        $records = $DB->get_records('quiz', ['course' => $courseid], 'name ASC');
+
+        if ($records) {
+            foreach ($records as $record) {
+                $quizzes[$record->id] = format_string($record->name);
+            }
+        }
+
+        $mform->addElement('autocomplete', 'quizid', get_string('selectquiz', 'local_yetkinlik'), $quizzes, [
+            'placeholder' => get_string('searchquiz', 'local_yetkinlik'),
+            'multiple' => false,
+        ]);
+        $mform->setType('quizid', PARAM_INT);
     }
 }
