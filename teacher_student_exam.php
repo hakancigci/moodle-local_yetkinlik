@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Teacher student exam analysis report.
+ * Teacher view for specific student analysis based on a selected quiz.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -23,123 +23,69 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
-require_login();
 
-global $DB, $OUTPUT, $PAGE;
+$courseid = required_param('courseid', PARAM_INT);
+$userid   = optional_param('userid', 0, PARAM_INT);
+$quizid   = optional_param('quizid', 0, PARAM_INT);
 
-$quizid = required_param('quizid', PARAM_INT);
-$userid = required_param('userid', PARAM_INT);
-
-$quiz = $DB->get_record('quiz', ['id' => $quizid], '*', MUST_EXIST);
-$courseid = $quiz->course;
-
+require_login($courseid);
 $context = context_course::instance($courseid);
+
+// Ensure the user has teacher-level report viewing capabilities.
 require_capability('mod/quiz:viewreports', $context);
 
-$student = $DB->get_record('user', ['id' => $userid], '*', MUST_EXIST);
+// Page configuration and navigation setup.
+$PAGE->set_url('/local/yetkinlik/teacher_student_exam.php', ['courseid' => $courseid]);
+$PAGE->set_title(get_string('studentanalysis', 'local_yetkinlik'));
+$PAGE->set_heading(get_string('studentanalysis', 'local_yetkinlik'));
+$PAGE->set_pagelayout('course');
 
-$PAGE->set_url('/local/yetkinlik/teacher_student_exam.php', ['quizid' => $quizid, 'userid' => $userid]);
-$PAGE->set_title('Öğrenci Sınav Analizi');
-$PAGE->set_heading(fullname($student) . ' - ' . $quiz->name);
+// 1. Fetch Student List (to be used in selection filters).
+// Only users who can attempt quizzes are considered students in this context.
+$students = get_enrolled_users($context, 'mod/quiz:attempt');
 
-echo $OUTPUT->header();
+// 2. Fetch Quiz List within the current course.
+$quizzes = $DB->get_records('quiz', ['course' => $courseid], 'name ASC');
 
-$sql = "
-SELECT
- c.shortname,
- COUNT(qa.id) attempts,
- SUM(CASE WHEN qas.fraction > 0 THEN 1 ELSE 0 END) correct
-FROM {local_yetkinlik_qmap} m
-JOIN {competency} c ON c.id = m.competencyid
-JOIN {question_attempts} qa ON qa.questionid = m.questionid
-JOIN {question_attempt_steps} qas ON qas.questionattemptid = qa.id
-JOIN {question_usages} qu ON qu.id = qa.questionusageid
-JOIN {quiz_attempts} qa2 ON qa2.uniqueid = qu.id
-WHERE qa2.quiz = :quizid AND qa2.userid = :userid
-GROUP BY c.shortname
-";
-
-$rows = $DB->get_records_sql($sql, ['quizid' => $quizid, 'userid' => $userid]);
-
-echo html_writer::start_tag('table', ['class' => 'generaltable']);
-echo html_writer::start_tag('thead');
-echo html_writer::start_tag('tr');
-echo html_writer::tag('th', 'Kazanım');
-echo html_writer::tag('th', 'Başarı');
-echo html_writer::end_tag('tr');
-echo html_writer::end_tag('thead');
-echo html_writer::start_tag('tbody');
-
-$labels = [];
-$data = [];
-
-foreach ($rows as $r) {
-    // Attempts varsa, sonucu 100 ile çarpıp tek ondalık hane olacak şekilde formatlıyoruz.
-    $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
-
-    $labels[] = $r->shortname;
-    $data[] = $rate;
-
-    $color = $rate >= 70 ? 'green' : ($rate >= 50 ? 'orange' : 'red');
-
-    echo html_writer::start_tag('tr');
-    echo html_writer::tag('td', s($r->shortname));
-    echo html_writer::tag('td', "%{$rate}", ['style' => "color: $color; font-weight: bold;"]);
-    echo html_writer::end_tag('tr');
+$rows = [];
+if ($userid && $quizid) {
+    // 3. Execution of normalized and secure SQL query for competency calculation.
+    // This query aggregates the student's performance across competencies for a single quiz.
+    $sql = "SELECT c.id, c.shortname, 
+                   SUM(qa.maxfraction) AS attempts, 
+                   SUM(qas.fraction) AS correct
+            FROM {quiz_attempts} quiza
+            JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+            JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+            JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+            JOIN {competency} c ON c.id = m.competencyid
+            JOIN (
+                SELECT MAX(fraction) AS fraction, questionattemptid 
+                FROM {question_attempt_steps} 
+                GROUP BY questionattemptid
+            ) qas ON qas.questionattemptid = qa.id
+            WHERE quiza.quiz = :quizid 
+              AND quiza.userid = :userid 
+              AND quiza.state = 'finished'
+            GROUP BY c.id, c.shortname
+            ORDER BY c.shortname ASC";
+    
+    $rows = $DB->get_records_sql($sql, ['quizid' => $quizid, 'userid' => $userid]);
 }
 
-echo html_writer::end_tag('tbody');
-echo html_writer::end_tag('table');
+// 4. Page Output Generation.
+echo $OUTPUT->header();
 
-$labelsjs = json_encode($labels);
-$datajs = json_encode($data);
+$renderdata = new stdClass();
+$renderdata->courseid = $courseid;
+$renderdata->userid   = $userid;
+$renderdata->quizid   = $quizid;
+$renderdata->students = $students;
+$renderdata->quizzes  = $quizzes;
+$renderdata->rows     = $rows;
 
-// Chart display section for student competency performance.
-// Chart display template.
-?>
+// Pass data to the renderable output class.
+$page = new \local_yetkinlik\output\teacher_student_exam_page($renderdata);
+echo $OUTPUT->render($page);
 
-<div class="chart-container mt-4" style="position: relative; height:40vh; width:100%">
-    <canvas id="teacherchart"></canvas>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    /**
-     * Initialize the bar chart using Chart.js.
-     */
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('teacherchart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: <?php echo $labelsjs; ?>,
-                datasets: [{
-                    label: 'Başarı %',
-                    data: <?php echo $datajs; ?>,
-                    backgroundColor: '#ff9800',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
-            }
-        });
-    });
-</script>
-
-<?php
-/**
- * Footer of the page.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 echo $OUTPUT->footer();

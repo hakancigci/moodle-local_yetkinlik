@@ -23,152 +23,148 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
-require_login();
-
-global $DB, $USER, $OUTPUT, $PAGE;
 
 $courseid = required_param('courseid', PARAM_INT);
-require_login($courseid);
-
-$context = context_course::instance($courseid);
 $groupid = optional_param('groupid', 0, PARAM_INT);
 
+require_login($courseid);
+$context = context_course::instance($courseid);
+require_capability('local/yetkinlik:viewreports', $context);
+
+// Page definitions and navigation.
 $PAGE->set_url('/local/yetkinlik/group_competency.php', ['courseid' => $courseid]);
 $PAGE->set_title(get_string('groupcompetency', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('groupcompetency', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 $PAGE->set_context($context);
 
-echo $OUTPUT->header();
+$renderdata = new stdClass();
+$renderdata->courseid = $courseid;
+$renderdata->groupid = $groupid;
 
-/* Kurs grupları */
-echo '<form method="get">';
-echo '<input type="hidden" name="courseid" value="' . $courseid . '">';
-echo '<select name="groupid">';
-echo '<option value="0">' . get_string('selectgroup', 'local_yetkinlik') . '</option>';
+// 1. Fetch available groups for the selection filter.
 $groups = groups_get_all_groups($courseid);
-foreach ($groups as $g) {
-    $sel = ($groupid == $g->id) ? 'selected' : '';
-    echo "<option value='{$g->id}' $sel>{$g->name}</option>";
+$renderdata->groups = $groups ? array_values($groups) : [];
+foreach ($renderdata->groups as $g) {
+    $g->selected = ($g->id == $groupid);
 }
-echo '</select> ';
-echo '<button>' . get_string('show', 'local_yetkinlik') . '</button>';
-echo '</form><hr>';
 
 if ($groupid) {
-    // Grup öğrencilerini idnumber’a göre sırala (sadece student rolü olanlar).
-    $students = $DB->get_records_sql("
+    global $DB;
+
+    // 2. Retrieve student list (Filtered by the selected group and student role).
+    $students = (array) $DB->get_records_sql("
         SELECT u.id, u.idnumber, u.firstname, u.lastname
         FROM {groups_members} gm
         JOIN {user} u ON u.id = gm.userid
         JOIN {role_assignments} ra ON ra.userid = u.id
         JOIN {context} ctx ON ctx.id = ra.contextid
-        JOIN {course} c ON c.id = ctx.instanceid
         WHERE gm.groupid = :groupid
-          AND c.id = :courseid
+          AND ctx.instanceid = :courseid
           AND ra.roleid = (SELECT id FROM {role} WHERE shortname = 'student')
         ORDER BY u.idnumber ASC
     ", ['groupid' => $groupid, 'courseid' => $courseid]);
 
-    // Kurs yetkinliklerini çek.
-    $competencies = $DB->get_records_sql("
+    // 3. Fetch mapped competencies list.
+    $competencies = (array) $DB->get_records_sql("
         SELECT DISTINCT c.id, c.shortname
         FROM {local_yetkinlik_qmap} m
         JOIN {competency} c ON c.id = m.competencyid
-        ORDER BY c.shortname
+        ORDER BY c.shortname ASC
     ");
+    $renderdata->competencies = array_values($competencies);
 
-    // Tablo başlıkları.
-    echo '<table class="generaltable">';
-    echo '<tr><th>' . get_string('student', 'local_yetkinlik') . '</th>';
-    foreach ($competencies as $c) {
-        echo "<th>{$c->shortname}</th>";
+    // 4. Performance data query optimized with unique key for easier mapping.
+    $scoremap = [];
+    $rawscores = (array) $DB->get_records_sql("
+        SELECT 
+            CONCAT(quiza.userid, '_', m.competencyid) as unique_key, 
+            quiza.userid, 
+            m.competencyid,
+            SUM(qa.maxfraction) AS total_max, 
+            SUM(qas.fraction) AS total_fraction
+        FROM {quiz_attempts} quiza
+        JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+        JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+        JOIN (
+            SELECT questionattemptid, MAX(fraction) AS fraction 
+            FROM {question_attempt_steps} 
+            GROUP BY questionattemptid
+        ) qas ON qas.questionattemptid = qa.id
+        WHERE quiza.state = 'finished'
+          AND quiza.userid IN (SELECT userid FROM {groups_members} WHERE groupid = :groupid)
+        GROUP BY quiza.userid, m.competencyid
+    ", ['groupid' => $groupid]);
+
+    // Construct the score map: $scoremap[userid][competencyid].
+    foreach ($rawscores as $rs) {
+        $scoremap[$rs->userid][$rs->competencyid] = [
+            'att' => (float)$rs->total_max, 
+            'cor' => (float)$rs->total_fraction
+        ];
     }
-    echo '</tr>';
 
-    // Grup toplamları için hazırlık.
-    $grouptotals = []; // Düzeltildi: tamamen küçük harf ve yorum sonuna nokta eklendi.
-    foreach ($competencies as $c) {
-        $grouptotals[$c->id] = ['attempts' => 0, 'correct' => 0];
-    }
+    // 5. Prepare student rows and calculate group competency rates for the template.
+    $renderdata->students = [];
+    $grouptotals = [];
 
-    // Her öğrenci için yetkinlik başarıları.
     foreach ($students as $s) {
-        // Ogrenci adı link olacak.
-        $url = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
-            'courseid' => $courseid,
-            'userid'   => $s->id,
-        ]);
-        $studentlink = html_writer::link($url, fullname($s), ['target' => '_blank']);
+        $row = new stdClass();
+        $detailurl = new moodle_url('/local/yetkinlik/student_competency_detail.php', ['courseid' => $courseid, 'userid' => $s->id]);
+        $row->studentlink = html_writer::link($detailurl, fullname($s), ['target' => '_blank']);
+        $row->scores = [];
 
-        echo "<tr><td>$studentlink</td>";
-        foreach ($competencies as $c) {
-            $sql = "
-                SELECT SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
-                FROM {quiz_attempts} quiza
-                JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                JOIN (
-                    SELECT MAX(fraction) AS fraction, questionattemptid
-                    FROM {question_attempt_steps}
-                    GROUP BY questionattemptid
-                ) qas ON qas.questionattemptid = qa.id
-                WHERE quiza.userid = :userid AND quiza.state = 'finished'
-                  AND m.competencyid = :competencyid
-            ";
-            $data = $DB->get_record_sql($sql, [
-                'userid' => $s->id,
-                'competencyid' => $c->id,
-            ]);
-
-            if ($data && $data->attempts) {
-                $rate = number_format(($data->correct / $data->attempts) * 100, 1);
-
-                if ($rate >= 80) {
-                    $color = 'green';
-                } else if ($rate >= 60) {
-                    $color = 'blue';
-                } else if ($rate >= 40) {
-                    $color = 'orange';
+        foreach ($renderdata->competencies as $c) {
+            $scoreobj = new stdClass();
+            
+            if (isset($scoremap[$s->id][$c->id])) {
+                $att = $scoremap[$s->id][$c->id]['att'];
+                $cor = $scoremap[$s->id][$c->id]['cor'];
+                
+                if ($att > 0) {
+                    $rate = number_format(($cor / $att) * 100, 1);
+                    $scoreobj->rate = $rate;
+                    
+                    // Logic for visual indicator colors based on performance.
+                    $scoreobj->color = ($rate >= 80) ? 'green' : (($rate >= 60) ? 'blue' : (($rate >= 40) ? 'orange' : 'red'));
+                    
+                    // Aggregate totals for the group average.
+                    $grouptotals[$c->id]['att'] = ($grouptotals[$c->id]['att'] ?? 0) + $att;
+                    $grouptotals[$c->id]['cor'] = ($grouptotals[$c->id]['cor'] ?? 0) + $cor;
                 } else {
-                    $color = 'red';
+                    $scoreobj->rate = null;
                 }
-                echo "<td style='color: $color; font-weight: bold;'>%$rate</td>";
-                $grouptotals[$c->id]['attempts'] += $data->attempts;
-                $grouptotals[$c->id]['correct']  += $data->correct;
             } else {
-                echo "<td></td>"; // Girişim yoksa boş hücre.
+                $scoreobj->rate = null; // No attempts recorded for this competency.
             }
+            $row->scores[] = $scoreobj;
         }
-        echo '</tr>';
+        $renderdata->students[] = $row;
     }
 
-    // Grup ortalama satırı.
-    echo "<tr style='font-weight: bold; background: #eee;'><td>" . get_string('total', 'local_yetkinlik') . "</td>";
-    foreach ($competencies as $c) {
-        $attempts = $grouptotals[$c->id]['attempts'];
-        $correct  = $grouptotals[$c->id]['correct'];
-        $rate = ($attempts) ? number_format(($correct / $attempts) * 100, 1) : '';
-
-        if ($rate !== '') {
-            if ($rate >= 80) {
-                $color = 'green';
-            } else if ($rate >= 60) {
-                $color = 'blue';
-            } else if ($rate >= 40) {
-                $color = 'orange';
-            } else {
-                $color = 'red';
-            }
-            echo "<td style='color: $color;'>%$rate</td>";
+    // 6. Calculate average totals for the report footer.
+    $renderdata->totals = [];
+    foreach ($renderdata->competencies as $c) {
+        $total = new stdClass();
+        $t_att = $grouptotals[$c->id]['att'] ?? 0;
+        $t_cor = $grouptotals[$c->id]['cor'] ?? 0;
+        
+        if ($t_att > 0) {
+            $trate = number_format(($t_cor / $t_att) * 100, 1);
+            $total->rate = $trate;
+            $total->color = ($trate >= 80) ? 'green' : (($trate >= 60) ? 'blue' : (($trate >= 40) ? 'orange' : 'red'));
         } else {
-            echo "<td></td>";
+            $total->rate = null;
         }
+        $renderdata->totals[] = $total;
     }
-    echo '</tr>';
-
-    echo '</table>';
 }
+
+// 7. Output rendering.
+echo $OUTPUT->header();
+
+$page = new \local_yetkinlik\output\group_competency_page($courseid, $groupid, $renderdata);
+echo $OUTPUT->render($page);
 
 echo $OUTPUT->footer();

@@ -15,13 +15,13 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Competency success report page.
+ * Report for competency analysis based on school-wide or course-specific data.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
+ 
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/ai.php');
 
@@ -30,6 +30,7 @@ require_login();
 $courseid = optional_param('courseid', 0, PARAM_INT);
 global $DB, $OUTPUT, $PAGE;
 
+// Determine context and visibility based on courseid parameter.
 if ($courseid) {
     $context = context_course::instance($courseid);
     require_capability('moodle/course:view', $context);
@@ -37,28 +38,26 @@ if ($courseid) {
     $reporttitle = get_string('report_title', 'local_yetkinlik', $course->fullname);
     $wheresql = "WHERE quiz.course = :courseid AND quiza.state = 'finished'";
     $params = ['courseid' => $courseid];
-    $url = new moodle_url('/local/yetkinlik/school_report.php', ['courseid' => $courseid]);
 } else {
+    // If no course is specified, treat as a site-wide report (admin access).
     $context = context_system::instance();
     require_capability('moodle/site:config', $context);
     $reporttitle = get_string('report_title', 'local_yetkinlik');
     $wheresql = "WHERE quiza.state = 'finished'";
     $params = [];
-    $url = new moodle_url('/local/yetkinlik/school_report.php');
 }
 
-$PAGE->set_url($url);
+// Page definitions.
+$PAGE->set_url(new moodle_url('/local/yetkinlik/school_report.php', ['courseid' => $courseid]));
 $PAGE->set_context($context);
 $PAGE->set_title($reporttitle);
 $PAGE->set_heading($reporttitle);
+$PAGE->set_pagelayout('report');
 
-echo $OUTPUT->header();
-echo $OUTPUT->heading($reporttitle);
-
-// SQL Sorgusu.
+// Main SQL Query to fetch competency success rates.
 $sql = "SELECT c.id, c.shortname, c.description,
-               CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-               CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+               SUM(qa.maxfraction) AS attempts,
+               SUM(qas.fraction) AS correct
         FROM {quiz_attempts} quiza
         JOIN {quiz} quiz ON quiz.id = quiza.quiz
         JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -66,8 +65,8 @@ $sql = "SELECT c.id, c.shortname, c.description,
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid
-            FROM {question_attempt_steps}
+            SELECT MAX(fraction) AS fraction, questionattemptid 
+            FROM {question_attempt_steps} 
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         $wheresql
@@ -75,55 +74,26 @@ $sql = "SELECT c.id, c.shortname, c.description,
         ORDER BY c.shortname ASC";
 
 $rows = $DB->get_records_sql($sql, $params);
-$rates = [];
 
-if ($rows) {
-    $table = new html_table();
-    $table->head = [
-        get_string('competencycode', 'local_yetkinlik'),
-        get_string('competencyname', 'local_yetkinlik'),
-        get_string('questioncount', 'local_yetkinlik'),
-        get_string('correctcount', 'local_yetkinlik'),
-        get_string('successrate', 'local_yetkinlik'),
-    ];
+// Data preparation for the output.
+$renderdata = new stdClass();
+$renderdata->courseid = $courseid;
+$renderdata->rows = $rows;
+$renderdata->comment = '';
 
+if (!empty($rows)) {
+    $rates = [];
     foreach ($rows as $r) {
-        $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
-        $rates[$r->shortname] = $rate;
-        $rowclass = ($rate >= 70) ? 'table-success' : (($rate >= 50) ? 'table-warning' : 'table-danger');
-
-        $row = new html_table_row([
-            '<strong>' . $r->shortname . '</strong>',
-            format_text($r->description, FORMAT_HTML),
-            $r->attempts,
-            $r->correct,
-            '<strong>%' . $rate . '</strong>',
-        ]);
-        $row->attributes['class'] = $rowclass;
-        $table->data[] = $row;
+        $rates[$r->shortname] = $r->attempts ? ($r->correct / $r->attempts) * 100 : 0;
     }
-
-    $comment = local_yetkinlik_generate_comment($rates);
-    if (!empty($comment)) {
-        echo $OUTPUT->box_start('generalbox mb-4');
-        $aicaption = '<h4 class="text-info"><i class="fa fa-magic"></i> ' .
-            get_string('generalcomment', 'local_yetkinlik') . '</h4>';
-        echo $aicaption;
-        echo format_text($comment, FORMAT_HTML);
-        echo $OUTPUT->box_end();
-    }
-
-    echo html_writer::table($table);
-
-    $pdfurl = new moodle_url('/local/yetkinlik/school_pdf.php', ['courseid' => $courseid]);
-    $pdflink = html_writer::link(
-        $pdfurl,
-        '<i class="fa fa-file-pdf-o"></i> ' . get_string('schoolpdf', 'local_yetkinlik'),
-        ['class' => 'btn btn-secondary']
-    );
-    echo html_writer::div($pdflink, 'text-right');
-} else {
-    echo $OUTPUT->notification(get_string('no_data_found', 'local_yetkinlik'), 'info');
+    // Generate AI commentary based on success rates (Function defined in ai.php).
+    $renderdata->comment = local_yetkinlik_generate_comment($rates);
 }
+
+// Output generation.
+echo $OUTPUT->header();
+
+$page = new \local_yetkinlik\output\school_report_page($renderdata);
+echo $OUTPUT->render($page);
 
 echo $OUTPUT->footer();

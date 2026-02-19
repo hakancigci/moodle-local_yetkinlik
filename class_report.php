@@ -28,21 +28,17 @@ require_once(__DIR__ . '/forms/selector_form.php');
 $courseid = required_param('courseid', PARAM_INT);
 $context  = context_course::instance($courseid);
 
-require_login();
+require_login($courseid);
 require_capability('moodle/course:view', $context);
-
-global $DB, $OUTPUT, $PAGE, $USER;
 
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
+// Page settings.
 $PAGE->set_url('/local/yetkinlik/class_report.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
-$PAGE->set_course($course);
 $PAGE->set_pagelayout('course');
 $PAGE->set_title(get_string('report_title', 'local_yetkinlik'));
 $PAGE->set_heading($course->fullname . " - " . get_string('report_heading', 'local_yetkinlik'));
-
-echo $OUTPUT->header();
 
 // 1. Parameter Management and Form.
 $userid     = optional_param('userid', 0, PARAM_INT);
@@ -55,19 +51,15 @@ if ($data = $mform->get_data()) {
 }
 $mform->set_data(['userid' => $userid, 'competencyid' => $competency]);
 
-// Upper Buttons Group.
-echo html_writer::start_div('d-flex justify-content-between align-items-center mb-3');
-$pdfparams = ['courseid' => $courseid];
-$pdfurl = new moodle_url('/local/yetkinlik/pdf_report.php', $pdfparams);
-echo html_writer::link($pdfurl, get_string('pdfreport', 'local_yetkinlik'), ['class' => 'btn btn-secondary', 'target' => '_blank']);
-echo html_writer::end_div();
+// 2. Data Preparation.
+$renderdata = new stdClass();
+$renderdata->courseid = $courseid;
+$renderdata->rows = [];
 
-$mform->display();
-
-// 2. Data Queries.
+// Course General SQL.
 $coursesql = "SELECT c.id, c.shortname,
-                     CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                     CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+                     SUM(qa.maxfraction) AS attempts,
+                     SUM(qas.fraction) AS correct
               FROM {quiz_attempts} quiza
               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
@@ -86,84 +78,46 @@ $coursesql .= " GROUP BY c.id, c.shortname";
 
 $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid, 'competencyid' => $competency]);
 
-if (empty($coursedata)) {
-    echo $OUTPUT->notification(get_string('nodatafound', 'local_yetkinlik'), 'info');
-} else {
+if (!empty($coursedata)) {
     $classdata = [];
     $studentdata = [];
 
     if ($userid) {
         $userdept = $DB->get_field('user', 'department', ['id' => $userid]);
         if (!empty($userdept)) {
-            $classsql = str_replace(
-                "FROM {quiz_attempts} quiza",
-                "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id",
-                $coursesql
-            );
+            // Fetch class/department data by joining with user table and filtering by department.
+            $classsql = str_replace("FROM {quiz_attempts} quiza", "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $coursesql);
             $classsql = str_replace("WHERE quiz.course", "WHERE u.department = :dept AND quiz.course", $classsql);
-            $classdata = $DB->get_records_sql($classsql, [
-                'courseid' => $courseid,
-                'dept' => $userdept,
-                'competencyid' => $competency,
-            ]);
+            $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $userdept, 'competencyid' => $competency]);
         }
-
+        // Fetch specific student data by filtering by userid.
         $studentsql = str_replace("WHERE quiz.course", "WHERE quiza.userid = :userid AND quiz.course", $coursesql);
-        $studentdata = $DB->get_records_sql($studentsql, [
-            'courseid' => $courseid,
-            'userid' => $userid,
-            'competencyid' => $competency,
-        ]);
+        $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $userid, 'competencyid' => $competency]);
     }
 
-    // 3. Table Output.
-    echo html_writer::start_tag('table', ['class' => 'generaltable mt-4 shadow-sm', 'style' => 'width:100%']);
-    echo html_writer::start_tag('thead');
-    echo html_writer::start_tag('tr');
-    echo html_writer::tag('th', get_string('competencyname', 'local_yetkinlik'));
-    echo html_writer::tag('th', get_string('courseavg', 'local_yetkinlik'), ['class' => 'text-center']);
-    echo html_writer::tag('th', get_string('classavg', 'local_yetkinlik'), ['class' => 'text-center']);
-    echo html_writer::tag('th', get_string('studentavg', 'local_yetkinlik'), ['class' => 'text-center']);
-    echo html_writer::end_tag('tr');
-    echo html_writer::end_tag('thead');
-    echo html_writer::start_tag('tbody');
-
+    // Chart lists.
     $labels = [];
-    $courserates = [];
-    $classrates = [];
-    $studentrates = [];
+    $courserates = []; $classrates = []; $studentrates = [];
 
     foreach ($coursedata as $cid => $c) {
-        $courserate = $c->attempts ? round(($c->correct / $c->attempts) * 100, 1) : 0;
-        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ?
-            round(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
-        $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ?
-            round(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
+        $courserate = $c->attempts ? number_format(($c->correct / $c->attempts) * 100, 1) : 0;
+        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ? number_format(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+        $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ? number_format(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
-        echo html_writer::start_tag('tr');
-        echo html_writer::tag('td', html_writer::tag('strong', $c->shortname));
-        echo html_writer::tag('td', '%' . $courserate, ['class' => 'text-center font-weight-bold']);
-        echo html_writer::tag('td', '%' . $classrate, ['class' => 'text-center text-muted']);
-        echo html_writer::tag('td', '%' . $studrate, ['class' => 'text-center text-primary font-weight-bold']);
-        echo html_writer::end_tag('tr');
+        $renderdata->rows[] = [
+            'shortname' => $c->shortname,
+            'courserate' => $courserate,
+            'classrate' => $classrate,
+            'studentrate' => $studrate
+        ];
 
         $labels[] = $c->shortname;
         $courserates[] = $courserate;
         $classrates[] = $classrate;
         $studentrates[] = $studrate;
     }
-    echo html_writer::end_tag('tbody');
-    echo html_writer::end_tag('table');
 
-    // 4. Chart Area (Visualizer.js compatible).
-    echo html_writer::div(
-        '<canvas id="studentClassChart"></canvas>',
-        'card mt-4 p-4 shadow-sm bg-light',
-        ['style' => 'height:400px; width:100%;']
-    );
-
-    // 5. Data Preparation and AMD Module Call.
-    $chartparams = [
+    $renderdata->chart_params = [
         'labels'     => $labels,
         'courseData' => $courserates,
         'classData'  => $classrates,
@@ -174,8 +128,12 @@ if (empty($coursedata)) {
             'my'     => get_string('studentavg', 'local_yetkinlik'),
         ],
     ];
-
-    $PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initStudentClass', [$chartparams]);
 }
+
+// 3. Output.
+echo $OUTPUT->header();
+
+$page = new \local_yetkinlik\output\class_report_page($renderdata, $mform);
+echo $OUTPUT->render($page);
 
 echo $OUTPUT->footer();

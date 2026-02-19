@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Report for competency exams.
+ * Report showing student performance per quiz for a specific selected competency.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -28,168 +28,87 @@ $courseid = required_param('courseid', PARAM_INT);
 $competencyid = optional_param('competencyid', 0, PARAM_INT);
 
 require_login($courseid);
-
-global $DB, $USER, $OUTPUT, $PAGE;
-
 $context = context_course::instance($courseid);
 
+// Page definitions and navigation setup.
 $PAGE->set_url('/local/yetkinlik/student_competency_exams.php', ['courseid' => $courseid]);
+$PAGE->set_context($context);
 $PAGE->set_title(get_string('studentcompetencyexams', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('studentcompetencyexams', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
-echo $OUTPUT->header();
-
-// Ogrencinin bu derste sahip olduğu yetkinlikler.
-$competencies = $DB->get_records_sql("
-    SELECT DISTINCT c.id, c.shortname, c.description
+// 1. Fetch available competencies for the selection filter.
+$comps_raw = $DB->get_records_sql("
+    SELECT DISTINCT c.id, c.shortname
     FROM {local_yetkinlik_qmap} m
     JOIN {competency} c ON c.id = m.competencyid
     ORDER BY c.shortname
 ");
 
-// Formu başlat.
-echo html_writer::start_tag('form', ['method' => 'get', 'class' => 'form-inline mb-3', 'id' => 'competency_filter_form']);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'courseid', 'value' => $courseid]);
-
-// Select menüsü için seçenekleri hazırla.
-$options = [0 => get_string('selectcompetency', 'local_yetkinlik')];
-foreach ($competencies as $c) {
-    $options[$c->id] = format_string($c->shortname);
+$competencies = [];
+foreach ($comps_raw as $c) {
+    $competencies[] = [
+        'id' => $c->id,
+        'shortname' => format_string($c->shortname),
+        'selected' => ($c->id == $competencyid)
+    ];
 }
 
-// Select menüsünü oluştur.
-echo html_writer::select($options, 'competencyid', $competencyid, false, [
-    'id' => 'id_competency_select',
-    'class' => 'form-control mr-2',
-]);
-
-echo html_writer::tag('button', get_string('show', 'local_yetkinlik'), [
-    'type' => 'submit',
-    'class' => 'btn btn-primary',
-]);
-echo html_writer::end_tag('form');
-
-// Autocomplete özelliğini aktifleştiren JavaScript (AMD).
-$PAGE->requires->js_call_amd('core/form-autocomplete', 'enhance', [
-    '#id_competency_select',
-    false,
-    false,
-    get_string('selectcompetency', 'local_yetkinlik'),
-]);
-
-echo html_writer::empty_tag('hr');
+$renderdata = new stdClass();
+$renderdata->courseid = $courseid;
+$renderdata->competencyid = $competencyid;
+$renderdata->competencies = $competencies;
+$renderdata->rows = [];
 
 if ($competencyid) {
-    // Yetkinlik açıklamasını güvenli bir şekilde çekelim.
-    if ($competency = $DB->get_record('competency', ['id' => $competencyid])) {
-        // HTML etiketlerini temizleyip gösterelim.
-        $cleandesc = strip_tags(html_entity_decode($competency->description, ENT_QUOTES, 'UTF-8'));
-        echo html_writer::tag('div', $cleandesc, [
-            'class' => 'alert alert-info competency-description mb-3',
-        ]);
+    // 2. Fetch competency details if a specific one is selected.
+    if ($comp = $DB->get_record('competency', ['id' => $competencyid])) {
+        $renderdata->description = format_text($comp->description, $comp->descriptionformat);
     }
 
-    $sql = "
-        SELECT
-            quiz.id AS quizid,
-            quiz.name AS quizname,
-            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS questions,
-            CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-        FROM {quiz_attempts} quiza
-        JOIN {user} u ON quiza.userid = u.id
-        JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-        JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-        JOIN {quiz} quiz ON quiz.id = quiza.quiz
-        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-        JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid
-            FROM {question_attempt_steps}
-            GROUP BY questionattemptid
-        ) qas ON qas.questionattemptid = qa.id
-        WHERE quiz.course = :courseid
-          AND m.competencyid = :competencyid
-          AND u.id = :userid
-          AND quiza.state = 'finished'
-        GROUP BY quiz.id, quiz.name
-        ORDER BY quiz.id
-    ";
+    // 3. Fetch performance data for the current user in the selected competency across all quizzes.
+    $sql = "SELECT quiz.id AS quizid, quiz.name AS quizname,
+                   SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
+            FROM {quiz_attempts} quiza
+            JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+            JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+            JOIN {quiz} quiz ON quiz.id = quiza.quiz
+            JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+            JOIN (
+                SELECT MAX(fraction) AS fraction, questionattemptid 
+                FROM {question_attempt_steps} 
+                GROUP BY questionattemptid
+            ) qas ON qas.questionattemptid = qa.id
+            WHERE quiz.course = :courseid 
+              AND m.competencyid = :competencyid 
+              AND quiza.userid = :userid 
+              AND quiza.state = 'finished'
+            GROUP BY quiz.id, quiz.name 
+            ORDER BY quiz.id";
 
-    $params = [
-        'courseid'     => $courseid,
-        'competencyid' => $competencyid,
-        'userid'       => $USER->id,
-    ];
+    $rows = $DB->get_records_sql($sql, [
+        'courseid' => $courseid, 
+        'competencyid' => $competencyid, 
+        'userid' => $USER->id
+    ]);
 
-    $rows = $DB->get_records_sql($sql, $params);
-
-    if ($rows) {
-        $table = new html_table();
-        $table->head = [
-            get_string('quiz', 'local_yetkinlik'),
-            get_string('question', 'local_yetkinlik'),
-            get_string('correct', 'local_yetkinlik'),
-            get_string('success', 'local_yetkinlik'),
-        ];
-        $table->attributes['class'] = 'generaltable mt-3';
-
-        $totalq = 0;
-        $totalc = 0;
-
-        foreach ($rows as $r) {
-            $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
-
-            if ($rate >= 80) {
-                $color = 'text-success';
-            } else if ($rate >= 60) {
-                $color = 'text-primary';
-            } else if ($rate >= 40) {
-                $color = 'text-warning';
-            } else {
-                $color = 'text-danger';
-            }
-
-            $totalq += $r->questions;
-            $totalc += $r->correct;
-
-            // Son girişimi bulma mantığı.
-            $lastattempt = $DB->get_record_sql("
-                SELECT id
-                FROM {quiz_attempts}
-                WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
-                ORDER BY attempt DESC
-                LIMIT 1
-            ", ['quizid' => $r->quizid, 'userid' => $USER->id]);
-
-            $link = s($r->quizname);
-            if ($lastattempt) {
-                $url = new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]);
-                $link = html_writer::link($url, $r->quizname, ['target' => '_blank']);
-            }
-
-            $table->data[] = [
-                $link,
-                $r->questions,
-                $r->correct,
-                html_writer::tag('span', "%$rate", ['class' => "$color font-weight-bold"]),
-            ];
-        }
-
-        // Toplam satırı.
-        $totalrate = $totalq ? number_format(($totalc / $totalq) * 100, 1) : 0;
-        $tcolor = ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger');
-
-        $table->data[] = new html_table_row([
-            html_writer::tag('strong', get_string('total', 'local_yetkinlik')),
-            html_writer::tag('strong', $totalq),
-            html_writer::tag('strong', $totalc),
-            html_writer::tag('strong', "%$totalrate", ['class' => $tcolor]),
-        ]);
-
-        echo html_writer::table($table);
-    } else {
-        echo $OUTPUT->notification(get_string('nocompetencyexamdata', 'local_yetkinlik'), 'info');
+    foreach ($rows as $r) {
+        // 4. Determine the link to the latest quiz attempt for review.
+        $lastattempt = $DB->get_record_sql("
+            SELECT id FROM {quiz_attempts} 
+            WHERE quiz = :quizid AND userid = :userid AND state = 'finished' 
+            ORDER BY attempt DESC", 
+            ['quizid' => $r->quizid, 'userid' => $USER->id], IGNORE_MULTIPLE);
+        
+        $r->review_url = $lastattempt ? (new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]))->out(false) : null;
+        $renderdata->rows[] = $r;
     }
 }
+
+// 5. Output Generation.
+echo $OUTPUT->header();
+
+$page = new \local_yetkinlik\output\student_competency_exams_page($renderdata);
+echo $OUTPUT->render($page);
 
 echo $OUTPUT->footer();

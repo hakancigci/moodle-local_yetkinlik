@@ -15,7 +15,8 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Student Competency Performance Timeline Report.
+ * Student competency progress timeline report.
+ * Tracks performance over time to visualize improvement or gaps.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -24,87 +25,78 @@
 
 require_once(__DIR__ . '/../../config.php');
 
-// 1. Parametreler ve güvenlik kontrolleri.
 $courseid = required_param('courseid', PARAM_INT);
 $days     = optional_param('days', 90, PARAM_INT);
 
 require_login($courseid);
-
-global $USER, $DB, $PAGE, $OUTPUT;
-
-$userid = $USER->id;
 $context = context_course::instance($courseid);
 
-// 2. Sayfa yapılandırması.
+// Page Setup and Navigation items.
 $PAGE->set_url('/local/yetkinlik/timeline.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('timelineheading', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('timelineheading', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
-echo $OUTPUT->header();
+// 1. SQL Preparation.
+// Fetch student's achievement data grouped by competency and month (period).
+$where = "quiz.course = :courseid AND u.id = :userid AND quiza.state = 'finished'";
+$params = ['courseid' => $courseid, 'userid' => $USER->id];
 
-// 3. SQL Sorgusu.
-$where = "quiz.course = :courseid AND u.id = :userid";
-$params = ['courseid' => $courseid, 'userid' => $userid];
-
+// Apply date filter if specific timeframe is requested.
 if ($days > 0) {
     $where .= " AND qas2.timecreated > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL :days DAY))";
     $params['days'] = $days;
 }
 
-$sql = "
-SELECT
-  c.shortname,
-  FROM_UNIXTIME(qas2.timecreated, '%Y-%m') AS period,
-  CAST(SUM(qa.maxfraction) AS DECIMAL(12,1)) AS attempts,
-  CAST(SUM(qas.fraction) AS DECIMAL(12,1)) AS correct
-FROM {quiz_attempts} quiza
-JOIN {user} u ON quiza.userid = u.id
-JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-JOIN {quiz} quiz ON quiz.id = quiza.quiz
-JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-JOIN {competency} c ON c.id = m.competencyid
-JOIN (
-    SELECT questionattemptid, MAX(timecreated) AS timecreated
-    FROM {question_attempt_steps}
-    GROUP BY questionattemptid
-) qas2 ON qas2.questionattemptid = qa.id
-JOIN (
-    SELECT MAX(fraction) AS fraction, questionattemptid
-    FROM {question_attempt_steps}
-    GROUP BY questionattemptid
-) qas ON qas.questionattemptid = qa.id
-WHERE $where AND quiza.state = 'finished'
-GROUP BY c.shortname, period
-ORDER BY period ASC
-";
+$sql = "SELECT c.shortname, FROM_UNIXTIME(qas2.timecreated, '%Y-%m') AS period,
+               SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
+        FROM {quiz_attempts} quiza
+        JOIN {user} u ON quiza.userid = u.id
+        JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+        JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+        JOIN {quiz} quiz ON quiz.id = quiza.quiz
+        JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+        JOIN {competency} c ON c.id = m.competencyid
+        JOIN (
+            SELECT questionattemptid, MAX(timecreated) AS timecreated 
+            FROM {question_attempt_steps} 
+            GROUP BY questionattemptid
+        ) qas2 ON qas2.questionattemptid = qa.id
+        JOIN (
+            SELECT MAX(fraction) AS fraction, questionattemptid 
+            FROM {question_attempt_steps} 
+            GROUP BY questionattemptid
+        ) qas ON qas.questionattemptid = qa.id
+        WHERE $where 
+        GROUP BY c.shortname, period 
+        ORDER BY period ASC";
 
 $rows = $DB->get_records_sql($sql, $params);
 
-// 4. Veri işleme.
-$data = [];
+// 2. Data Processing for Chart.js.
+// Map SQL results into a structured array for time-series visualization.
+$compdata = [];
 $periods = [];
-
 foreach ($rows as $r) {
     $rate = $r->attempts ? round(($r->correct / $r->attempts) * 100, 1) : 0;
-    $data[$r->shortname][$r->period] = $rate;
+    $compdata[$r->shortname][$r->period] = $rate;
     $periods[$r->period] = true;
 }
 
+// Generate a sorted unique list of time periods (Months).
 $periods = array_keys($periods);
 sort($periods);
 
-// 5. Grafik için Dataset hazırlığı.
 $datasets = [];
 $colors = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00897b'];
 $i = 0;
 
-foreach ($data as $comp => $vals) {
+// Transform processed data into Chart.js dataset format.
+foreach ($compdata as $comp => $vals) {
     $line = [];
-    foreach ($periods as $p) {
-        $line[] = isset($vals[$p]) ? (float)$vals[$p] : 0;
+    foreach ($periods as $p) { 
+        $line[] = isset($vals[$p]) ? (float)$vals[$p] : 0; 
     }
     $datasets[] = [
         'label' => $comp,
@@ -112,51 +104,22 @@ foreach ($data as $comp => $vals) {
         'borderColor' => $colors[$i % count($colors)],
         'backgroundColor' => $colors[$i % count($colors)],
         'fill' => false,
-        'tension' => 0.3,
+        'tension' => 0.3, // Curve tension for smoother lines.
     ];
     $i++;
 }
 
-// 6. Filtreleme Formu (UI).
-echo html_writer::start_tag('div', ['class' => 'card mb-4 shadow-sm']);
-echo html_writer::start_tag('div', ['class' => 'card-body']);
+// 3. Output Generation.
+echo $OUTPUT->header();
 
-$formurl = new moodle_url('/local/yetkinlik/timeline.php');
-echo html_writer::start_tag('form', ['method' => 'get', 'action' => $formurl, 'class' => 'form-inline']);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'courseid', 'value' => $courseid]);
+$renderdata = new stdClass();
+$renderdata->courseid = $courseid;
+$renderdata->days = $days;
+$renderdata->periods = $periods;
+$renderdata->datasets = $datasets;
 
-echo html_writer::label(get_string('filterlabel', 'local_yetkinlik'), 'days', false, ['class' => 'mr-2']);
-
-$options = [
-    '30' => get_string('last30days', 'local_yetkinlik'),
-    '90' => get_string('last90days', 'local_yetkinlik'),
-    '0'  => get_string('alltime', 'local_yetkinlik'),
-];
-echo html_writer::select($options, 'days', $days, false, ['class' => 'form-control mr-2', 'id' => 'days']);
-
-echo html_writer::tag('button', get_string('show', 'local_yetkinlik'), [
-    'type' => 'submit',
-    'class' => 'btn btn-primary',
-]);
-
-echo html_writer::end_tag('form');
-echo html_writer::end_tag('div');
-echo html_writer::end_tag('div');
-
-// 7. Grafik Alanı.
-echo html_writer::div(
-    '<canvas id="timeline"></canvas>',
-    'card p-4 shadow-sm bg-light',
-    ['style' => 'height:450px; width:100%;']
-);
-
-// 8. AMD Modülünü Çağırma.
-$chartparams = [
-    'labels'       => $periods,
-    'datasets'     => $datasets,
-    'successLabel' => get_string('successrate', 'local_yetkinlik'),
-];
-
-$PAGE->requires->js_call_amd('local_yetkinlik/visualizer', 'initTimeline', [$chartparams]);
+// Render using the timeline output class.
+$page = new \local_yetkinlik\output\timeline_page($renderdata);
+echo $OUTPUT->render($page);
 
 echo $OUTPUT->footer();
