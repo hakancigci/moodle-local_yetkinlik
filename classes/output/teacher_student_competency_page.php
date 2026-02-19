@@ -29,6 +29,13 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Output class for teacher student competency page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class teacher_student_competency_page implements renderable, templatable {
 
     /** @var stdClass Data object containing calculation results. */
@@ -38,7 +45,7 @@ class teacher_student_competency_page implements renderable, templatable {
     protected $mform;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param stdClass $data
      * @param \moodleform $mform
@@ -56,19 +63,19 @@ class teacher_student_competency_page implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
-        
+
         // Render the Moodle filter form into HTML.
         $export->form_html = $this->mform->render();
-        
+
         // Check if both student and competency filters are active.
         $export->has_selection = ($this->data->userid > 0 && $this->data->competencyid > 0);
-        
+
         // Check if there are results to display.
         $export->has_rows = !empty($this->data->rows);
-        
+
         // Assign row-level data.
         $export->rows = $this->data->rows;
-        
+
         // Prepare aggregated totals for the table footer if results exist.
         if ($export->has_rows) {
             $export->total = $this->data->total;
