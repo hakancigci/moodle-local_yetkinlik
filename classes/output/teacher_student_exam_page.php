@@ -29,25 +29,23 @@ use templatable;
 use renderer_base;
 use stdClass;
 
-/**
- * Teacher's student exam analysis output class.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 class teacher_student_exam_page implements renderable, templatable {
 
-    /** @var stdClass Data storage for the analysis results and filter options. */
+    /** @var stdClass Data object containing calculation results. */
     protected $data;
+
+    /** @var \moodleform The filter form instance. */
+    protected $mform;
 
     /**
      * Constructor.
      *
      * @param stdClass $data
+     * @param \moodleform $mform
      */
-    public function __construct($data) {
+    public function __construct($data, $mform) {
         $this->data = $data;
+        $this->mform = $mform;
     }
 
     /**
@@ -58,63 +56,23 @@ class teacher_student_exam_page implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
-        $export->courseid = $this->data->courseid;
-        $export->userid = $this->data->userid;
-        $export->quizid = $this->data->quizid;
 
-        // Process Student List for the filter dropdown.
-        $export->students = [];
-        foreach ($this->data->students as $s) {
-            $export->students[] = [
-                'id' => $s->id,
-                'name' => fullname($s),
-                'selected' => ($s->id == $this->data->userid),
-            ];
-        }
+        // Render the Moodle filter form into HTML.
+        $export->form_html = $this->mform->render();
 
-        // Process Quiz List for the filter dropdown.
-        $export->quizzes = [];
-        foreach ($this->data->quizzes as $q) {
-            $export->quizzes[] = [
-                'id' => $q->id,
-                'name' => format_string($q->name),
-                'selected' => ($q->id == $this->data->quizid),
-            ];
-        }
+        // Selection and row status flags.
+        $export->has_selection = ($this->data->userid > 0 && $this->data->quizid > 0);
+        $export->has_rows = !empty($this->data->rows);
+        $export->rows = $this->data->rows;
 
-        $export->rows = [];
+        // Prepare chart configuration.
         $labels = [];
         $values = [];
-
-        if (!empty($this->data->rows)) {
-            foreach ($this->data->rows as $r) {
-                // Calculate raw achievement rate.
-                $rawrate = $r->attempts ? ($r->correct / $r->attempts) * 100 : 0;
-
-                // Assign Bootstrap contextual classes based on performance thresholds.
-                $rowclass = 'table-danger';
-                if ($rawrate >= 70) {
-                    $rowclass = 'table-success';
-                } else if ($rawrate >= 50) {
-                    $rowclass = 'table-warning';
-                }
-
-                $export->rows[] = [
-                    'shortname' => s($r->shortname),
-                    'attempts'  => number_format($r->attempts, 0),
-                    'correct'   => number_format($r->correct, 1),
-                    'rate'      => number_format($rawrate, 1),
-                    'rowclass'  => $rowclass,
-                ];
-
-                // Arrays for chart visualization data.
-                $labels[] = $r->shortname;
-                $values[] = round($rawrate, 1);
-            }
-            $export->has_rows = true;
+        foreach ($this->data->rows as $row) {
+            $labels[] = $row->shortname;
+            $values[] = $row->raw_rate;
         }
 
-        // JSON configuration for the JavaScript visualization module.
         $export->chart_config = json_encode([
             'labels' => $labels,
             'values' => $values,
