@@ -1,3 +1,41 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    @template local_yetkinlik/teacher_report
+
+    Example context (json):
+    {
+        "form_html": "<form>Mock Form</form>",
+        "has_selection": true,
+        "has_rows": true,
+        "rows": [
+            {
+                "quizname": "Haftalık Quiz 1",
+                "questions": 10,
+                "correct": 8,
+                "rate": "80.0",
+                "color": "green",
+                "review_url": "#"
+            }
+        ],
+        "total": {
+            "questions": 10,
+            "correct": 8,
+            "rate": "80.0",
+            "color": "green"
+        }
+    }
+}}
 <div class="local_yetkinlik_teacher_report">
     {{! Filter Form }}
     <div class="card mb-4 p-3 bg-light border-0 shadow-sm">
