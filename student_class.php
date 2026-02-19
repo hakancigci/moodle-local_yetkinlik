@@ -39,17 +39,21 @@ $PAGE->set_pagelayout('course');
 
 // 1. General Course Average Query.
 $coursesql = "SELECT c.id, c.shortname,
-                      CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
-                      CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
-               FROM {quiz_attempts} quiza
-               JOIN {quiz} quiz ON quiz.id = quiza.quiz
-               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-               JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
-               JOIN {competency} c ON c.id = m.competencyid
-               JOIN (SELECT MAX(fraction) AS fraction, questionattemptid FROM {question_attempt_steps} GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
-               WHERE quiz.course = :courseid AND quiza.state = 'finished'
-               GROUP BY c.id, c.shortname";
+                     CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
+                     CAST(SUM(qas.fraction) AS DECIMAL(12, 1)) AS correct
+              FROM {quiz_attempts} quiza
+              JOIN {quiz} quiz ON quiz.id = quiza.quiz
+              JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+              JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+              JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+              JOIN {competency} c ON c.id = m.competencyid
+              JOIN (
+                  SELECT MAX(fraction) AS fraction, questionattemptid
+                  FROM {question_attempt_steps}
+                  GROUP BY questionattemptid
+              ) qas ON qas.questionattemptid = qa.id
+              WHERE quiz.course = :courseid AND quiza.state = 'finished'
+              GROUP BY c.id, c.shortname";
 
 $coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid]);
 
@@ -63,7 +67,8 @@ if (!empty($coursedata)) {
     if (!empty($USER->department)) {
         // Fetch data filtered by user department.
         $classsql = str_replace("GROUP BY c.id, c.shortname", "AND u.department = :dept GROUP BY c.id", $coursesql);
-        $classsql = str_replace("FROM {quiz_attempts} quiza", "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $classsql);
+        $classsql = str_replace("FROM {quiz_attempts} quiza",
+            "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $classsql);
         $renderdata->classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
     }
 
