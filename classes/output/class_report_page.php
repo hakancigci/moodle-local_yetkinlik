@@ -15,13 +15,13 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Class Report for Competency Matching.
+ * Class Report for Competency Matching output class.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
- 
+
 namespace local_yetkinlik\output;
 
 use renderable;
@@ -29,10 +29,17 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Renderable page class for the competency class report.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class class_report_page implements renderable, templatable {
     /** @var stdClass Data to be rendered */
     protected $data;
-    
+
     /** @var \moodleform The filter form */
     protected $mform;
 
@@ -43,7 +50,7 @@ class class_report_page implements renderable, templatable {
      * @param \moodleform $mform
      */
     public function __construct($data, $mform) {
-        $this->data = $data;
+        $this->data = $this->data;
         $this->mform = $mform;
     }
 
@@ -55,10 +62,10 @@ class class_report_page implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
-        
+
         // Render and pass the form HTML.
         $export->form_html = $this->mform->render();
-        
+
         // PDF report URL.
         $pdfurl = new \moodle_url('/local/yetkinlik/pdf_report.php', ['courseid' => $this->data->courseid]);
         $export->pdf_url = $pdfurl->out(false);
