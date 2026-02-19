@@ -29,13 +29,20 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Output class for student exam competency page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class student_exam_page implements renderable, templatable {
 
     /** @var stdClass Data object containing raw statistics from the database. */
     protected $data;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param stdClass $data
      */
@@ -51,12 +58,12 @@ class student_exam_page implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
-        
+
         // Data for the quiz selection form.
         $export->courseid = $this->data->courseid;
         $export->quizid = $this->data->quizid;
         $export->quizzes = $this->data->quizzes;
-        
+
         // Report and visualization data.
         $export->has_data = !empty($this->data->rows);
         $export->rows = [];
@@ -72,20 +79,20 @@ class student_exam_page implements renderable, templatable {
 
                 // Determine hex colors based on performance thresholds.
                 if ($rate >= 80) {
-                    $color = '#28a745'; // Success Green
+                    $color = '#28a745'; // Success Green.
                 } else if ($rate >= 60) {
-                    $color = '#007bff'; // Primary Blue
+                    $color = '#007bff'; // Primary Blue.
                 } else if ($rate >= 40) {
-                    $color = '#fd7e14'; // Warning Orange
+                    $color = '#fd7e14'; // Warning Orange.
                 } else {
-                    $color = '#dc3545'; // Danger Red
+                    $color = '#dc3545'; // Danger Red.
                 }
 
                 $export->rows[] = [
                     'shortname' => $r->shortname,
-                    'description' => format_text($r->description, FORMAT_HTML), 
+                    'description' => format_text($r->description, FORMAT_HTML),
                     'rate' => $rate,
-                    'color' => $color
+                    'color' => $color,
                 ];
 
                 // Prepare arrays for Chart.js configuration.
