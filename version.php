@@ -33,5 +33,5 @@ $plugin->release   = '3.0.1';                 // Human-readable version name.
 
 // Plugin dependencies (Other plugins that must be installed first).
 $plugin->dependencies = [
-    'qbank_yetkinlik' => 2026031200,
+    'qbank_yetkinlik' => 2026031210,
 ];
