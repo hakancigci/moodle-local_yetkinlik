@@ -30,13 +30,20 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Output class for student competency timeline page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class timeline_page implements renderable, templatable {
 
     /** @var stdClass Data object containing timeline periods and competency datasets. */
     protected $data;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param stdClass $data
      */
@@ -54,23 +61,23 @@ class timeline_page implements renderable, templatable {
         $export = new stdClass();
         $export->courseid = $this->data->courseid;
         $export->selected_days = $this->data->days;
-        
+
         // Define filter timeframes for the dropdown selection.
         $export->filter_options = [
             [
-                'value' => 30, 
-                'label' => get_string('last30days', 'local_yetkinlik'), 
-                'selected' => ($this->data->days == 30)
+                'value' => 30,
+                'label' => get_string('last30days', 'local_yetkinlik'),
+                'selected' => ($this->data->days == 30),
             ],
             [
-                'value' => 90, 
-                'label' => get_string('last90days', 'local_yetkinlik'), 
-                'selected' => ($this->data->days == 90)
+                'value' => 90,
+                'label' => get_string('last90days', 'local_yetkinlik'),
+                'selected' => ($this->data->days == 90),
             ],
             [
-                'value' => 0,  
-                'label' => get_string('alltime', 'local_yetkinlik'),    
-                'selected' => ($this->data->days == 0)
+                'value' => 0,
+                'label' => get_string('alltime', 'local_yetkinlik'),
+                'selected' => ($this->data->days == 0),
             ],
         ];
 
@@ -78,7 +85,7 @@ class timeline_page implements renderable, templatable {
         $export->chart_config = json_encode([
             'labels'       => $this->data->periods,
             'datasets'     => $this->data->datasets,
-            'successLabel' => get_string('successrate', 'local_yetkinlik')
+            'successLabel' => get_string('successrate', 'local_yetkinlik'),
         ]);
 
         // Determine if there is sufficient data to render the visualization.
