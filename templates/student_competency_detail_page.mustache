@@ -1,0 +1,54 @@
+<div class="local_yetkinlik_student_detail">
+    
+    {{#has_data}}
+        {{! Competency Breakdown Table }}
+        <div class="table-responsive">
+            <table class="generaltable table table-bordered table-hover shadow-sm bg-white">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>{{#str}}competencycode, local_yetkinlik{{/str}}</th>
+                        <th>{{#str}}competency, local_yetkinlik{{/str}}</th>
+                        <th class="text-center">{{#str}}questioncount, local_yetkinlik{{/str}}</th>
+                        <th class="text-center">{{#str}}correctcount, local_yetkinlik{{/str}}</th>
+                        <th class="text-center">{{#str}}successrate, local_yetkinlik{{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#rows}}
+                    <tr>
+                        <td class="font-weight-bold">{{shortname}}</td>
+                        <td>{{description}}</td>
+                        <td class="text-center">{{questions}}</td>
+                        <td class="text-center">{{correct}}</td>
+                        <td class="text-center font-weight-bold" style="color: {{color}};">
+                            %{{rate}}
+                        </td>
+                    </tr>
+                    {{/rows}}
+                </tbody>
+            </table>
+        </div>
+
+        {{! PDF Export Button }}
+        <div class="mt-4">
+            <a href="{{pdf_url}}" class="btn btn-secondary" target="_blank">
+                <i class="fa fa-file-pdf-o"></i> {{#str}}pdfmystudent, local_yetkinlik{{/str}}
+            </a>
+        </div>
+
+        {{! AI Commentary Section }}
+        <div class="ai-commentary mt-5">
+            <h3 class="mb-3"><i class="fa fa-magic"></i> {{#str}}generalcomment, local_yetkinlik{{/str}}</h3>
+            <div class="alert alert-info border-left-info shadow-sm p-4">
+                {{{ai_comment}}}
+            </div>
+        </div>
+    {{/has_data}}
+
+    {{^has_data}}
+        {{! No Data Found Alert }}
+        <div class="alert alert-warning">
+            {{#str}}nodatafound, local_yetkinlik{{/str}}
+        </div>
+    {{/has_data}}
+</div>

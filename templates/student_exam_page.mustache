@@ -1,0 +1,79 @@
+<div class="local_yetkinlik_student_exam">
+    
+    {{! 1. Quiz Selection Form }}
+    <div class="card mb-4 border-0 shadow-sm bg-light">
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <input type="hidden" name="courseid" value="{{courseid}}">
+                
+                <label class="mr-2 font-weight-bold" for="quizid">
+                    {{#str}}selectquiz, local_yetkinlik{{/str}}
+                </label>
+                
+                <select name="quizid" id="quizid" class="form-control mr-2">
+                    {{#quizzes}}
+                        <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+                    {{/quizzes}}
+                </select>
+                
+                <button type="submit" class="btn btn-primary">
+                    {{#str}}show, local_yetkinlik{{/str}}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{#quizid}}
+        {{#has_data}}
+            {{! 2. Competency Analysis Table }}
+            <div class="table-responsive">
+                <table class="generaltable table table-hover mt-3 shadow-sm bg-white">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>{{#str}}competencycode, local_yetkinlik{{/str}}</th>
+                            <th>{{#str}}competency, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}success, local_yetkinlik{{/str}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#rows}}
+                        <tr>
+                            <td><strong>{{shortname}}</strong></td>
+                            <td>{{{description}}}</td>
+                            <td class="text-center font-weight-bold" style="color: {{color}}; font-size: 1.1em;">
+                                %{{rate}}
+                            </td>
+                        </tr>
+                        {{/rows}}
+                    </tbody>
+                </table>
+            </div>
+
+            {{! 3. Visual Chart Area }}
+            <div class="card mt-4 p-4 shadow-sm bg-white border-0">
+                <div style="height:400px; min-height:400px; width:100%; position: relative;">
+                    <canvas id="studentexamchart" data-chart-config="{{chart_config}}"></canvas>
+                </div>
+            </div>
+
+            {{#js}}
+            require(['local_yetkinlik/visualizer'], function(Visualizer) {
+                var canvas = document.getElementById('studentexamchart');
+                if (canvas) {
+                    // Extract and parse the chart configuration from data attribute.
+                    var config = JSON.parse(canvas.getAttribute('data-chart-config'));
+                    Visualizer.initStudentExam(config);
+                }
+            });
+            {{/js}}
+
+        {{/has_data}}
+
+        {{^has_data}}
+            {{! Empty State Notification }}
+            <div class="alert alert-info">
+                {{#str}}noexamdata, local_yetkinlik{{/str}}
+            </div>
+        {{/has_data}}
+    {{/quizid}}
+</div>

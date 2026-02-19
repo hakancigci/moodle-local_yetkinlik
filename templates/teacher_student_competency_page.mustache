@@ -1,0 +1,62 @@
+<div class="local_yetkinlik_teacher_report">
+    {{! Filter Form }}
+    <div class="card mb-4 p-3 bg-light border-0 shadow-sm">
+        <div class="card-body">
+            {{{form_html}}}
+        </div>
+    </div>
+
+    {{#has_selection}}
+        {{#has_rows}}
+            {{! Competency Performance Table }}
+            <div class="table-responsive">
+                <table class="generaltable table table-bordered table-hover mt-3 shadow-sm bg-white">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>{{#str}}quiz, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}question, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}correct, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}success, local_yetkinlik{{/str}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#rows}}
+                        <tr>
+                            <td>
+                                {{#review_url}}
+                                    <a href="{{review_url}}" target="_blank">{{quizname}}</a>
+                                {{/review_url}}
+                                {{^review_url}}
+                                    {{quizname}}
+                                {{/review_url}}
+                            </td>
+                            <td class="text-center">{{questions}}</td>
+                            <td class="text-center">{{correct}}</td>
+                            <td class="text-center font-weight-bold" style="color: {{color}};">
+                                %{{rate}}
+                            </td>
+                        </tr>
+                        {{/rows}}
+                    </tbody>
+                    <tfoot>
+                        {{#total}}
+                        <tr class="table-secondary font-weight-bold">
+                            <td>{{#str}}total, local_yetkinlik{{/str}}</td>
+                            <td class="text-center">{{questions}}</td>
+                            <td class="text-center">{{correct}}</td>
+                            <td class="text-center" style="color: {{color}};">%{{rate}}</td>
+                        </tr>
+                        {{/total}}
+                    </tfoot>
+                </table>
+            </div>
+        {{/has_rows}}
+
+        {{^has_rows}}
+            {{! Empty State Notification }}
+            <div class="alert alert-info">
+                {{#str}}nodatastudentcompetency, local_yetkinlik{{/str}}
+            </div>
+        {{/has_rows}}
+    {{/has_selection}}
+</div>

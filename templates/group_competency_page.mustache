@@ -1,0 +1,57 @@
+{{! local_yetkinlik/group_competency_page }}
+<div class="local_yetkinlik_group_report">
+    <form method="get" class="mb-3 d-flex align-items-center">
+        <input type="hidden" name="courseid" value="{{courseid}}">
+        <select name="groupid" class="custom-select w-auto mr-2">
+            <option value="0">{{#str}}selectgroup, local_yetkinlik{{/str}}</option>
+            {{#groups}}
+                <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+            {{/groups}}
+        </select>
+        <button type="submit" class="btn btn-primary">{{#str}}show, local_yetkinlik{{/str}}</button>
+    </form>
+
+    {{#has_group}}
+        {{#competencies.0}} {{! Only show table if competencies exist }}
+        <div class="table-responsive">
+            <table class="generaltable table table-bordered table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>{{#str}}student, local_yetkinlik{{/str}}</th>
+                        {{#competencies}}
+                            <th class="text-center">{{shortname}}</th>
+                        {{/competencies}}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#students}}
+                        <tr>
+                            <td>{{{studentlink}}}</td>
+                            {{#scores}}
+                                <td class="text-center" style="color: {{color}}; font-weight: bold;">
+                                    {{#rate}}%{{rate}}{{/rate}}
+                                    {{^rate}}-{{/rate}}
+                                </td>
+                            {{/scores}}
+                        </tr>
+                    {{/students}}
+                </tbody>
+                <tfoot>
+                    <tr class="table-secondary font-weight-bold">
+                        <td>{{#str}}total, local_yetkinlik{{/str}}</td>
+                        {{#totals}}
+                            <td class="text-center" style="color: {{color}};">
+                                {{#rate}}%{{rate}}{{/rate}}
+                                {{^rate}}-{{/rate}}
+                            </td>
+                        {{/totals}}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {{/competencies.0}}
+        {{^competencies}}
+            <div class="alert alert-info">{{#str}}nocompetencies, local_yetkinlik{{/str}}</div>
+        {{/competencies}}
+    {{/has_group}}
+</div>

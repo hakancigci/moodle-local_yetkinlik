@@ -1,0 +1,56 @@
+<div class="local_yetkinlik_timeline">
+
+    {{! 1. Filter Selection Card }}
+    <div class="card mb-4 border-0 shadow-sm bg-light">
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <input type="hidden" name="courseid" value="{{courseid}}">
+                
+                <label class="mr-2 font-weight-bold" for="days_select">
+                    {{#str}}filterlabel, local_yetkinlik{{/str}}
+                </label>
+                
+                <select name="days" id="days_select" class="form-control mr-2 custom-select">
+                    {{#filter_options}}
+                        <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                    {{/filter_options}}
+                </select>
+                
+                <button type="submit" class="btn btn-primary">
+                    {{#str}}show, local_yetkinlik{{/str}}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{! 2. Chart Visualization Card }}
+    {{#has_data}}
+    <div class="card p-4 shadow-sm bg-white border-0">
+        <div style="height:450px; width:100%; position: relative;">
+            {{! IMPORTANT: The ID must match 'timeline' for visualizer.js integration }}
+            <canvas id="timeline" data-chart-config="{{chart_config}}"></canvas>
+        </div>
+    </div>
+
+    {{#js}}
+    require(['local_yetkinlik/visualizer'], function(Visualizer) {
+        var canvas = document.getElementById('timeline');
+        if (canvas) {
+            // Retrieve and parse JSON configuration for Chart.js.
+            var config = JSON.parse(canvas.getAttribute('data-chart-config'));
+            
+            // Invoke the initTimeline function within visualizer.js to render the line chart.
+            Visualizer.initTimeline(config);
+        }
+    });
+    {{/js}}
+    {{/has_data}}
+
+    {{^has_data}}
+    {{! 3. Empty State Notification }}
+    <div class="alert alert-info border-0 shadow-sm">
+        <i class="fa fa-info-circle"></i> {{#str}}nodatafound, local_yetkinlik{{/str}}
+    </div>
+    {{/has_data}}
+
+</div>

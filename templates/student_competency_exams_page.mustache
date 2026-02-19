@@ -1,0 +1,97 @@
+<div class="local_yetkinlik_competency_exams">
+    
+    {{! 1. Competency Selection Form (Responsive) }}
+    <div class="card mb-4 border-0 shadow-sm bg-light">
+        <div class="card-body">
+            <form method="get" id="competency_filter_form">
+                <input type="hidden" name="courseid" value="{{courseid}}">
+                
+                <div class="form-row align-items-end">
+                    {{! Selection Box: Full width on mobile, 75% width on desktop }}
+                    <div class="col-12 col-md-9 mb-3 mb-md-0">
+                        <label class="font-weight-bold" for="id_competency_select">
+                            {{#str}}selectcompetency, local_yetkinlik{{/str}}
+                        </label>
+                        <select name="competencyid" id="id_competency_select" class="form-control">
+                            <option value="0">{{#str}}selectcompetency, local_yetkinlik{{/str}}</option>
+                            {{#competencies}}
+                                <option value="{{id}}" {{#selected}}selected{{/selected}}>{{shortname}}</option>
+                            {{/competencies}}
+                        </select>
+                    </div>
+                    
+                    {{! Submit Button: Full width on mobile, 25% width on desktop }}
+                    <div class="col-12 col-md-3">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fa fa-search"></i> {{#str}}show, local_yetkinlik{{/str}}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{#has_selection}}
+        {{! 2. Competency Description - Using triple braces for HTML content rendering }}
+        {{#description}}
+        <div class="alert alert-info border-left-info shadow-sm mb-4">
+            <i class="fa fa-info-circle"></i> {{{description}}}
+        </div>
+        {{/description}}
+
+        {{! 3. Quiz Results Table }}
+        {{#rows.0}}
+        <div class="table-responsive">
+            <table class="generaltable table table-hover shadow-sm bg-white">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>{{#str}}quiz, local_yetkinlik{{/str}}</th>
+                        <th class="text-center">{{#str}}question, local_yetkinlik{{/str}}</th>
+                        <th class="text-center">{{#str}}correct, local_yetkinlik{{/str}}</th>
+                        <th class="text-center">{{#str}}success, local_yetkinlik{{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#rows}}
+                    <tr>
+                        <td>
+                            {{#review_url}}
+                                <a href="{{review_url}}" target="_blank"><strong>{{quizname}}</strong></a>
+                            {{/review_url}}
+                            {{^review_url}}{{quizname}}{{/review_url}}
+                        </td>
+                        <td class="text-center">{{questions}}</td>
+                        <td class="text-center">{{correct}}</td>
+                        <td class="text-center font-weight-bold {{colorclass}}">%{{rate}}</td>
+                    </tr>
+                    {{/rows}}
+                </tbody>
+                <tfoot>
+                    {{#total}}
+                    <tr class="table-secondary font-weight-bold">
+                        <td>{{#str}}total, local_yetkinlik{{/str}}</td>
+                        <td class="text-center">{{questions}}</td>
+                        <td class="text-center">{{correct}}</td>
+                        <td class="text-center {{colorclass}}">%{{rate}}</td>
+                    </tr>
+                    {{/total}}
+                </tfoot>
+            </table>
+        </div>
+        {{/rows.0}}
+
+        {{^rows}}
+            {{! Empty State Alert }}
+            <div class="alert alert-warning shadow-sm">
+                <i class="fa fa-exclamation-triangle"></i> {{#str}}nocompetencyexamdata, local_yetkinlik{{/str}}
+            </div>
+        {{/rows}}
+    {{/has_selection}}
+</div>
+
+{{#js}}
+require(['core/form-autocomplete'], function(Autocomplete) {
+    // Apply Moodle's Autocomplete feature to the competency selection box.
+    Autocomplete.enhance('#id_competency_select', false, false, "{{#str}}selectcompetency, local_yetkinlik{{/str}}");
+});
+{{/js}}
