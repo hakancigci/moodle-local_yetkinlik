@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * English strings for local_yetkinlik plugin.
@@ -134,5 +134,5 @@ $string['timelineheading'] = 'Competency Progress Over Time';
 $string['total'] = 'TOTAL';
 $string['user'] = 'Student';
 $string['yetkinlik:manage'] = 'Manage question-competency mappings';
-$string['yetkinlik:viewreports'] = 'View all student competency reports';
 $string['yetkinlik:viewownreport'] = 'View own competency analysis report';
+$string['yetkinlik:viewreports'] = 'View all student competency reports';
