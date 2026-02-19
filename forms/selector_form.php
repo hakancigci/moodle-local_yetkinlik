@@ -75,7 +75,7 @@ class local_yetkinlik_selector_form extends moodleform {
         $competencies = [0 => get_string('allcompetencies', 'local_yetkinlik')];
         $sql = "SELECT DISTINCT c.id, c.shortname
                 FROM {competency} c
-                JOIN {local_yetkinlik_qmap} m ON m.competencyid = c.id
+                JOIN {qbank_yetkinlik_qmap} m ON m.competencyid = c.id
                 WHERE m.courseid = :courseid";
 
         $records = $DB->get_records_sql($sql, ['courseid' => $courseid]);
