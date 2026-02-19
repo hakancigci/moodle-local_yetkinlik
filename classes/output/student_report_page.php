@@ -29,9 +29,16 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Output class for student report page.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class student_report_page implements renderable, templatable {
-    
-    /** @var stdClass Raw report data including database rows and context information */
+
+    /** @var stdClass Raw report data including database rows and context information. */
     protected $data;
 
     /**
@@ -52,33 +59,33 @@ class student_report_page implements renderable, templatable {
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
         $export->rows = [];
-        
+
         foreach ($this->data->rows as $r) {
             // Calculate achievement rate as a percentage.
             $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
-            
+
             // Define color codes for visual representation (Bootstrap compatible HEX codes).
             if ($rate >= 80) {
-                $color = '#28a745'; // Green
+                $color = '#28a745'; // Green.
             } else if ($rate >= 60) {
-                $color = '#007bff'; // Blue
+                $color = '#007bff'; // Blue.
             } else if ($rate >= 40) {
-                $color = '#fd7e14'; // Orange
+                $color = '#fd7e14'; // Orange.
             } else {
-                $color = '#dc3545'; // Red
+                $color = '#dc3545'; // Red.
             }
 
             $row = new stdClass();
             $row->shortname = s($r->shortname);
-            
+
             // Render description maintaining HTML formatting and context-aware filtering.
             $row->description = format_text($r->description, $r->descriptionformat, ['context' => $this->data->context]);
-            
+
             $row->questions = (float)$r->questions;
             $row->correct = (float)$r->correct;
             $row->rate = $rate;
             $row->color = $color;
-            
+
             $export->rows[] = $row;
         }
 
