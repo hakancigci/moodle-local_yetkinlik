@@ -29,7 +29,7 @@ $plugin->component = 'local_yetkinlik';       // Full name of the plugin (catego
 $plugin->version   = 2026031200;              // The current module version (YYYYMMDDXX).
 $plugin->requires  = 2025041400;              // Requires Moodle 5.0 or later.
 $plugin->maturity  = MATURITY_STABLE;          // Stable release.
-$plugin->release   = '2.0.9';                 // Human-readable version name.
+$plugin->release   = '3.0.0';                 // Human-readable version name.
 
 // Plugin dependencies (Other plugins that must be installed first).
 $plugin->dependencies = [
