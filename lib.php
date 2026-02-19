@@ -22,19 +22,17 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * Extend course navigation with competency analysis links.
  *
- * @param global_navigation $navigation
- * @param stdClass $course
- * @param context_course $context
+ * @param global_navigation $navigation The navigation object.
+ * @param stdClass $course The course object.
+ * @param context_course $context The course context.
  * @return void
  */
-
-defined('MOODLE_INTERNAL') || die();
-
 function local_yetkinlik_extend_navigation_course($navigation, $course, $context) {
-    global $USER;
 
     // 1. Teacher Reports Section.
     if (has_capability('mod/quiz:viewreports', $context)) {
