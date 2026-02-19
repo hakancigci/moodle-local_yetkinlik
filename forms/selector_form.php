@@ -39,7 +39,7 @@ class local_yetkinlik_selector_form extends moodleform {
 
         $mform = $this->_form;
         $courseid = $this->_customdata['courseid'];
-        
+
         // Control flags for different report types.
         $showcompetency = isset($this->_customdata['showcompetency']) ? $this->_customdata['showcompetency'] : true;
         $showquiz = isset($this->_customdata['showquiz']) ? $this->_customdata['showquiz'] : false;
