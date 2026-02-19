@@ -50,7 +50,7 @@ class class_report_page implements renderable, templatable {
      * @param \moodleform $mform
      */
     public function __construct($data, $mform) {
-        $this->data = $this->data;
+        $this->data = $data;
         $this->mform = $mform;
     }
 
