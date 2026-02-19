@@ -34,6 +34,8 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
 
     // 1. Teacher Reports Section.
     if (has_capability('mod/quiz:viewreports', $context)) {
+        
+        // Genel Sınıf Raporu
         if (!$navigation->find('yetkinlik_teacher', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/class_report.php', ['courseid' => $course->id]);
             $navigation->add(
@@ -46,6 +48,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             );
         }
 
+        // Öğrenci Analizi (Genel)
         if (!$navigation->find('yetkinlik_teacher_student', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/teacher_student_competency.php', ['courseid' => $course->id]);
             $navigation->add(
@@ -55,6 +58,19 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
                 null,
                 'yetkinlik_teacher_student',
                 new pix_icon('i/users', '')
+            );
+        }
+
+        // Öğrenci Sınav Analizi (Yeni Eklenen)
+        if (!$navigation->find('yetkinlik_teacher_student_exam', navigation_node::TYPE_SETTING)) {
+            $url = new moodle_url('/local/yetkinlik/teacher_student_exam.php', ['courseid' => $course->id]);
+            $navigation->add(
+                get_string('studentexamanalysis', 'local_yetkinlik'),
+                $url,
+                navigation_node::TYPE_SETTING,
+                null,
+                'yetkinlik_teacher_student_exam',
+                new pix_icon('i/search', '')
             );
         }
     }
