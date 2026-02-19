@@ -164,10 +164,10 @@ if ($groupid && $quizid) {
     $renderdata->totals = [];
     foreach ($renderdata->competencies as $c) {
         $total = new stdClass();
-        $totalAtt = $grouptotals[$c->id]['att'] ?? 0;
-        $totalCor = $grouptotals[$c->id]['cor'] ?? 0;
-        if ($totalAtt > 0) {
-            $trate = number_format(($totalCor / $totalAtt) * 100, 1);
+        $totalatt = $grouptotals[$c->id]['att'] ?? 0;
+        $totalcor = $grouptotals[$c->id]['cor'] ?? 0;
+        if ($totalatt > 0) {
+            $trate = number_format(($totalcor / $totalatt) * 100, 1);
             $total->rate = $trate;
             $total->color = ($trate >= 80) ? 'green' : (($trate >= 60) ? 'blue' : (($trate >= 40) ? 'orange' : 'red'));
         } else {
