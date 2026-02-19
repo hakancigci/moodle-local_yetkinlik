@@ -38,14 +38,14 @@ $PAGE->set_heading(get_string('studentcompetencyexams', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
 // 1. Fetch available competencies for the selection filter.
-$compsRaw = $DB->get_records_sql("
+$compsraw = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname
     FROM {qbank_yetkinlik_qmap} m
     JOIN {competency} c ON c.id = m.competencyid
     ORDER BY c.shortname");
 
 $competencies = [];
-foreach ($compsRaw as $c) {
+foreach ($compsraw as $c) {
     $competencies[] = [
         'id' => $c->id,
         'shortname' => format_string($c->shortname),
