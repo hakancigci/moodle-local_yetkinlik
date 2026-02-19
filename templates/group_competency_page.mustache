@@ -1,4 +1,45 @@
-{{! local_yetkinlik/group_competency_page }}
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    @template local_yetkinlik/group_competency_page
+
+    Example context (json):
+    {
+        "courseid": 2,
+        "has_group": true,
+        "groups": [
+            { "id": 1, "name": "Grup A", "selected": true },
+            { "id": 2, "name": "Grup B", "selected": false }
+        ],
+        "competencies": [
+            { "shortname": "Yetkinlik 1" },
+            { "shortname": "Yetkinlik 2" }
+        ],
+        "students": [
+            {
+                "studentlink": "<a href='#'>Ali Yılmaz</a>",
+                "scores": [
+                    { "rate": "85", "color": "green" },
+                    { "rate": "45", "color": "orange" }
+                ]
+            }
+        ],
+        "totals": [
+            { "rate": "65", "color": "blue" },
+            { "rate": "55", "color": "red" }
+        ]
+    }
+}}
 <div class="local_yetkinlik_group_report">
     <form method="get" class="mb-3 d-flex align-items-center">
         <input type="hidden" name="courseid" value="{{courseid}}">
@@ -12,7 +53,7 @@
     </form>
 
     {{#has_group}}
-        {{#competencies.0}} {{! Only show table if competencies exist }}
+        {{#competencies.0}}
         <div class="table-responsive">
             <table class="generaltable table table-bordered table-striped mt-3">
                 <thead>
@@ -50,6 +91,7 @@
             </table>
         </div>
         {{/competencies.0}}
+
         {{^competencies}}
             <div class="alert alert-info">{{#str}}nocompetencies, local_yetkinlik{{/str}}</div>
         {{/competencies}}
