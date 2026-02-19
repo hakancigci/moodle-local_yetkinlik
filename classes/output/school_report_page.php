@@ -21,7 +21,7 @@
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
- 
+
 namespace local_yetkinlik\output;
 
 use renderable;
@@ -30,7 +30,15 @@ use renderer_base;
 use stdClass;
 use moodle_url;
 
+/**
+ * Renderable class for the school-wide competency report.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class school_report_page implements renderable, templatable {
+
     /** @var stdClass Data to be rendered */
     protected $data;
 
@@ -58,30 +66,30 @@ class school_report_page implements renderable, templatable {
         if ($export->has_data) {
             $export->rows = [];
             foreach ($this->data->rows as $r) {
-                // 1. Calculate success rate and format (e.g., 75.4)
-                $raw_rate = $r->attempts ? ($r->correct / $r->attempts) * 100 : 0;
-                $formatted_rate = number_format($raw_rate, 1);
-                
-                // 2. Format question and correct counts (e.g., 1,250)
-                // Using 0 decimals for attempts; formatting follows Moodle's language pack localization.
-                $formatted_attempts = number_format($r->attempts, 0);
-                $formatted_correct  = number_format($r->correct, 1);
+                // 1. Calculate success rate and format (e.g., 75.4).
+                $rawrate = $r->attempts ? ($r->correct / $r->attempts) * 100 : 0;
+                $formattedrate = number_format($rawrate, 1);
+
+                // 2. Format question and correct counts (e.g., 1,250).
+                // Using 0 decimals for attempts; formatting follows localization.
+                $formattedattempts = number_format($r->attempts, 0);
+                $formattedcorrect  = number_format($r->correct, 1);
 
                 // Determine CSS color class for the table row based on the success rate.
                 $rowclass = 'table-danger';
-                if ($raw_rate >= 70) {
+                if ($rawrate >= 70) {
                     $rowclass = 'table-success';
-                } else if ($raw_rate >= 50) {
+                } else if ($rawrate >= 50) {
                     $rowclass = 'table-warning';
                 }
 
                 $export->rows[] = [
                     'shortname'   => $r->shortname,
                     'description' => format_text($r->description, FORMAT_HTML),
-                    'attempts'    => $formatted_attempts, // Formatted question count.
-                    'correct'     => $formatted_correct,  // Formatted correct answer count.
-                    'rate'        => $formatted_rate,
-                    'rowclass'    => $rowclass
+                    'attempts'    => $formattedattempts,
+                    'correct'     => $formattedcorrect,
+                    'rate'        => $formattedrate,
+                    'rowclass'    => $rowclass,
                 ];
             }
 
@@ -89,7 +97,7 @@ class school_report_page implements renderable, templatable {
             if (!empty($this->data->comment)) {
                 $export->ai_comment = [
                     'title'   => get_string('generalcomment', 'local_yetkinlik'),
-                    'content' => format_text($this->data->comment, FORMAT_HTML)
+                    'content' => format_text($this->data->comment, FORMAT_HTML),
                 ];
             }
         }
