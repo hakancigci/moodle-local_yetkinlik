@@ -29,6 +29,15 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Class teacher_student_exam_page.
+ *
+ * This class handles the data exportation for the teacher student exam Mustache template.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class teacher_student_exam_page implements renderable, templatable {
 
     /** @var stdClass Data object containing calculation results. */
