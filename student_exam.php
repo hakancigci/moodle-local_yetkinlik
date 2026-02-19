@@ -38,7 +38,7 @@ $PAGE->set_heading(get_string('studentexam', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
 // 1. Prepare the list of quizzes completed by the student.
-$quizzes_raw = $DB->get_records_sql("
+$quizzesraw = $DB->get_records_sql("
     SELECT DISTINCT q.id, q.name
       FROM {quiz} q
       JOIN {quiz_attempts} qa ON qa.quiz = q.id
@@ -48,11 +48,11 @@ $quizzes_raw = $DB->get_records_sql("
 
 // Build the quiz selection dropdown data.
 $quizzes = [['id' => 0, 'name' => get_string('selectquiz', 'local_yetkinlik'), 'selected' => ($quizid == 0)]];
-foreach ($quizzes_raw as $q) {
+foreach ($quizzesraw as $q) {
     $quizzes[] = [
         'id' => $q->id,
         'name' => $q->name,
-        'selected' => ($quizid == $q->id)
+        'selected' => ($quizid == $q->id),
     ];
 }
 
@@ -72,12 +72,12 @@ if ($quizid) {
             JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
             JOIN {competency} c ON c.id = m.competencyid
             JOIN (
-                SELECT MAX(fraction) AS fraction, questionattemptid 
-                FROM {question_attempt_steps} 
+                SELECT MAX(fraction) AS fraction, questionattemptid
+                FROM {question_attempt_steps}
                 GROUP BY questionattemptid
             ) qas ON qas.questionattemptid = qa.id
             WHERE quiz.id = ? AND quiza.userid = ? AND quiza.state = 'finished'
-            GROUP BY c.shortname, c.description 
+            GROUP BY c.shortname, c.description
             ORDER BY c.shortname";
 
     $renderdata->rows = $DB->get_records_sql($sql, [$quizid, $USER->id]);
