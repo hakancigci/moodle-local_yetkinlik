@@ -69,14 +69,15 @@ $coursesql = "SELECT c.id, c.shortname,
               JOIN (SELECT MAX(fraction) AS fraction, questionattemptid
                       FROM {question_attempt_steps}
                   GROUP BY questionattemptid) qas ON qas.questionattemptid = qa.id
-              WHERE quiz.course = :courseid AND quiza.state = 'finished' ";
+              WHERE quiz.course = :courseid AND quiza.state = 'finished'";
 
 if ($competency) {
-    $coursesql .= " AND c.id = :competencyid ";
+    $coursesql .= " AND c.id = :competencyid";
 }
 $coursesql .= " GROUP BY c.id, c.shortname";
 
-$coursedata = $DB->get_records_sql($coursesql, ['courseid' => $courseid, 'competencyid' => $competency]);
+$params = ['courseid' => $courseid, 'competencyid' => $competency];
+$coursedata = $DB->get_records_sql($coursesql, $params);
 
 if (!empty($coursedata)) {
     $classdata = [];
@@ -86,29 +87,36 @@ if (!empty($coursedata)) {
         $userdept = $DB->get_field('user', 'department', ['id' => $userid]);
         if (!empty($userdept)) {
             // Fetch class/department data by joining with user table and filtering by department.
-            $classsql = str_replace("FROM {quiz_attempts} quiza", "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $coursesql);
+            $classsql = str_replace("FROM {quiz_attempts} quiza",
+                "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $coursesql);
             $classsql = str_replace("WHERE quiz.course", "WHERE u.department = :dept AND quiz.course", $classsql);
-            $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $userdept, 'competencyid' => $competency]);
+            $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $userdept,
+                'competencyid' => $competency]);
         }
         // Fetch specific student data by filtering by userid.
         $studentsql = str_replace("WHERE quiz.course", "WHERE quiza.userid = :userid AND quiz.course", $coursesql);
-        $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $userid, 'competencyid' => $competency]);
+        $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $userid,
+            'competencyid' => $competency]);
     }
 
     // Chart lists.
     $labels = [];
-    $courserates = []; $classrates = []; $studentrates = [];
+    $courserates = [];
+    $classrates = [];
+    $studentrates = [];
 
     foreach ($coursedata as $cid => $c) {
         $courserate = $c->attempts ? number_format(($c->correct / $c->attempts) * 100, 1) : 0;
-        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ? number_format(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
-        $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ? number_format(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
+        $classrate  = (isset($classdata[$cid]) && $classdata[$cid]->attempts) ?
+            number_format(($classdata[$cid]->correct / $classdata[$cid]->attempts) * 100, 1) : 0;
+        $studrate   = (isset($studentdata[$cid]) && $studentdata[$cid]->attempts) ?
+            number_format(($studentdata[$cid]->correct / $studentdata[$cid]->attempts) * 100, 1) : 0;
 
         $renderdata->rows[] = [
             'shortname' => $c->shortname,
             'courserate' => $courserate,
             'classrate' => $classrate,
-            'studentrate' => $studrate
+            'studentrate' => $studrate,
         ];
 
         $labels[] = $c->shortname;
