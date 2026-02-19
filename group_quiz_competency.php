@@ -51,16 +51,32 @@ $renderdata->courseid = $courseid;
 
 // Prepare Groups for filter.
 $groups = groups_get_all_groups($courseid);
-$renderdata->groups = [[ 'id' => 0, 'name' => get_string('selectgroup', 'local_yetkinlik'), 'selected' => ($groupid == 0) ]];
+$renderdata->groups = [[
+    'id' => 0,
+    'name' => get_string('selectgroup', 'local_yetkinlik'),
+    'selected' => ($groupid == 0),
+]];
 foreach ($groups as $g) {
-    $renderdata->groups[] = [ 'id' => $g->id, 'name' => format_string($g->name), 'selected' => ($g->id == $groupid) ];
+    $renderdata->groups[] = [
+        'id' => $g->id,
+        'name' => format_string($g->name),
+        'selected' => ($g->id == $groupid),
+    ];
 }
 
 // Prepare Quizzes for filter.
 $quizzes = $DB->get_records('quiz', ['course' => $courseid], 'name ASC');
-$renderdata->quizzes = [[ 'id' => 0, 'name' => get_string('selectquiz', 'local_yetkinlik'), 'selected' => ($quizid == 0) ]];
+$renderdata->quizzes = [[
+    'id' => 0,
+    'name' => get_string('selectquiz', 'local_yetkinlik'),
+    'selected' => ($quizid == 0),
+]];
 foreach ($quizzes as $q) {
-    $renderdata->quizzes[] = [ 'id' => $q->id, 'name' => format_string($q->name), 'selected' => ($q->id == $quizid) ];
+    $renderdata->quizzes[] = [
+        'id' => $q->id,
+        'name' => format_string($q->name),
+        'selected' => ($q->id == $quizid),
+    ];
 }
 
 if ($groupid && $quizid) {
@@ -76,8 +92,7 @@ if ($groupid && $quizid) {
         WHERE gm.groupid = :groupid
           AND ctx.instanceid = :courseid
           AND ra.roleid = (SELECT id FROM {role} WHERE shortname = 'student')
-        ORDER BY u.idnumber ASC
-    ", ['groupid' => $groupid, 'courseid' => $courseid]);
+        ORDER BY u.idnumber ASC", ['groupid' => $groupid, 'courseid' => $courseid]);
 
     // Fetch Competencies linked to the specific quiz questions.
     $competencies = (array)$DB->get_records_sql("
@@ -88,14 +103,13 @@ if ($groupid && $quizid) {
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         WHERE quiza.quiz = :quizid
-        ORDER BY c.shortname
-    ", ['quizid' => $quizid]);
+        ORDER BY c.shortname", ['quizid' => $quizid]);
     $renderdata->competencies = array_values($competencies);
 
     // Performance Data Calculation.
     $scoremap = [];
     $rawscores = (array)$DB->get_records_sql("
-        SELECT 
+        SELECT
             CONCAT(quiza.userid, '_', m.competencyid) as unique_key,
             quiza.userid, m.competencyid,
             SUM(qa.maxfraction) AS total_max, SUM(qas.fraction) AS total_fraction
@@ -104,11 +118,12 @@ if ($groupid && $quizid) {
         JOIN {question_attempts} qa ON qa.questionusageid = qu.id
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN (
-            SELECT questionattemptid, MAX(fraction) AS fraction FROM {question_attempt_steps} GROUP BY questionattemptid
+            SELECT questionattemptid, MAX(fraction) AS fraction
+            FROM {question_attempt_steps}
+            GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE quiza.quiz = :quizid AND quiza.state = 'finished'
-        GROUP BY quiza.userid, m.competencyid
-    ", ['quizid' => $quizid]);
+        GROUP BY quiza.userid, m.competencyid", ['quizid' => $quizid]);
 
     foreach ($rawscores as $rs) {
         $scoremap[$rs->userid][$rs->competencyid] = ['att' => $rs->total_max, 'cor' => $rs->total_fraction];
@@ -119,7 +134,10 @@ if ($groupid && $quizid) {
     $grouptotals = [];
     foreach ($students as $s) {
         $row = new stdClass();
-        $detailurl = new moodle_url('/local/yetkinlik/student_competency_detail.php', ['courseid' => $courseid, 'userid' => $s->id]);
+        $detailurl = new moodle_url('/local/yetkinlik/student_competency_detail.php', [
+            'courseid' => $courseid,
+            'userid' => $s->id,
+        ]);
         $row->studentlink = html_writer::link($detailurl, fullname($s), ['target' => '_blank']);
         $row->scores = [];
 
@@ -130,11 +148,8 @@ if ($groupid && $quizid) {
                 $cor = $scoremap[$s->id][$c->id]['cor'];
                 $rate = ($att > 0) ? number_format(($cor / $att) * 100, 1) : 0;
                 $scoreobj->rate = $rate;
-                
-                // Define visual performance indicators (colors).
                 $scoreobj->color = ($rate >= 80) ? 'green' : (($rate >= 60) ? 'blue' : (($rate >= 40) ? 'orange' : 'red'));
-                
-                // Aggregate group-wide totals for each competency.
+
                 $grouptotals[$c->id]['att'] = ($grouptotals[$c->id]['att'] ?? 0) + $att;
                 $grouptotals[$c->id]['cor'] = ($grouptotals[$c->id]['cor'] ?? 0) + $cor;
             } else {
@@ -149,18 +164,20 @@ if ($groupid && $quizid) {
     $renderdata->totals = [];
     foreach ($renderdata->competencies as $c) {
         $total = new stdClass();
-        $t_att = $grouptotals[$c->id]['att'] ?? 0;
-        $t_cor = $grouptotals[$c->id]['cor'] ?? 0;
-        if ($t_att > 0) {
-            $trate = number_format(($t_cor / $t_att) * 100, 1);
+        $totalAtt = $grouptotals[$c->id]['att'] ?? 0;
+        $totalCor = $grouptotals[$c->id]['cor'] ?? 0;
+        if ($totalAtt > 0) {
+            $trate = number_format(($totalCor / $totalAtt) * 100, 1);
             $total->rate = $trate;
             $total->color = ($trate >= 80) ? 'green' : (($trate >= 60) ? 'blue' : (($trate >= 40) ? 'orange' : 'red'));
-        } else { $total->rate = null; }
+        } else {
+            $total->rate = null;
+        }
         $renderdata->totals[] = $total;
     }
 }
 
-// 5. OUTPUT START (After all logic is processed).
+// 5. OUTPUT START.
 echo $OUTPUT->header();
 
 $page = new \local_yetkinlik\output\group_quiz_competency_page($courseid, $groupid, $quizid, $renderdata);
