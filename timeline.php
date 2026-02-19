@@ -59,17 +59,17 @@ $sql = "SELECT c.shortname, FROM_UNIXTIME(qas2.timecreated, '%Y-%m') AS period,
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
-            SELECT questionattemptid, MAX(timecreated) AS timecreated 
-            FROM {question_attempt_steps} 
+            SELECT questionattemptid, MAX(timecreated) AS timecreated
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas2 ON qas2.questionattemptid = qa.id
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
-        WHERE $where 
-        GROUP BY c.shortname, period 
+        WHERE $where
+        GROUP BY c.shortname, period
         ORDER BY period ASC";
 
 $rows = $DB->get_records_sql($sql, $params);
@@ -95,8 +95,8 @@ $i = 0;
 // Transform processed data into Chart.js dataset format.
 foreach ($compdata as $comp => $vals) {
     $line = [];
-    foreach ($periods as $p) { 
-        $line[] = isset($vals[$p]) ? (float)$vals[$p] : 0; 
+    foreach ($periods as $p) {
+        $line[] = isset($vals[$p]) ? (float)$vals[$p] : 0;
     }
     $datasets[] = [
         'label' => $comp,
