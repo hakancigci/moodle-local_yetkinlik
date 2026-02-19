@@ -51,8 +51,8 @@ $sql = "SELECT c.id, c.shortname, c.description, c.descriptionformat,
         JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
-            SELECT MAX(fraction) AS fraction, questionattemptid 
-            FROM {question_attempt_steps} 
+            SELECT MAX(fraction) AS fraction, questionattemptid
+            FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE quiz.course = :courseid AND quiza.userid = :userid AND quiza.state = 'finished'
