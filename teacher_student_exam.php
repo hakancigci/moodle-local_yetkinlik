@@ -38,12 +38,11 @@ $PAGE->set_title(get_string('studentanalysis', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('studentanalysis', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
-// Initialize the selector form.
 // Initialize the form: Hide competency, show quiz.
 $mform = new \local_yetkinlik_selector_form(null, [
     'courseid' => $courseid,
     'showcompetency' => false, // This hides competencies.
-    'showquiz' => true         // This shows quizzes.
+    'showquiz' => true,         // Added comma after last item to fix NormalizedArrays error.
 ]);
 
 $data = new stdClass();
@@ -88,7 +87,7 @@ if ($fromform = $mform->get_data()) {
                 'correct'   => number_format($r->correct, 1),
                 'rate'      => number_format($rawrate, 1),
                 'rowclass'  => $rowclass,
-                'raw_rate'  => round($rawrate, 1)
+                'raw_rate'  => round($rawrate, 1), // Added comma after last item to fix NormalizedArrays error.
             ];
         }
     }
