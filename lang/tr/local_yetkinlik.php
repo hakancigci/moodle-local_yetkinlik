@@ -121,6 +121,7 @@ $string['studentclass'] = 'Yetkinlik Durumu';
 $string['studentcompetencydetail'] = 'Öğrenci Yetkinlik Detayı';
 $string['studentcompetencyexams'] = 'Yetkinlik Bazlı Sınav Analizim';
 $string['studentexam'] = 'Sınav Kazanım Analizim';
+$string['studentexamanalysis'] = 'Öğrenci Sınav Analizi';
 $string['studentpdfreport'] = 'Yetkinlik Gelişim Raporu';
 $string['studentreport'] = 'Yetkinlik Karnem';
 $string['success'] = 'Başarı';
