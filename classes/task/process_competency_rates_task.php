@@ -45,7 +45,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
         $contextid = \context_course::instance($courseid)->id;
 
         $sql = "SELECT DISTINCT c.id, c.shortname
-                  FROM {local_yetkinlik_qmap} m
+                  FROM {qbank_yetkinlik_qmap} m
                   JOIN {competency} c ON c.id = m.competencyid
               ORDER BY c.shortname";
         $competencies = $DB->get_records_sql($sql);
@@ -131,7 +131,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                   JOIN {question_usages} qu ON qu.id = quiza.uniqueid
                   JOIN {question_attempts} qa ON qa.questionusageid = qu.id
                   JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                  JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
+                  JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
                   JOIN (
                        SELECT MAX(fraction) AS fraction, questionattemptid
                          FROM {question_attempt_steps}
