@@ -1,3 +1,44 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    @template local_yetkinlik/teacher_panel
+
+    Example context (json):
+    {
+        "courseid": 5,
+        "userid": 2,
+        "quizid": 10,
+        "students": [
+            { "id": 1, "name": "Ali Yılmaz", "selected": false },
+            { "id": 2, "name": "Ayşe Demir", "selected": true }
+        ],
+        "quizzes": [
+            { "id": 10, "name": "Matematik Vize", "selected": true },
+            { "id": 11, "name": "Fizik Final", "selected": false }
+        ],
+        "has_rows": true,
+        "rows": [
+            {
+                "shortname": "Y01",
+                "attempts": 5,
+                "correct": 4,
+                "rate": "80",
+                "rowclass": "table-success"
+            }
+        ],
+        "chart_config": "{\"labels\":[\"Y01\"], \"values\":[80], \"label\":\"Başarı Oranı\"}"
+    }
+}}
 <div class="local_yetkinlik_teacher_panel">
     {{! Selection Filters }}
     <div class="card mb-4 border-0 shadow-sm bg-light">
@@ -6,7 +47,9 @@
                 <input type="hidden" name="courseid" value="{{courseid}}">
                 
                 <div class="form-group mr-3" style="min-width: 280px;">
-                    <label class="mr-2 font-weight-bold d-block d-md-inline">{{#str}}student, local_yetkinlik{{/str}}:</label>
+                    <label for="student_select" class="mr-2 font-weight-bold d-block d-md-inline">
+                        {{#str}}student, local_yetkinlik{{/str}}:
+                    </label>
                     <select name="userid" id="student_select" class="form-control custom-select shadow-sm">
                         <option value="">{{#str}}selectstudent, local_yetkinlik{{/str}}...</option>
                         {{#students}}
@@ -16,7 +59,9 @@
                 </div>
 
                 <div class="form-group mr-3" style="min-width: 280px;">
-                    <label class="mr-2 font-weight-bold d-block d-md-inline">{{#str}}quiz, local_yetkinlik{{/str}}:</label>
+                    <label for="quiz_select" class="mr-2 font-weight-bold d-block d-md-inline">
+                        {{#str}}quiz, local_yetkinlik{{/str}}:
+                    </label>
                     <select name="quizid" id="quiz_select" class="form-control custom-select shadow-sm">
                         <option value="">{{#str}}selectquiz, local_yetkinlik{{/str}}...</option>
                         {{#quizzes}}
