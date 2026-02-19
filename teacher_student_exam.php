@@ -51,8 +51,8 @@ $rows = [];
 if ($userid && $quizid) {
     // 3. Execution of normalized and secure SQL query for competency calculation.
     // This query aggregates the student's performance across competencies for a single quiz.
-    $sql = "SELECT c.id, c.shortname, 
-                   SUM(qa.maxfraction) AS attempts, 
+    $sql = "SELECT c.id, c.shortname,
+                   SUM(qa.maxfraction) AS attempts,
                    SUM(qas.fraction) AS correct
             FROM {quiz_attempts} quiza
             JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -60,16 +60,16 @@ if ($userid && $quizid) {
             JOIN {local_yetkinlik_qmap} m ON m.questionid = qa.questionid
             JOIN {competency} c ON c.id = m.competencyid
             JOIN (
-                SELECT MAX(fraction) AS fraction, questionattemptid 
-                FROM {question_attempt_steps} 
+                SELECT MAX(fraction) AS fraction, questionattemptid
+                FROM {question_attempt_steps}
                 GROUP BY questionattemptid
             ) qas ON qas.questionattemptid = qa.id
-            WHERE quiza.quiz = :quizid 
-              AND quiza.userid = :userid 
+            WHERE quiza.quiz = :quizid
+              AND quiza.userid = :userid
               AND quiza.state = 'finished'
             GROUP BY c.id, c.shortname
             ORDER BY c.shortname ASC";
-    
+
     $rows = $DB->get_records_sql($sql, ['quizid' => $quizid, 'userid' => $userid]);
 }
 
