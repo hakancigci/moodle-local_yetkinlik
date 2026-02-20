@@ -39,7 +39,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class teacher_student_exam_page implements renderable, templatable {
-
     /** @var stdClass Data object containing calculation results. */
     protected $data;
 
