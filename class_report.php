@@ -87,16 +87,33 @@ if (!empty($coursedata)) {
         $userdept = $DB->get_field('user', 'department', ['id' => $userid]);
         if (!empty($userdept)) {
             // Fetch class/department data by joining with user table and filtering by department.
-            $classsql = str_replace("FROM {quiz_attempts} quiza",
-                "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $coursesql);
-            $classsql = str_replace("WHERE quiz.course", "WHERE u.department = :dept AND quiz.course", $classsql);
-            $classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $userdept,
-                'competencyid' => $competency]);
+            $classsql = str_replace(
+                "FROM {quiz_attempts} quiza",
+                "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id",
+                $coursesql
+            );
+            $classsql = str_replace(
+                "WHERE quiz.course",
+                "WHERE u.department = :dept AND quiz.course",
+                $classsql
+            );
+            $classdata = $DB->get_records_sql($classsql, [
+                'courseid' => $courseid,
+                'dept' => $userdept,
+                'competencyid' => $competency,
+            ]);
         }
         // Fetch specific student data by filtering by userid.
-        $studentsql = str_replace("WHERE quiz.course", "WHERE quiza.userid = :userid AND quiz.course", $coursesql);
-        $studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $userid,
-            'competencyid' => $competency]);
+        $studentsql = str_replace(
+            "WHERE quiz.course",
+            "WHERE quiza.userid = :userid AND quiz.course",
+            $coursesql
+        );
+        $studentdata = $DB->get_records_sql($studentsql, [
+            'courseid' => $courseid,
+            'userid' => $userid,
+            'competencyid' => $competency,
+        ]);
     }
 
     // Chart lists.
