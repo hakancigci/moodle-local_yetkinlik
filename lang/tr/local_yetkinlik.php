@@ -135,6 +135,7 @@ $string['timeline'] = 'Zaman Çizelgesi';
 $string['timelineheading'] = 'Zaman İçinde Yetkinlik Gelişimi';
 $string['total'] = 'TOPLAM';
 $string['user'] = 'Öğrenci';
+$string['visual_report'] = 'Görsel rapor';
 $string['yetkinlik:manage'] = 'Soru-yetkinlik eşleştirmelerini yönet';
 $string['yetkinlik:viewownreport'] = 'Kendi yetkinlik analiz raporunu görüntüle';
 $string['yetkinlik:viewreports'] = 'Tüm öğrenci yetkinlik raporlarını görüntüle';
