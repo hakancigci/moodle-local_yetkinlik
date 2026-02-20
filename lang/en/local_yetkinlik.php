@@ -103,6 +103,7 @@ $string['schoolpdf'] = 'School PDF Report';
 $string['schoolpdfreport'] = 'School General Achievement Report';
 $string['schoolreport'] = 'School General Report';
 $string['searchcompetency'] = 'Search competency';
+$string['searchquiz'] = 'Search quiz';
 $string['searchuserorprept'] = 'Search student or report';
 $string['selectcompetency'] = 'Select competency';
 $string['selectgroup'] = 'Select group';
