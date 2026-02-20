@@ -37,7 +37,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class student_class_page implements renderable, templatable {
-
     /** @var stdClass Data object containing performance statistics. */
     protected $data;
 
