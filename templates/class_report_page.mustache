@@ -92,7 +92,7 @@
 
 {{#has_data}}
 {{#js}}
-require(['jquery', 'local_yetkinlik/visualizer'], function($, Visualizer) {
+require(['jquery', 'local_yetkinlik/visualizer', 'core/log'], function($, Visualizer, Log) {
     var canvas = document.getElementById('studentClassChart');
     if (canvas) {
         var rawData = canvas.getAttribute('data-chart-config');
@@ -100,7 +100,8 @@ require(['jquery', 'local_yetkinlik/visualizer'], function($, Visualizer) {
             var params = JSON.parse(rawData);
             Visualizer.initStudentClass(params);
         } catch (e) {
-            console.error("An error occurred while loading the Competency Chart:", e);
+            Log.error("An error occurred while loading the Competency Chart");
+            Log.error(e);
         }
     }
 });
