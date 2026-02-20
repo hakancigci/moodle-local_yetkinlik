@@ -34,7 +34,6 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
 
     // 1. Teacher Reports Section.
     if (has_capability('mod/quiz:viewreports', $context)) {
-
         // General class report.
         if (!$navigation->find('yetkinlik_teacher', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/class_report.php', ['courseid' => $course->id]);
