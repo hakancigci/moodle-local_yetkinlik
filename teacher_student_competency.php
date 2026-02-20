@@ -80,13 +80,19 @@ class local_yetkinlik_teacher_form extends moodleform {
         $mform->setType('courseid', PARAM_INT);
 
         // Using autocomplete for better UX with large student/competency lists.
-        $mform->addElement('autocomplete', 'userid',
+        $mform->addElement(
+            'autocomplete',
+            'userid',
             get_string('selectstudent', 'local_yetkinlik'),
-            $this->_customdata['studentoptions']);
+            $this->_customdata['studentoptions']
+        );
 
-        $mform->addElement('autocomplete', 'competencyid',
+        $mform->addElement(
+            'autocomplete',
+            'competencyid',
             get_string('selectcompetency', 'local_yetkinlik'),
-            $this->_customdata['compoptions']);
+            $this->_customdata['compoptions']
+        );
 
         $this->add_action_buttons(false, get_string('show', 'local_yetkinlik'));
     }
@@ -143,11 +149,16 @@ if ($userid && $competencyid) {
         $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
 
         // Find the last finished attempt to generate a review link.
-        $lastattempt = $DB->get_record_sql("
-            SELECT id FROM {quiz_attempts}
-            WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
-            ORDER BY attempt DESC",
-            ['quizid' => $r->quizid, 'userid' => $userid], IGNORE_MULTIPLE);
+        $lastattempt = $DB->get_record_sql(
+            "SELECT id FROM {quiz_attempts}
+             WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
+             ORDER BY attempt DESC",
+            [
+                'quizid' => $r->quizid,
+                'userid' => $userid,
+            ],
+            IGNORE_MULTIPLE
+        );
 
         $renderdata->rows[] = [
             'quizname'   => $r->quizname,
