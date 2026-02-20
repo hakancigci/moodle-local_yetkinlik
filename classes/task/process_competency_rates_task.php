@@ -32,7 +32,6 @@ namespace local_yetkinlik\task;
  * @package    local_yetkinlik
  */
 class process_competency_rates_task extends \core\task\adhoc_task {
-
     /**
      * Run the task to process competency rates.
      */
