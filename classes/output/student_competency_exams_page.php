@@ -37,7 +37,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class student_competency_exams_page implements renderable, templatable {
-
     /** @var stdClass Data object passed from the script. */
     protected $data;
 
