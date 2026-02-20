@@ -37,7 +37,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class group_quiz_competency_page implements renderable, templatable {
-
     /** @var int The course ID. */
     protected $courseid;
 
