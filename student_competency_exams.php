@@ -93,11 +93,16 @@ if ($competencyid) {
 
     foreach ($rows as $r) {
         // 4. Determine the link to the latest quiz attempt for review.
-        $lastattempt = $DB->get_record_sql("
-            SELECT id FROM {quiz_attempts}
-            WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
-            ORDER BY attempt DESC",
-            ['quizid' => $r->quizid, 'userid' => $USER->id], IGNORE_MULTIPLE);
+        $lastattempt = $DB->get_record_sql(
+            "SELECT id FROM {quiz_attempts}
+             WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
+             ORDER BY attempt DESC",
+            [
+                'quizid' => $r->quizid,
+                'userid' => $USER->id,
+            ],
+            IGNORE_MULTIPLE
+        );
 
         $r->review_url = $lastattempt ?
             (new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]))->out(false) : null;
