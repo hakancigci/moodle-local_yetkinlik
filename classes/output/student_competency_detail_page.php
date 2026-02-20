@@ -37,7 +37,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class student_competency_detail_page implements renderable, templatable {
-
     /** @var stdClass Raw data to be processed for the template. */
     protected $data;
 
