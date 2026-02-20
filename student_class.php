@@ -66,16 +66,33 @@ if (!empty($coursedata)) {
     // 2. Class (Department) Average.
     if (!empty($USER->department)) {
         // Fetch data filtered by user department.
-        $classsql = str_replace("GROUP BY c.id, c.shortname", "AND u.department = :dept GROUP BY c.id", $coursesql);
-        $classsql = str_replace("FROM {quiz_attempts} quiza",
-            "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id", $classsql);
-        $renderdata->classdata = $DB->get_records_sql($classsql, ['courseid' => $courseid, 'dept' => $USER->department]);
+        $classsql = str_replace(
+            "GROUP BY c.id, c.shortname",
+            "AND u.department = :dept GROUP BY c.id",
+            $coursesql
+        );
+        $classsql = str_replace(
+            "FROM {quiz_attempts} quiza",
+            "FROM {quiz_attempts} quiza JOIN {user} u ON quiza.userid = u.id",
+            $classsql
+        );
+        $renderdata->classdata = $DB->get_records_sql($classsql, [
+            'courseid' => $courseid,
+            'dept' => $USER->department,
+        ]);
     }
 
     // 3. Student's Individual Data.
     // Fetch data filtered by current user's ID.
-    $studentsql = str_replace("GROUP BY c.id, c.shortname", "AND quiza.userid = :userid GROUP BY c.id", $coursesql);
-    $renderdata->studentdata = $DB->get_records_sql($studentsql, ['courseid' => $courseid, 'userid' => $USER->id]);
+    $studentsql = str_replace(
+        "GROUP BY c.id, c.shortname",
+        "AND quiza.userid = :userid GROUP BY c.id",
+        $coursesql
+    );
+    $renderdata->studentdata = $DB->get_records_sql($studentsql, [
+        'courseid' => $courseid,
+        'userid' => $USER->id,
+    ]);
 }
 
 // Render the output.
