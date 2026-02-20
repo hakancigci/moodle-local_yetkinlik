@@ -111,9 +111,15 @@ if ($groupid) {
 
     foreach ($students as $s) {
         $row = new stdClass();
-        $detailurl = new moodle_url('/local/yetkinlik/student_competency_detail.php',
-            ['courseid' => $courseid, 'userid' => $s->id]);
-        $row->studentlink = html_writer::link($detailurl, fullname($s), ['target' => '_blank']);
+        $detailurl = new moodle_url(
+            '/local/yetkinlik/student_competency_detail.php',
+            ['courseid' => $courseid, 'userid' => $s->id]
+        );
+        $row->studentlink = html_writer::link(
+            $detailurl,
+            fullname($s),
+            ['target' => '_blank']
+        );
         $row->scores = [];
 
         foreach ($renderdata->competencies as $c) {
