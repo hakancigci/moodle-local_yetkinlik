@@ -42,7 +42,7 @@ $PAGE->set_pagelayout('course');
 $mform = new \local_yetkinlik_selector_form(null, [
     'courseid' => $courseid,
     'showcompetency' => false, // This hides competencies.
-    'showquiz' => true,         // Added comma after last item to fix NormalizedArrays error.
+    'showquiz' => true, // Added comma after last item to fix NormalizedArrays error.
 ]);
 
 $data = new stdClass();
@@ -81,7 +81,7 @@ if ($fromform = $mform->get_data()) {
             $rawrate = $r->attempts ? ($r->correct / $r->attempts) * 100 : 0;
             $rowclass = ($rawrate >= 70) ? 'table-success' : (($rawrate >= 50) ? 'table-warning' : 'table-danger');
 
-            $data->rows[] = (object)[
+            $data->rows[] = (object) [
                 'shortname' => s($r->shortname),
                 'attempts'  => number_format($r->attempts, 0),
                 'correct'   => number_format($r->correct, 1),
