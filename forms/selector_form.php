@@ -28,6 +28,10 @@ require_once($CFG->libdir . '/formslib.php');
 
 /**
  * Selector form class for local_yetkinlik reports.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class local_yetkinlik_selector_form extends moodleform {
 
@@ -89,6 +93,9 @@ class local_yetkinlik_selector_form extends moodleform {
 
     /**
      * Helper to add competency autocomplete element.
+     *
+     * @param int $courseid The course ID to filter competencies.
+     * @return void
      */
     protected function add_competency_selector($courseid) {
         global $DB;
@@ -116,6 +123,9 @@ class local_yetkinlik_selector_form extends moodleform {
 
     /**
      * Helper to add quiz autocomplete element.
+     *
+     * @param int $courseid The course ID to fetch quizzes.
+     * @return void
      */
     protected function add_quiz_selector($courseid) {
         global $DB;
