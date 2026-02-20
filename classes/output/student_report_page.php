@@ -37,7 +37,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class student_report_page implements renderable, templatable {
-
     /** @var stdClass Raw report data including database rows and context information. */
     protected $data;
 
