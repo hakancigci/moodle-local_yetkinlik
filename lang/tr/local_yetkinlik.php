@@ -103,6 +103,7 @@ $string['schoolpdf'] = 'Okul PDF Raporu';
 $string['schoolpdfreport'] = 'Okul Genel Başarı Raporu';
 $string['schoolreport'] = 'Okul Genel Raporu';
 $string['searchcompetency'] = 'Kazanım ara';
+$string['searchquiz'] = 'Sınav ara';
 $string['searchuserorprept'] = 'Öğrenci veya rapor ara';
 $string['selectcompetency'] = 'Yetkinlik seçiniz';
 $string['selectgroup'] = 'Grup seçiniz';
