@@ -135,6 +135,7 @@ $string['timeline'] = 'Timeline';
 $string['timelineheading'] = 'Competency Progress Over Time';
 $string['total'] = 'TOTAL';
 $string['user'] = 'Student';
+$string['visual_report'] = 'Visual report';
 $string['yetkinlik:manage'] = 'Manage question-competency mappings';
 $string['yetkinlik:viewownreport'] = 'View own competency analysis report';
 $string['yetkinlik:viewreports'] = 'View all student competency reports';
