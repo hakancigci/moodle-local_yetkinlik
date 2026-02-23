@@ -42,15 +42,15 @@ $PAGE->set_pagelayout('course');
 $where = "quiz.course = :courseid AND u.id = :userid AND quiza.state = 'finished'";
 $params = ['courseid' => $courseid, 'userid' => $USER->id];
 
-// PostgreSQL uyumluluğu için tarih filtresini PHP üzerinden hesaplıyoruz.
+// We are calculating the date filter.
 if ($days > 0) {
     $cutoff = time() - ($days * 86400); 
     $where .= " AND qas2.timecreated > :cutoff";
     $params['cutoff'] = $cutoff;
 }
 
-// SQL Sorgusu: Veritabanı bağımsız (Cross-DB) hale getirildi.
-// FROM_UNIXTIME yerine ham timecreated çekilip PHP'de formatlanacak.
+// SQL Query: Made database independent (Cross-DB).
+// Raw timecreated will be retrieved and formatted in PHP instead of FROM_UNIXTIME.
 $sql = "SELECT qas2.id AS stepid, 
                c.shortname, 
                qas2.timecreated,
@@ -84,7 +84,7 @@ $periods = [];
 $raw_totals = [];
 
 foreach ($rows as $r) {
-    // Tarihi PHP tarafında formatlayarak DB uyumsuzluğunu gideriyoruz (Yıl-Ay).
+    // We format the date as year and month.
     $period = date('Y-m', $r->timecreated);
     $periods[$period] = true;
     
@@ -96,7 +96,7 @@ foreach ($rows as $r) {
     $raw_totals[$r->shortname][$period]['correct'] += $r->step_fraction;
 }
 
-// Yüzdelik hesaplama ve Chart.js formatına hazırlık.
+// Percentage calculation.
 $periods = array_keys($periods);
 sort($periods);
 
