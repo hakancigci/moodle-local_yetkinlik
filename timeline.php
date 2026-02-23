@@ -44,18 +44,17 @@ $params = ['courseid' => $courseid, 'userid' => $USER->id];
 
 // We are calculating the date filter.
 if ($days > 0) {
-    $cutoff = time() - ($days * 86400); 
+    $cutoff = time() - ($days * 86400);
     $where .= " AND qas2.timecreated > :cutoff";
     $params['cutoff'] = $cutoff;
 }
 
 // SQL Query: Made database independent (Cross-DB).
-// Raw timecreated will be retrieved and formatted in PHP instead of FROM_UNIXTIME.
-$sql = "SELECT qas2.id AS stepid, 
-               c.shortname, 
+$sql = "SELECT qas2.id AS stepid,
+               c.shortname,
                qas2.timecreated,
-               qa.maxfraction AS attempt_max, 
-               qas.fraction AS step_fraction
+               qa.maxfraction AS attemptmax,
+               qas.fraction AS stepfraction
         FROM {quiz_attempts} quiza
         JOIN {user} u ON quiza.userid = u.id
         JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -79,21 +78,20 @@ $sql = "SELECT qas2.id AS stepid,
 $rows = $DB->get_records_sql($sql, $params);
 
 // 2. Data Processing.
-$compdata = [];
 $periods = [];
-$raw_totals = [];
+$rawtotals = [];
 
 foreach ($rows as $r) {
     // We format the date as year and month.
     $period = date('Y-m', $r->timecreated);
     $periods[$period] = true;
-    
-    if (!isset($raw_totals[$r->shortname][$period])) {
-        $raw_totals[$r->shortname][$period] = ['attempts' => 0, 'correct' => 0];
+
+    if (!isset($rawtotals[$r->shortname][$period])) {
+        $rawtotals[$r->shortname][$period] = ['attempts' => 0, 'correct' => 0];
     }
-    
-    $raw_totals[$r->shortname][$period]['attempts'] += $r->attempt_max;
-    $raw_totals[$r->shortname][$period]['correct'] += $r->step_fraction;
+
+    $rawtotals[$r->shortname][$period]['attempts'] += $r->attemptmax;
+    $rawtotals[$r->shortname][$period]['correct'] += $r->stepfraction;
 }
 
 // Percentage calculation.
@@ -104,17 +102,17 @@ $datasets = [];
 $colors = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00897b'];
 $i = 0;
 
-foreach ($raw_totals as $comp => $monthly_vals) {
+foreach ($rawtotals as $comp => $monthlyvals) {
     $line = [];
     foreach ($periods as $p) {
-        if (isset($monthly_vals[$p]) && $monthly_vals[$p]['attempts'] > 0) {
-            $rate = round(($monthly_vals[$p]['correct'] / $monthly_vals[$p]['attempts']) * 100, 1);
+        if (isset($monthlyvals[$p]) && $monthlyvals[$p]['attempts'] > 0) {
+            $rate = round(($monthlyvals[$p]['correct'] / $monthlyvals[$p]['attempts']) * 100, 1);
             $line[] = (float)$rate;
         } else {
             $line[] = 0;
         }
     }
-    
+
     $datasets[] = [
         'label' => $comp,
         'data' => $line,
