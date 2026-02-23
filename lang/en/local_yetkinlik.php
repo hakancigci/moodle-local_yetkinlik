@@ -78,6 +78,7 @@ $string['mycompetencyexams'] = 'My Competency Exams';
 $string['mycompetencystate'] = 'My Competency State';
 $string['myexamanalysis'] = 'My Exam Analysis';
 $string['myreportcard'] = 'My Report Card';
+$string['nocompetencies'] = 'No competency.';
 $string['nocompetencyexamdata'] = 'No exam data found for this competency.';
 $string['nodatafound'] = 'No completed quiz data found for analysis in this course yet.';
 $string['nodatastudentcompetency'] = 'No quiz data found for this student in this competency.';
