@@ -24,23 +24,37 @@
 
 namespace local_yetkinlik\privacy;
 
-use core_privacy\local\metadata\null_provider;
+defined('MOODLE_INTERNAL') || die();
+
+use core_privacy\local\metadata\collection;
+use core_privacy\local\metadata\provider as metadataprovider;
 
 /**
- * Privacy Subsystem implementing null_provider.
+ * Privacy Subsystem implementation.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements null_provider {
+class provider implements metadataprovider {
+
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
+     * Returns metadata about the data sent to external locations.
      *
-     * @return string
+     * @param collection $collection The collection to add metadata to.
+     * @return collection The modified collection.
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        // We declare that data has been sent to the OpenAI API.
+        $collection->add_external_location_link(
+            'openai',
+            [
+                'questiontext' => 'privacy:metadata:openai:questiontext',
+                'answertext' => 'privacy:metadata:openai:answertext'
+            ],
+            'privacy:metadata:openai:externalpurpose'
+        );
+
+        return $collection;
     }
 }
