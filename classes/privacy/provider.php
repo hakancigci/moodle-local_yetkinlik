@@ -24,8 +24,6 @@
 
 namespace local_yetkinlik\privacy;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core_privacy\local\metadata\collection;
 use core_privacy\local\metadata\provider as metadataprovider;
 
@@ -50,7 +48,7 @@ class provider implements metadataprovider {
             'openai',
             [
                 'questiontext' => 'privacy:metadata:openai:questiontext',
-                'answertext' => 'privacy:metadata:openai:answertext'
+                'answertext' => 'privacy:metadata:openai:answertext',
             ],
             'privacy:metadata:openai:externalpurpose'
         );
