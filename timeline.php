@@ -39,18 +39,23 @@ $PAGE->set_heading(get_string('timelineheading', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
 // 1. SQL Preparation.
-// Fetch student's achievement data grouped by competency and month (period).
 $where = "quiz.course = :courseid AND u.id = :userid AND quiza.state = 'finished'";
 $params = ['courseid' => $courseid, 'userid' => $USER->id];
 
-// Apply date filter if specific timeframe is requested.
+// PostgreSQL uyumluluğu için tarih filtresini PHP üzerinden hesaplıyoruz.
 if ($days > 0) {
-    $where .= " AND qas2.timecreated > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL :days DAY))";
-    $params['days'] = $days;
+    $cutoff = time() - ($days * 86400); 
+    $where .= " AND qas2.timecreated > :cutoff";
+    $params['cutoff'] = $cutoff;
 }
 
-$sql = "SELECT c.shortname, FROM_UNIXTIME(qas2.timecreated, '%Y-%m') AS period,
-               SUM(qa.maxfraction) AS attempts, SUM(qas.fraction) AS correct
+// SQL Sorgusu: Veritabanı bağımsız (Cross-DB) hale getirildi.
+// FROM_UNIXTIME yerine ham timecreated çekilip PHP'de formatlanacak.
+$sql = "SELECT qas2.id AS stepid, 
+               c.shortname, 
+               qas2.timecreated,
+               qa.maxfraction AS attempt_max, 
+               qas.fraction AS step_fraction
         FROM {quiz_attempts} quiza
         JOIN {user} u ON quiza.userid = u.id
         JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -59,7 +64,7 @@ $sql = "SELECT c.shortname, FROM_UNIXTIME(qas2.timecreated, '%Y-%m') AS period,
         JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
         JOIN {competency} c ON c.id = m.competencyid
         JOIN (
-            SELECT questionattemptid, MAX(timecreated) AS timecreated
+            SELECT questionattemptid, MAX(id) as id, MAX(timecreated) AS timecreated
             FROM {question_attempt_steps}
             GROUP BY questionattemptid
         ) qas2 ON qas2.questionattemptid = qa.id
@@ -69,22 +74,29 @@ $sql = "SELECT c.shortname, FROM_UNIXTIME(qas2.timecreated, '%Y-%m') AS period,
             GROUP BY questionattemptid
         ) qas ON qas.questionattemptid = qa.id
         WHERE $where
-        GROUP BY c.shortname, period
-        ORDER BY period ASC";
+        ORDER BY qas2.timecreated ASC";
 
 $rows = $DB->get_records_sql($sql, $params);
 
-// 2. Data Processing for Chart.js.
-// Map SQL results into a structured array for time-series visualization.
+// 2. Data Processing.
 $compdata = [];
 $periods = [];
+$raw_totals = [];
+
 foreach ($rows as $r) {
-    $rate = $r->attempts ? round(($r->correct / $r->attempts) * 100, 1) : 0;
-    $compdata[$r->shortname][$r->period] = $rate;
-    $periods[$r->period] = true;
+    // Tarihi PHP tarafında formatlayarak DB uyumsuzluğunu gideriyoruz (Yıl-Ay).
+    $period = date('Y-m', $r->timecreated);
+    $periods[$period] = true;
+    
+    if (!isset($raw_totals[$r->shortname][$period])) {
+        $raw_totals[$r->shortname][$period] = ['attempts' => 0, 'correct' => 0];
+    }
+    
+    $raw_totals[$r->shortname][$period]['attempts'] += $r->attempt_max;
+    $raw_totals[$r->shortname][$period]['correct'] += $r->step_fraction;
 }
 
-// Generate a sorted unique list of time periods (Months).
+// Yüzdelik hesaplama ve Chart.js formatına hazırlık.
 $periods = array_keys($periods);
 sort($periods);
 
@@ -92,19 +104,24 @@ $datasets = [];
 $colors = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00897b'];
 $i = 0;
 
-// Transform processed data into Chart.js dataset format.
-foreach ($compdata as $comp => $vals) {
+foreach ($raw_totals as $comp => $monthly_vals) {
     $line = [];
     foreach ($periods as $p) {
-        $line[] = isset($vals[$p]) ? (float)$vals[$p] : 0;
+        if (isset($monthly_vals[$p]) && $monthly_vals[$p]['attempts'] > 0) {
+            $rate = round(($monthly_vals[$p]['correct'] / $monthly_vals[$p]['attempts']) * 100, 1);
+            $line[] = (float)$rate;
+        } else {
+            $line[] = 0;
+        }
     }
+    
     $datasets[] = [
         'label' => $comp,
         'data' => $line,
         'borderColor' => $colors[$i % count($colors)],
         'backgroundColor' => $colors[$i % count($colors)],
         'fill' => false,
-        'tension' => 0.3, // Curve tension for smoother lines.
+        'tension' => 0.3,
     ];
     $i++;
 }
@@ -118,7 +135,6 @@ $renderdata->days = $days;
 $renderdata->periods = $periods;
 $renderdata->datasets = $datasets;
 
-// Render using the timeline output class.
 $page = new \local_yetkinlik\output\timeline_page($renderdata);
 echo $OUTPUT->render($page);
 
