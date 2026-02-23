@@ -78,6 +78,7 @@ $string['mycompetencyexams'] = 'Yetkinlik Bazlı Sınavlarım';
 $string['mycompetencystate'] = 'Yetkinlik Durumu';
 $string['myexamanalysis'] = 'Sınav Kazanım Analizim';
 $string['myreportcard'] = 'Karnem';
+$string['nocompetencies'] = 'Yetkinlik yok.';
 $string['nocompetencyexamdata'] = 'Bu yetkinlik için sınav verisi bulunamadı.';
 $string['nodatafound'] = 'Bu kursta henüz analiz edilecek tamamlanmış sınav verisi bulunamadı.';
 $string['nodatastudentcompetency'] = 'Bu öğrenci için bu yetkinlikte sınav verisi bulunamadı.';
