@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Capability definitions for the local_yetkinlik plugin.
@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
 
-    // Authority to perform question-competency matching (for teachers).
+    // Ability to manage question-competency mapping.
     'local/yetkinlik:manage' => [
         'riskbitmask'  => RISK_CONFIG,
         'captype'      => 'write',
@@ -37,7 +37,7 @@ $capabilities = [
         ],
     ],
 
-    // Authorization to view reports (Teachers and Administrators).
+    // Ability to view all competency reports (Teachers and Managers).
     'local/yetkinlik:viewreports' => [
         'captype'      => 'read',
         'contextlevel' => CONTEXT_COURSE,
@@ -48,7 +48,7 @@ $capabilities = [
         ],
     ],
 
-    // The ability to view their own competency analysis (Students).
+    // Ability to view own competency analysis (Students).
     'local/yetkinlik:viewownreport' => [
         'captype'      => 'read',
         'contextlevel' => CONTEXT_COURSE,
