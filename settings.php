@@ -25,11 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    // 1. Ayarlar Sayfası Tanımlama.
+    // 1. Define the Settings Page.
     $settings = new admin_settingpage('local_yetkinlik', get_string('pluginname', 'local_yetkinlik'));
 
     if ($ADMIN->fulltree) {
-        // AI entegrasyonu aktif/pasif.
+        // AI integration toggle (enable/disable).
         $settings->add(new admin_setting_configcheckbox(
             'local_yetkinlik/enable_ai',
             get_string('enable_ai', 'local_yetkinlik'),
@@ -37,7 +37,7 @@ if ($hassiteconfig) {
             0
         ));
 
-        // API anahtarı.
+        // API Key.
         $settings->add(new admin_setting_configtext(
             'local_yetkinlik/apikey',
             get_string('apikey', 'local_yetkinlik'),
@@ -46,7 +46,7 @@ if ($hassiteconfig) {
             PARAM_TEXT
         ));
 
-        // Model adı.
+        // Model name.
         $settings->add(new admin_setting_configtext(
             'local_yetkinlik/model',
             get_string('model', 'local_yetkinlik'),
@@ -55,7 +55,7 @@ if ($hassiteconfig) {
             PARAM_ALPHANUMEXT
         ));
 
-        // Maksimum satır sayısı.
+        // Maximum number of rows.
         $settings->add(new admin_setting_configtext(
             'local_yetkinlik/maxrows',
             get_string('maxrows', 'local_yetkinlik'),
@@ -65,10 +65,10 @@ if ($hassiteconfig) {
         ));
     }
 
-    // 2. Ayarlar Sayfasını "Yerel Eklentiler" altına ekle.
+    // 2. Add the Settings Page under "Local Plugins".
     $ADMIN->add('localplugins', $settings);
 
-    // 3. Harici Rapor Sayfalarını "Raporlar" menüsü altına ekle.
+    // 3. Add External Report Pages under the "Reports" menu.
     $ADMIN->add('reports', new admin_externalpage(
         'local_yetkinlik_schoolreport',
         get_string('schoolreport', 'local_yetkinlik'),
