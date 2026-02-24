@@ -59,7 +59,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                     continue;
                 }
 
-                // Dil dosyasından metinleri alalım.
+                // Let's retrieve the text from the language file.
                 $ratestr = number_format($rate, 1);
                 $a = new \stdClass();
                 $a->competency = $c->shortname;
