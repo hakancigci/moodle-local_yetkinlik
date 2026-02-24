@@ -28,7 +28,7 @@ require_once(__DIR__ . '/ai.php');
 
 require_login();
 
-// Parametre kontrolü.
+// Parameter validation.
 $courseid = optional_param('courseid', 0, PARAM_INT);
 global $DB;
 
@@ -37,7 +37,7 @@ if ($courseid) {
     require_capability('moodle/course:view', $context);
     $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
-    // Dil dosyasından ders bazlı başlığı çekiyoruz.
+    // Fetch course-specific title from the language file.
     $reporttitle = get_string('report_title', 'local_yetkinlik', $course->fullname);
 
     $wheresql = "WHERE quiz.course = :courseid AND quiza.state = 'finished'";
@@ -46,14 +46,14 @@ if ($courseid) {
     $context = context_system::instance();
     require_capability('moodle/site:config', $context);
 
-    // Dil dosyasından genel başlığı çekiyoruz.
+    // Fetch general title from the language file.
     $reporttitle = get_string('report_title', 'local_yetkinlik');
 
     $wheresql = "WHERE quiza.state = 'finished'";
     $params = [];
 }
 
-// Veri Çekme SQL.
+// SQL for Data Retrieval.
 $sql = "
     SELECT c.id, c.shortname, c.description,
            CAST(SUM(qa.maxfraction) AS DECIMAL(12, 1)) AS attempts,
@@ -82,10 +82,10 @@ foreach ($rows as $r) {
     $rates[$r->shortname] = $rate;
 }
 
-// AI yorumu üretme.
+// Generate AI comment.
 $comment = local_yetkinlik_generate_comment($rates);
 
-/* PDF Hazırlığı. */
+/* PDF Preparation. */
 $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 $pdf->SetCreator('Moodle');
 $pdf->SetTitle($reporttitle);
@@ -95,17 +95,17 @@ $pdf->SetMargins(15, 15, 15);
 $pdf->SetAutoPageBreak(true, PDF_MARGIN_BOTTOM);
 $pdf->AddPage();
 
-// Font ayarı (Türkçe karakterler için).
+// Font settings (for UTF-8 / Turkish character support).
 $pdf->SetFont('freeserif', '', 12);
 
-// Başlık bölümü.
+// Header section.
 $pdf->SetFont('freeserif', 'B', 16);
 $pdf->Cell(0, 10, $reporttitle, 0, 1, 'C');
 $pdf->SetFont('freeserif', '', 9);
 $pdf->Cell(0, 5, get_string('creation_date', 'local_yetkinlik') . ": " . date('d.m.Y H:i'), 0, 1, 'R');
 $pdf->Ln(5);
 
-// HTML tablo başlıkları dil dosyasından geliyor.
+// HTML table headers fetched from language file.
 $html = '
 <table border="0.5" cellpadding="6" style="width: 100%;">
     <thead>
@@ -122,10 +122,10 @@ $html = '
 foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
 
-    // HTML etiketlerini temizle.
+    // Clean HTML tags.
     $cleandesc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
 
-    // Renk skalası.
+    // Color scaling based on success rate.
     $bgcolor = $rate >= 70 ? '#e6ffec' : ($rate >= 50 ? '#fff9e6' : '#ffe6e6');
 
     $html .= '
@@ -140,10 +140,10 @@ foreach ($rows as $r) {
 
 $html .= '</tbody></table>';
 
-// Tabloyu PDF'e aktar.
+// Render table to PDF.
 $pdf->writeHTML($html, true, false, true, false, '');
 
-// AI analiz notu (Eğer yorum varsa).
+// AI analysis note (if a comment exists).
 if (!empty($comment)) {
     $cleancomment = html_entity_decode(strip_tags($comment), ENT_QUOTES, 'UTF-8');
 
@@ -157,6 +157,6 @@ if (!empty($comment)) {
     $pdf->MultiCell(0, 7, $cleancomment, 0, 'L', false, 1);
 }
 
-// Cıktı.
-$pdf->Output("kazanim_raporu.pdf", "I");
+// Output.
+$pdf->Output("competency_report.pdf", "I");
 exit;
