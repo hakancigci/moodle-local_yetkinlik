@@ -35,7 +35,6 @@ use core_privacy\local\metadata\provider as metadataprovider;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements metadataprovider {
-
     /**
      * Returns metadata about the data sent to external locations.
      *
