@@ -36,7 +36,6 @@ global $DB, $CFG;
 if ($courseid) {
     $context = context_course::instance($courseid);
     require_capability('local/yetkinlik:viewreports', $context);
-    
     $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
     $reporttitle = get_string('report_title', 'local_yetkinlik', $course->fullname);
 
@@ -125,7 +124,6 @@ $html = '
 
 foreach ($rows as $r) {
     $rate = $r->attempts ? number_format(($r->correct / $r->attempts) * 100, 1) : 0;
-    
     // Formatting and cleaning data for PDF.
     $cleandesc = html_entity_decode(strip_tags($r->description), ENT_QUOTES, 'UTF-8');
     $bgcolor = $rate >= 70 ? '#e6ffec' : ($rate >= 50 ? '#fff9e6' : '#ffe6e6');
