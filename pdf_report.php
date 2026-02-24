@@ -104,7 +104,8 @@ $pdf->Cell(0, 10, $reporttitle, 0, 1, 'C');
 $pdf->SetFont('freeserif', '', 9);
 
 // Use Moodle userdate for localized time.
-$dateinfo = get_string('creation_date', 'local_yetkinlik') . ": " . userdate(time(), get_string('strftimedatetimeshort', 'langconfig'));
+$dateconfig = get_string('strftimedatetimeshort', 'langconfig');
+$dateinfo = get_string('creation_date', 'local_yetkinlik') . ": " . userdate(time(), $dateconfig);
 $pdf->Cell(0, 5, $dateinfo, 0, 1, 'R');
 $pdf->Ln(5);
 
