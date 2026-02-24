@@ -24,16 +24,16 @@
 
 require_once(__DIR__ . '/../../config.php');
 
-// Parametreler.
+// Parameters.
 $courseid = required_param('courseid', PARAM_INT);
 $run = optional_param('run', 0, PARAM_BOOL);
 
-// Güvenlik ve Bağlam.
+// Security and Context.
 $context = context_course::instance($courseid);
 require_login($courseid);
 require_capability('moodle/site:config', context_system::instance());
 
-// Sayfa Ayarları.
+// Page Settings.
 $PAGE->set_url('/local/yetkinlik/add_success_to_evidence.php', ['courseid' => $courseid]);
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('process_success_title', 'local_yetkinlik'));
@@ -42,7 +42,7 @@ $PAGE->set_heading(get_string('process_success_heading', 'local_yetkinlik'));
 echo $OUTPUT->header();
 
 if ($run) {
-    // Adhoc task oluştur.
+    // Create an adhoc task.
     $task = new \local_yetkinlik\task\process_competency_rates_task();
     $task->set_custom_data([
         'courseid' => $courseid,
@@ -54,7 +54,7 @@ if ($run) {
     echo $OUTPUT->notification(get_string('process_queued', 'local_yetkinlik'), 'success');
     echo $OUTPUT->continue_button(new moodle_url('/course/view.php', ['id' => $courseid]));
 } else {
-    // Bilgi kutusu ve işlem butonu.
+    // Information box and action button.
     echo $OUTPUT->box(get_string('process_success_desc', 'local_yetkinlik'), 'generalbox boxaligncenter');
 
     $url = new moodle_url($PAGE->url, ['run' => 1, 'courseid' => $courseid]);
