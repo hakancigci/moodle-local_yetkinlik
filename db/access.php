@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
 
-    // Soru-Yetkinlik eşleştirmesini yapma yetkisi (Öğretmenler için).
+    // Authority to perform question-competency matching (for teachers).
     'local/yetkinlik:manage' => [
         'riskbitmask'  => RISK_CONFIG,
         'captype'      => 'write',
@@ -37,7 +37,7 @@ $capabilities = [
         ],
     ],
 
-    // Raporları görüntüleme yetkisi (Öğretmen ve Yöneticiler).
+    // Authorization to view reports (Teachers and Administrators).
     'local/yetkinlik:viewreports' => [
         'captype'      => 'read',
         'contextlevel' => CONTEXT_COURSE,
@@ -48,7 +48,7 @@ $capabilities = [
         ],
     ],
 
-    // Kendi yetkinlik analizini görme yetkisi (Öğrenciler).
+    // The ability to view their own competency analysis (Students).
     'local/yetkinlik:viewownreport' => [
         'captype'      => 'read',
         'contextlevel' => CONTEXT_COURSE,
