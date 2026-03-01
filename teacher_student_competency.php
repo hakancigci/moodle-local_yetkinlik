@@ -10,13 +10,10 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Teacher view: Student-specific competency performance report.
- * Provides filters for selecting students and competencies to view detailed quiz results.
+ * Provides filters and detailed question links with modal support.
  *
  * @package    local_yetkinlik
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
@@ -32,30 +29,24 @@ $competencyid = optional_param('competencyid', 0, PARAM_INT);
 
 require_login($courseid);
 $context = context_course::instance($courseid);
-
-// Check for quiz report viewing capability (Teacher or Manager roles usually).
 require_capability('mod/quiz:viewreports', $context);
 
-// Page definitions and navigation setup.
 $PAGE->set_url('/local/yetkinlik/teacher_student_competency.php', ['courseid' => $courseid]);
 $PAGE->set_title(get_string('teacherstudentcompetency', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('teacherstudentcompetency', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
-$PAGE->set_context($context);
 
-// 1. Data Preparation (Dropdown / Form Options).
-// Get all enrolled users to populate the student selection filter.
+// 1. Data Preparation.
 $students = get_enrolled_users($context);
 $studentoptions = [0 => get_string('selectstudent', 'local_yetkinlik')];
 foreach ($students as $s) {
     $studentoptions[$s->id] = fullname($s);
 }
 
-// Get competencies that have been mapped to questions.
 $competencies = $DB->get_records_sql("
-    SELECT DISTINCT c.id, c.shortname
-    FROM {qbank_yetkinlik_qmap} m
-    JOIN {competency} c ON c.id = m.competencyid
+    SELECT DISTINCT c.id, c.shortname 
+    FROM {qbank_yetkinlik_qmap} m 
+    JOIN {competency} c ON c.id = m.competencyid 
     ORDER BY c.shortname");
 
 $compoptions = [0 => get_string('selectcompetency', 'local_yetkinlik')];
@@ -65,131 +56,113 @@ foreach ($competencies as $c) {
 
 /**
  * Filter form for student and competency selection.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class local_yetkinlik_teacher_form extends moodleform {
-    /**
-     * Form definition.
-     */
     public function definition() {
         $mform = $this->_form;
         $mform->addElement('hidden', 'courseid');
         $mform->setType('courseid', PARAM_INT);
-
-        // Using autocomplete for better UX with large student/competency lists.
-        $mform->addElement(
-            'autocomplete',
-            'userid',
-            get_string('selectstudent', 'local_yetkinlik'),
-            $this->_customdata['studentoptions']
-        );
-
-        $mform->addElement(
-            'autocomplete',
-            'competencyid',
-            get_string('selectcompetency', 'local_yetkinlik'),
-            $this->_customdata['compoptions']
-        );
-
+        $mform->addElement('autocomplete', 'userid', get_string('selectstudent', 'local_yetkinlik'), $this->_customdata['studentoptions']);
+        $mform->addElement('autocomplete', 'competencyid', get_string('selectcompetency', 'local_yetkinlik'), $this->_customdata['compoptions']);
         $this->add_action_buttons(false, get_string('show', 'local_yetkinlik'));
     }
 }
 
-$mform = new local_yetkinlik_teacher_form(null, [
-    'studentoptions' => $studentoptions,
-    'compoptions'    => $compoptions,
-]);
+$mform = new local_yetkinlik_teacher_form(null, ['studentoptions' => $studentoptions, 'compoptions' => $compoptions]);
 $mform->set_data(['courseid' => $courseid, 'userid' => $userid, 'competencyid' => $competencyid]);
 
-// Handle form submission.
 if ($frmdata = $mform->get_data()) {
     $userid = $frmdata->userid;
     $competencyid = $frmdata->competencyid;
 }
 
-// 3. Report Data Fetching (SQL).
+// 3. Report Data Fetching.
 $renderdata = new stdClass();
 $renderdata->userid = $userid;
 $renderdata->competencyid = $competencyid;
+$renderdata->competencies = $competencies;
 $renderdata->rows = [];
+$renderdata->question_details = [];
 
 if ($userid && $competencyid) {
-    // Fetch quiz-based performance data for the selected student and competency.
-    $sql = "SELECT quiz.id AS quizid, quiz.name AS quizname,
-                   SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
-            FROM {quiz_attempts} quiza
-            JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-            JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-            JOIN {quiz} quiz ON quiz.id = quiza.quiz
-            JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
-            JOIN (
-                SELECT MAX(fraction) AS fraction, questionattemptid
-                FROM {question_attempt_steps}
-                GROUP BY questionattemptid
-            ) qas ON qas.questionattemptid = qa.id
-            WHERE m.competencyid = :competencyid
-              AND quiza.userid = :userid
-              AND quiz.course = :courseid
-              AND quiza.state = 'finished'
-            GROUP BY quiz.id, quiz.name
-            ORDER BY quiz.name";
+    // 2. Fetch competency details if a specific one is selected.
+    if ($comp = $DB->get_record('competency', ['id' => $competencyid])) {
+        $renderdata->description = format_text($comp->description, $comp->descriptionformat);
+    }
+    
+    // 3a. Summary Table Data.
+    $sql_summary = "SELECT quiz.id AS quizid, quiz.name AS quizname, MAX(quiza.id) as lastattemptid,
+                           SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
+                    FROM {quiz_attempts} quiza
+                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                    JOIN {qbank_yetkinlik_qmap} map ON map.questionid = qa.questionid
+                    JOIN (
+                        SELECT MAX(fraction) AS fraction, questionattemptid
+                        FROM {question_attempt_steps}
+                        GROUP BY questionattemptid
+                    ) qas ON qas.questionattemptid = qa.id
+                    WHERE map.competencyid = :competencyid 
+                      AND quiza.userid = :userid 
+                      AND quiz.course = :courseid 
+                      AND quiza.state = 'finished'
+                    GROUP BY quiz.id, quiz.name";
 
-    $rows = $DB->get_records_sql($sql, [
-        'competencyid' => $competencyid,
-        'userid' => $userid,
-        'courseid' => $courseid,
-    ]);
+    $summary_rows = $DB->get_records_sql($sql_summary, ['competencyid' => $competencyid, 'userid' => $userid, 'courseid' => $courseid]);
 
-    $tq = 0;
-    $tc = 0;
-    foreach ($rows as $r) {
+    $tq = 0; $tc = 0;
+    foreach ($summary_rows as $r) {
         $rate = $r->questions ? number_format(($r->correct / $r->questions) * 100, 1) : 0;
-
-        // Find the last finished attempt to generate a review link.
-        $lastattempt = $DB->get_record_sql(
-            "SELECT id FROM {quiz_attempts}
-             WHERE quiz = :quizid AND userid = :userid AND state = 'finished'
-             ORDER BY attempt DESC",
-            [
-                'quizid' => $r->quizid,
-                'userid' => $userid,
-            ],
-            IGNORE_MULTIPLE
-        );
-
         $renderdata->rows[] = [
-            'quizname'   => $r->quizname,
-            'questions'  => (float)$r->questions,
-            'correct'    => (float)$r->correct,
-            'rate'       => $rate,
-            'color'      => ($rate >= 80) ? 'green' : (($rate >= 60) ? 'blue' : (($rate >= 40) ? 'orange' : 'red')),
-            'review_url' => $lastattempt ?
-                (new moodle_url('/mod/quiz/review.php', ['attempt' => $lastattempt->id]))->out(false) : null,
+            'quizname' => $r->quizname,
+            'quizurl'  => (new moodle_url('/mod/quiz/review.php', ['attempt' => $r->lastattemptid]))->out(false),
+            'questions'=> (float)$r->questions,
+            'correct'  => number_format($r->correct,1),
+            'rate'     => $rate,
+            'color'    => ($rate >= 80) ? 'green' : (($rate >= 40) ? 'orange' : 'red'),
         ];
-        $tq += $r->questions;
-        $tc += $r->correct;
+        $tq += $r->questions; $tc += $r->correct;
     }
 
-    // Calculate aggregated totals for the selected student/competency.
     if ($tq > 0) {
         $trate = number_format(($tc / $tq) * 100, 1);
-        $renderdata->total = [
-            'questions' => $tq,
-            'correct' => $tc,
-            'rate' => $trate,
-            'color' => ($trate >= 80) ? 'green' : (($trate >= 60) ? 'blue' : (($trate >= 40) ? 'orange' : 'red')),
+        $renderdata->total = ['questions' => $tq, 'correct' => number_format($tc,1), 'rate' => $trate, 'color' => ($trate >= 80) ? 'green' : 'red'];
+    }
+
+    // 3b. Detail Table Data - Fixed with -1 offset for page parameter.
+    $sql_details = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, slot.page
+                    FROM {quiz_attempts} quiza
+                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                    JOIN {question} q ON q.id = qa.questionid
+                    JOIN {quiz_slots} slot ON slot.quizid = quiz.id AND slot.slot = qa.slot
+                    INNER JOIN {qbank_yetkinlik_qmap} map ON map.questionid = qa.questionid
+                    WHERE map.competencyid = :competencyid AND quiza.userid = :userid AND quiza.state = 'finished'
+                    ORDER BY quiz.name ASC, slot.slot ASC";
+
+    $questions = $DB->get_records_sql($sql_details, ['competencyid' => $competencyid, 'userid' => $userid]);
+
+    foreach ($questions as $q) {
+        // Apply the -1 offset fix for correct page targeting.
+        $target_page = max(0, $q->page - 1);
+        
+        $renderdata->question_details[] = [
+            'quizname'     => $q->quizname,
+            'questionname' => $q->qname,
+            'attemptid'    => $q->attemptid,
+            'page'         => $target_page,
+            'url'          => (new moodle_url('/mod/quiz/review.php', [
+                                'attempt' => $q->attemptid, 
+                                'page' => $target_page, 
+                                'showall' => 0
+                              ]))->out(false) . '#q' . $q->id
         ];
     }
 }
 
-// 4. Output Generation.
 echo $OUTPUT->header();
-
-// Render the page using the corresponding output class.
 $page = new \local_yetkinlik\output\teacher_student_competency_page($renderdata, $mform);
 echo $OUTPUT->render($page);
-
 echo $OUTPUT->footer();
