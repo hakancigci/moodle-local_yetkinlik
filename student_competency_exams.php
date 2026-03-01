@@ -58,7 +58,7 @@ $renderdata->courseid = $courseid;
 $renderdata->competencyid = $competencyid;
 $renderdata->competencies = $competencies;
 $renderdata->rows = [];
-$renderdata->question_details = [];
+$renderdata->questiondetails = [];
 
 if ($competencyid) {
     // 2. Fetch competency details if a specific one is selected.
@@ -67,68 +67,68 @@ if ($competencyid) {
     }
 
     // 3. Fetch summary performance data for the current user in the selected competency across all quizzes.
-    $sql_summary = "SELECT quiz.id AS quizid, quiz.name AS quizname,
-                           SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
-                    FROM {quiz_attempts} quiza
-                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                    JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                    JOIN (
-                        SELECT MAX(fraction) AS fraction, questionattemptid
-                        FROM {question_attempt_steps}
-                        GROUP BY questionattemptid
-                    ) qas ON qas.questionattemptid = qa.id
-                    WHERE quiz.course = :courseid 
-                      AND m.competencyid = :competencyid
-                      AND quiza.userid = :userid
-                      AND quiza.state = 'finished'
-                    GROUP BY quiz.id, quiz.name
-                    ORDER BY quiz.id";
+    $sqlsummary = "SELECT quiz.id AS quizid, quiz.name AS quizname,
+                          SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
+                   FROM {quiz_attempts} quiza
+                   JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                   JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                   JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                   JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
+                   JOIN (
+                       SELECT MAX(fraction) AS fraction, questionattemptid
+                       FROM {question_attempt_steps}
+                       GROUP BY questionattemptid
+                   ) qas ON qas.questionattemptid = qa.id
+                   WHERE quiz.course = :courseid
+                     AND m.competencyid = :competencyid
+                     AND quiza.userid = :userid
+                     AND quiza.state = 'finished'
+                   GROUP BY quiz.id, quiz.name
+                   ORDER BY quiz.id";
 
-    $summary_rows = $DB->get_records_sql($sql_summary, [
+    $summaryrows = $DB->get_records_sql($sqlsummary, [
         'courseid' => $courseid,
         'competencyid' => $competencyid,
         'userid' => $USER->id,
     ]);
 
-    foreach ($summary_rows as $r) {
+    foreach ($summaryrows as $r) {
         $renderdata->rows[] = $r;
     }
 
     // 4. Fetch detailed question attempts related to the competency with page-specific links.
-    $sql_details = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, slot.page
-                    FROM {quiz_attempts} quiza
-                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                    JOIN {question} q ON q.id = qa.questionid
-                    JOIN {quiz_slots} slot ON slot.quizid = quiz.id AND slot.slot = qa.slot
-                    INNER JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
-                    WHERE m.competencyid = :competencyid 
-                      AND quiza.userid = :userid 
-                      AND quiza.state = 'finished'
-                      AND quiz.course = :courseid
-                    ORDER BY quiz.name ASC, slot.slot ASC";
+    $sqldetails = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, slot.page
+                   FROM {quiz_attempts} quiza
+                   JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                   JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                   JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                   JOIN {question} q ON q.id = qa.questionid
+                   JOIN {quiz_slots} slot ON slot.quizid = quiz.id AND slot.slot = qa.slot
+                   INNER JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
+                   WHERE m.competencyid = :competencyid
+                     AND quiza.userid = :userid
+                     AND quiza.state = 'finished'
+                     AND quiz.course = :courseid
+                   ORDER BY quiz.name ASC, slot.slot ASC";
 
-    $questions = $DB->get_records_sql($sql_details, [
+    $questions = $DB->get_records_sql($sqldetails, [
         'competencyid' => $competencyid,
         'userid' => $USER->id,
-        'courseid' => $courseid
+        'courseid' => $courseid,
     ]);
 
     foreach ($questions as $q) {
         // Apply the -1 offset fix for correct page targeting.
-        $target_page = max(0, $q->page - 1);
-        
-        $renderdata->question_details[] = [
+        $targetpage = max(0, $q->page - 1);
+
+        $renderdata->questiondetails[] = [
             'quizname'     => $q->quizname,
             'questionname' => $q->qname,
             'url'          => (new moodle_url('/mod/quiz/review.php', [
-                                'attempt' => $q->attemptid, 
-                                'page' => $target_page, 
-                                'showall' => 0
-                              ]))->out(false) . '#q' . $q->id
+                                'attempt' => $q->attemptid,
+                                'page' => $targetpage,
+                                'showall' => 0,
+                              ]))->out(false) . '#q' . $q->id,
         ];
     }
 }
