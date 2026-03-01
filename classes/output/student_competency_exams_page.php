@@ -84,14 +84,14 @@ class student_competency_exams_page implements renderable, templatable {
 
                 $export->rows[] = [
                     'quizname' => $r->quizname,
-                    'questions' => (float)$r->questions,
-                    'correct' => number_format($r->correct,1),
+                    'questions' => (float) $r->questions,
+                    'correct' => number_format($r->correct, 1),
                     'rate' => $rate,
                     'colorclass' => $colorclass,
                 ];
 
                 $totalq += $r->questions;
-                $totalc += number_format($r->correct,1);
+                $totalc += number_format($r->correct, 1);
             }
 
             // Generate aggregated total data for the table footer.
