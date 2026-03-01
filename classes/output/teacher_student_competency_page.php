@@ -69,9 +69,9 @@ class teacher_student_competency_page implements renderable, templatable {
             $export->description = $this->data->description;
         }
         $export->has_rows = !empty($this->data->rows);
-        $export->has_questions = !empty($this->data->question_details);
+        $export->has_questions = !empty($this->data->questiondetails);
         $export->rows = $this->data->rows;
-        $export->question_details = $this->data->question_details;
+        $export->question_details = $this->data->questiondetails;
         $export->total = $this->data->total ?? null;
 
         return $export;
