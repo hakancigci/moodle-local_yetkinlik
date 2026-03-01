@@ -69,11 +69,20 @@ class local_yetkinlik_teacher_form extends moodleform {
         $mform->addElement('hidden', 'courseid');
         $mform->setType('courseid', PARAM_INT);
 
-        $mform->addElement('autocomplete', 'userid', get_string('selectstudent', 'local_yetkinlik'),
-            $this->_customdata['studentoptions']);
+        // Düzenlenen bölüm: Çok satırlı fonksiyon çağrıları kurallara uygun hale getirildi.
+        $mform->addElement(
+            'autocomplete',
+            'userid',
+            get_string('selectstudent', 'local_yetkinlik'),
+            $this->_customdata['studentoptions']
+        );
 
-        $mform->addElement('autocomplete', 'competencyid', get_string('selectcompetency', 'local_yetkinlik'),
-            $this->_customdata['compoptions']);
+        $mform->addElement(
+            'autocomplete',
+            'competencyid',
+            get_string('selectcompetency', 'local_yetkinlik'),
+            $this->_customdata['compoptions']
+        );
 
         $this->add_action_buttons(false, get_string('show', 'local_yetkinlik'));
     }
@@ -120,8 +129,11 @@ if ($userid && $competencyid) {
                      AND quiza.state = 'finished'
                    GROUP BY quiz.id, quiz.name";
 
-    $summaryrows = $DB->get_records_sql($sqlsummary,
-        ['competencyid' => $competencyid, 'userid' => $userid, 'courseid' => $courseid]);
+    // Düzenlenen bölüm: Çok satırlı array/parametre yapısı.
+    $summaryrows = $DB->get_records_sql(
+        $sqlsummary,
+        ['competencyid' => $competencyid, 'userid' => $userid, 'courseid' => $courseid]
+    );
 
     $tq = 0;
     $tc = 0;
