@@ -29,15 +29,38 @@ use templatable;
 use renderer_base;
 use stdClass;
 
+/**
+ * Output class for teacher's student competency performance report.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class teacher_student_competency_page implements renderable, templatable {
+
+    /** @var stdClass Data object passed from the script. */
     protected $data;
+
+    /** @var \moodleform The filter form instance. */
     protected $mform;
 
+    /**
+     * Constructor.
+     *
+     * @param stdClass $data The data to be rendered.
+     * @param \moodleform $mform The filter form.
+     */
     public function __construct($data, $mform) {
         $this->data = $data;
         $this->mform = $mform;
     }
 
+    /**
+     * Export data for the Mustache template.
+     *
+     * @param renderer_base $output The renderer base.
+     * @return stdClass The data ready for the template.
+     */
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
         $export->form_html = $this->mform->render();
