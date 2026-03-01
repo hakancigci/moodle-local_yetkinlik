@@ -39,14 +39,19 @@
 <div class="local_yetkinlik_teacher_report">
     {{! Filter Form }}
     <div class="card mb-4 p-3 bg-light border-0 shadow-sm">
-        <div class="card-body">
-            {{{form_html}}}
-        </div>
+        <div class="card-body">{{{form_html}}}</div>
     </div>
 
     {{#has_selection}}
+     {{! 2. Competency Description - Using triple braces for HTML content rendering }}
+        {{#description}}
+        <div class="alert alert-info border-left-info shadow-sm mb-4">
+            <i class="fa fa-info-circle"></i> {{{description}}}
+        </div>
+        {{/description}}
         {{#has_rows}}
-            {{! Competency Performance Table }}
+            {{! Summary Performance Table }}
+            <h4 class="mt-4">{{#str}}summaryreport, local_yetkinlik{{/str}}</h4>
             <div class="table-responsive">
                 <table class="generaltable table table-bordered table-hover mt-3 shadow-sm bg-white">
                     <thead class="thead-dark">
@@ -60,41 +65,64 @@
                     <tbody>
                         {{#rows}}
                         <tr>
-                            <td>
-                                {{#review_url}}
-                                    <a href="{{review_url}}" target="_blank">{{quizname}}</a>
-                                {{/review_url}}
-                                {{^review_url}}
-                                    {{quizname}}
-                                {{/review_url}}
-                            </td>
+                            <td><a href="{{quizurl}}" target="_blank"><strong>{{quizname}}</strong></a></td>
                             <td class="text-center">{{questions}}</td>
                             <td class="text-center">{{correct}}</td>
-                            <td class="text-center font-weight-bold" style="color: {{color}};">
-                                %{{rate}}
-                            </td>
+                            <td class="text-center font-weight-bold" style="color: {{color}};">%{{rate}}</td>
                         </tr>
                         {{/rows}}
                     </tbody>
+                    {{#total}}
                     <tfoot>
-                        {{#total}}
                         <tr class="table-secondary font-weight-bold">
                             <td>{{#str}}total, local_yetkinlik{{/str}}</td>
                             <td class="text-center">{{questions}}</td>
                             <td class="text-center">{{correct}}</td>
                             <td class="text-center" style="color: {{color}};">%{{rate}}</td>
                         </tr>
-                        {{/total}}
                     </tfoot>
+                    {{/total}}
                 </table>
             </div>
         {{/has_rows}}
 
-        {{^has_rows}}
-            {{! Empty State Notification }}
-            <div class="alert alert-info">
-                {{#str}}nodatastudentcompetency, local_yetkinlik{{/str}}
+        {{#has_questions}}
+            {{! Detailed Question Links with Modal Trigger }}
+            <h4 class="mt-5">{{#str}}questionlinks, local_yetkinlik{{/str}}</h4>
+            <div class="table-responsive">
+                <table class="generaltable table table-bordered table-hover mt-3 shadow-sm bg-white">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>{{#str}}quiz, local_yetkinlik{{/str}}</th>
+                            <th>{{#str}}questionname, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}action, local_yetkinlik{{/str}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#question_details}}
+                        <tr>
+                            <td>{{quizname}}</td>
+                            <td>{{questionname}}</td>
+                            <td class="text-center">
+                                <a href="{{url}}" class="btn btn-sm btn-outline-primary view-question-modal" target="_blank">
+                                    <i class="fa fa-search"></i> {{#str}}viewattempt, local_yetkinlik{{/str}}
+                                </a>
+                            </td>
+                        </tr>
+                        {{/question_details}}
+                    </tbody>
+                </table>
             </div>
+        {{/has_questions}}
+
+        {{^has_rows}}
+            <div class="alert alert-info mt-4">{{#str}}nodatastudentcompetency, local_yetkinlik{{/str}}</div>
         {{/has_rows}}
     {{/has_selection}}
 </div>
+
+{{#js}}
+require(['local_yetkinlik/modal_viewer'], function(ModalViewer) {
+    ModalViewer.init('.view-question-modal');
+});
+{{/js}}
