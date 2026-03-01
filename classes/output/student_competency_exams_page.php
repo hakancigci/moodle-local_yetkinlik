@@ -106,8 +106,8 @@ class student_competency_exams_page implements renderable, templatable {
             }
 
             // Export detailed question links for the modal viewer.
-            $export->has_questions = !empty($this->data->question_details);
-            $export->question_details = $this->data->question_details;
+            $export->has_questions = !empty($this->data->questiondetails);
+            $export->question_details = $this->data->questiondetails;
         }
 
         return $export;
