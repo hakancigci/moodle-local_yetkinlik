@@ -29,56 +29,28 @@ use templatable;
 use renderer_base;
 use stdClass;
 
-/**
- * Output class for teacher student competency page.
- *
- * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 class teacher_student_competency_page implements renderable, templatable {
-    /** @var stdClass Data object containing calculation results. */
     protected $data;
-
-    /** @var \local_yetkinlik_teacher_form The filter form instance. */
     protected $mform;
 
-    /**
-     * Constructor.
-     *
-     * @param stdClass $data
-     * @param \moodleform $mform
-     */
     public function __construct($data, $mform) {
         $this->data = $data;
         $this->mform = $mform;
     }
 
-    /**
-     * Export data for the Mustache template.
-     *
-     * @param renderer_base $output
-     * @return stdClass
-     */
     public function export_for_template(renderer_base $output) {
         $export = new stdClass();
-
-        // Render the Moodle filter form into HTML.
         $export->form_html = $this->mform->render();
-
-        // Check if both student and competency filters are active.
+        $export->competencies = $this->data->competencies;
         $export->has_selection = ($this->data->userid > 0 && $this->data->competencyid > 0);
-
-        // Check if there are results to display.
-        $export->has_rows = !empty($this->data->rows);
-
-        // Assign row-level data.
-        $export->rows = $this->data->rows;
-
-        // Prepare aggregated totals for the table footer if results exist.
-        if ($export->has_rows) {
-            $export->total = $this->data->total;
+        if ($export->has_selection) {
+            $export->description = $this->data->description;
         }
+        $export->has_rows = !empty($this->data->rows);
+        $export->has_questions = !empty($this->data->question_details);
+        $export->rows = $this->data->rows;
+        $export->question_details = $this->data->question_details;
+        $export->total = $this->data->total ?? null;
 
         return $export;
     }
