@@ -18,12 +18,13 @@
  * English strings for local_yetkinlik plugin.
  *
  * @package    local_yetkinlik
- * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @copyright  2026 Hakan Ã‡iÄŸci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['action'] = 'Action';
 $string['ai_failed'] = 'AI request failed.';
 $string['ai_not_configured'] = 'AI integration is active but settings are incomplete.';
 $string['ai_prompt_school'] = 'Write a pedagogical analysis and strategy for the school based on the following competency percentages:';
@@ -35,7 +36,7 @@ $string['allusers'] = 'All students';
 $string['analysisfor'] = 'Competency Analysis: {$a}';
 $string['apikey'] = 'API Key';
 $string['apikey_desc'] = 'Enter your OpenAI or Azure OpenAI API key. <a href="https://platform.openai.com/account/api-keys" target="_blank">Click here for OpenAI key</a>.';
-$string['bluelegend'] = 'Blue: Mostly achieved (60–79%)';
+$string['bluelegend'] = 'Blue: Mostly achieved (60â€“79%)';
 $string['btn_process_now'] = 'Process Success Rates Now';
 $string['classavg'] = 'Class Average';
 $string['classinfo'] = 'Class: {$a}';
@@ -83,9 +84,9 @@ $string['nocompetencyexamdata'] = 'No exam data found for this competency.';
 $string['nodatafound'] = 'No completed quiz data found for analysis in this course yet.';
 $string['nodatastudentcompetency'] = 'No quiz data found for this student in this competency.';
 $string['noexamdata'] = 'No competency data found for this exam.';
-$string['orangelegend'] = 'Orange: Partially achieved (40–59%)';
-$string['pdfmystudent'] = '📄 View My PDF Report';
-$string['pdfreport'] = '📄 PDF Report';
+$string['orangelegend'] = 'Orange: Partially achieved (40â€“59%)';
+$string['pdfmystudent'] = 'ðŸ“„ View My PDF Report';
+$string['pdfreport'] = 'ðŸ“„ PDF Report';
 $string['pluginname'] = 'Competency Plugin';
 $string['privacy:metadata'] = 'The Yetkinlik plugin does not store any personal data.';
 $string['privacy:metadata:openai:answertext'] = 'The student\'s response is sent to be evaluated by the AI model.';
@@ -97,9 +98,11 @@ $string['process_success_heading'] = 'Transfer Percentage Success to Evidence';
 $string['process_success_title'] = 'Process Success Rates in Background';
 $string['question'] = 'Question';
 $string['questioncount'] = 'Number of Questions';
+$string['questionlinks'] = 'Related Question Details';
+$string['questionname'] = 'Question Title';
 $string['quiz'] = 'Quiz';
 $string['recordupdated'] = 'Record updated successfully';
-$string['redlegend'] = 'Red: Not achieved (0–39%)';
+$string['redlegend'] = 'Red: Not achieved (0â€“39%)';
 $string['report_heading'] = 'Competency Analysis Detailed Report';
 $string['report_title'] = 'Detailed Competency Report';
 $string['savechanges'] = 'Save changes';
@@ -134,11 +137,13 @@ $string['success_threshold'] = 'Success threshold';
 $string['success_threshold_desc'] = 'Default success percentage for color coding.';
 $string['successpercent'] = 'Success %';
 $string['successrate'] = 'Success Rate (%)';
+$string['summaryreport'] = 'Competency Success Summary';
 $string['teacherstudentcompetency'] = 'Student Competency Analysis';
 $string['timeline'] = 'Timeline';
 $string['timelineheading'] = 'Competency Progress Over Time';
 $string['total'] = 'TOTAL';
 $string['user'] = 'Student';
+$string['viewattempt'] = 'Review';
 $string['visual_report'] = 'Visual report';
 $string['yetkinlik:manage'] = 'Manage question-competency mappings';
 $string['yetkinlik:viewownreport'] = 'View own competency analysis report';
