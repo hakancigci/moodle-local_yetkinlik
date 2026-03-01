@@ -11,21 +11,38 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
     @template local_yetkinlik/teacher_report
+
+    Teacher view for student competency performance.
+
+    Context variables required for this template:
+    * form_html - The rendered Moodle form HTML.
+    * has_selection - Whether a student and competency have been selected.
+    * description - Competency description.
+    * has_rows - Whether performance data exists.
+    * rows - Array of quiz performance data.
+    * total - Summary data for the footer.
+    * has_questions - Whether question detail links exist.
+    * questiondetails - Array of individual question attempts.
 
     Example context (json):
     {
         "form_html": "<form>Mock Form</form>",
         "has_selection": true,
+        "description": "Competency info",
         "has_rows": true,
         "rows": [
             {
-                "quizname": "Haftalık Quiz 1",
+                "quizname": "Quiz 1",
+                "quizurl": "#",
                 "questions": 10,
                 "correct": 8,
                 "rate": "80.0",
-                "color": "green",
-                "review_url": "#"
+                "color": "green"
             }
         ],
         "total": {
@@ -33,7 +50,15 @@
             "correct": 8,
             "rate": "80.0",
             "color": "green"
-        }
+        },
+        "has_questions": true,
+        "questiondetails": [
+            {
+                "quizname": "Quiz 1",
+                "questionname": "Q1",
+                "url": "#"
+            }
+        ]
     }
 }}
 <div class="local_yetkinlik_teacher_report">
@@ -43,12 +68,13 @@
     </div>
 
     {{#has_selection}}
-     {{! 2. Competency Description - Using triple braces for HTML content rendering }}
+        {{! 2. Competency Description }}
         {{#description}}
         <div class="alert alert-info border-left-info shadow-sm mb-4">
             <i class="fa fa-info-circle"></i> {{{description}}}
         </div>
         {{/description}}
+
         {{#has_rows}}
             {{! Summary Performance Table }}
             <h4 class="mt-4">{{#str}}summaryreport, local_yetkinlik{{/str}}</h4>
@@ -99,7 +125,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {{#question_details}}
+                        {{#questiondetails}}
                         <tr>
                             <td>{{quizname}}</td>
                             <td>{{questionname}}</td>
@@ -109,7 +135,7 @@
                                 </a>
                             </td>
                         </tr>
-                        {{/question_details}}
+                        {{/questiondetails}}
                     </tbody>
                 </table>
             </div>
