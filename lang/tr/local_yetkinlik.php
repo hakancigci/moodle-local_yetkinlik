@@ -24,6 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['action'] = 'Eylem';
 $string['ai_failed'] = 'Yapay zeka isteği başarısız oldu.';
 $string['ai_not_configured'] = 'Yapay zeka aktif ancak ayarlar eksik.';
 $string['ai_prompt_school'] = 'Aşağıdaki yetkinlik yüzdelerine dayanarak okul için bir pedagojik analiz ve gelişim stratejisi yazın:';
@@ -97,6 +98,8 @@ $string['process_success_heading'] = 'Yüzdelik Başarıları Kanıtlara Aktar';
 $string['process_success_title'] = 'Başarıları Arka Planda İşle';
 $string['question'] = 'Soru';
 $string['questioncount'] = 'Soru Sayısı';
+$string['questionlinks'] = 'İlgili Soru Detayları';
+$string['questionname'] = 'Soru Adı';
 $string['quiz'] = 'Sınav';
 $string['recordupdated'] = 'Kayıt başarıyla güncellendi';
 $string['redlegend'] = 'Kırmızı: Kazanılmadı (%0–39)';
@@ -120,7 +123,7 @@ $string['structured_green'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Tam
 $string['structured_orange'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Kısmen öğrenildi. Öneri: Daha fazla örnek soru çözerek pekiştir.';
 $string['structured_red'] = '{$a->shortname}: Başarı oranı %{$a->rate}. Henüz yeterli gelişim sağlanamadı. Öneri: Konuyu tekrar et ve ek kaynaklardan yararlan.';
 $string['student'] = 'Öğrenci';
-$string['studentanalysis'] = 'Kazanım Karşılaştırma Raporum';
+$string['studentanalysis'] = 'Öğrenci Yetkinlik Analizi';
 $string['studentavg'] = 'Öğrenci Ortalaması';
 $string['studentclass'] = 'Yetkinlik Durumu';
 $string['studentcompetencydetail'] = 'Öğrenci Yetkinlik Detayı';
@@ -134,11 +137,13 @@ $string['success_threshold'] = 'Başarı eşiği';
 $string['success_threshold_desc'] = 'Renk kodlaması için varsayılan başarı yüzdesi.';
 $string['successpercent'] = 'Başarı Yüzdesi';
 $string['successrate'] = 'Başarı Oranı (%)';
+$string['summaryreport'] = 'Yetkinlik Başarı Özeti';
 $string['teacherstudentcompetency'] = 'Öğrenci Yetkinlik Analizi';
 $string['timeline'] = 'Zaman Çizelgesi';
 $string['timelineheading'] = 'Zaman İçinde Yetkinlik Gelişimi';
 $string['total'] = 'TOPLAM';
 $string['user'] = 'Öğrenci';
+$string['viewattempt'] = 'İnceleme';
 $string['visual_report'] = 'Görsel rapor';
 $string['yetkinlik:manage'] = 'Soru-yetkinlik eşleştirmelerini yönet';
 $string['yetkinlik:viewownreport'] = 'Kendi yetkinlik analiz raporunu görüntüle';
