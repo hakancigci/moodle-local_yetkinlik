@@ -1,59 +1,12 @@
-{{!
-    This file is part of Moodle - http://moodle.org/
-
-    Moodle is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Moodle is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    @template local_yetkinlik/competency_exams
-
-    Example context (json):
-    {
-        "courseid": 2,
-        "competencies": [
-            { "id": 1, "shortname": "MAT-01", "selected": true },
-            { "id": 2, "shortname": "FIZ-01", "selected": false }
-        ],
-        "has_selection": true,
-        "description": "Bu yetkinlik temel cebir becerilerini ölçer.",
-        "rows": [
-            {
-                "quizname": "Vize Sınavı",
-                "review_url": "#",
-                "questions": 10,
-                "correct": 8,
-                "rate": "80",
-                "colorclass": "text-success"
-            }
-        ],
-        "total": {
-            "questions": 10,
-            "correct": 8,
-            "rate": "80",
-            "colorclass": "text-success"
-        }
-    }
-}}
 <div class="local_yetkinlik_competency_exams">
-    
-    {{! 1. Competency Selection Form (Responsive) }}
+    {{! 1. Competency Selection Filter }}
     <div class="card mb-4 border-0 shadow-sm bg-light">
         <div class="card-body">
             <form method="get" id="competency_filter_form">
                 <input type="hidden" name="courseid" value="{{courseid}}">
-                
                 <div class="form-row align-items-end">
-                    {{! Selection Box: Full width on mobile, 75% width on desktop }}
                     <div class="col-12 col-md-9 mb-3 mb-md-0">
-                        <label class="font-weight-bold" for="id_competency_select">
-                            {{#str}}selectcompetency, local_yetkinlik{{/str}}
-                        </label>
+                        <label class="font-weight-bold" for="id_competency_select">{{#str}}selectcompetency, local_yetkinlik{{/str}}</label>
                         <select name="competencyid" id="id_competency_select" class="form-control">
                             <option value="0">{{#str}}selectcompetency, local_yetkinlik{{/str}}</option>
                             {{#competencies}}
@@ -61,8 +14,6 @@
                             {{/competencies}}
                         </select>
                     </div>
-                    
-                    {{! Submit Button: Full width on mobile, 25% width on desktop }}
                     <div class="col-12 col-md-3">
                         <button type="submit" class="btn btn-primary btn-block">
                             <i class="fa fa-search"></i> {{#str}}show, local_yetkinlik{{/str}}
@@ -74,15 +25,15 @@
     </div>
 
     {{#has_selection}}
-        {{! 2. Competency Description - Using triple braces for HTML content rendering }}
         {{#description}}
         <div class="alert alert-info border-left-info shadow-sm mb-4">
             <i class="fa fa-info-circle"></i> {{{description}}}
         </div>
         {{/description}}
 
-        {{! 3. Quiz Results Table }}
+        {{! 2. Summary Table }}
         {{#rows.0}}
+        <h4 class="mt-4">{{#str}}summaryreport, local_yetkinlik{{/str}}</h4>
         <div class="table-responsive">
             <table class="generaltable table table-hover shadow-sm bg-white">
                 <thead class="thead-dark">
@@ -96,12 +47,7 @@
                 <tbody>
                     {{#rows}}
                     <tr>
-                        <td>
-                            {{#review_url}}
-                                <a href="{{review_url}}" target="_blank"><strong>{{quizname}}</strong></a>
-                            {{/review_url}}
-                            {{^review_url}}{{quizname}}{{/review_url}}
-                        </td>
+                        <td><strong>{{quizname}}</strong></td>
                         <td class="text-center">{{questions}}</td>
                         <td class="text-center">{{correct}}</td>
                         <td class="text-center font-weight-bold {{colorclass}}">%{{rate}}</td>
@@ -122,8 +68,36 @@
         </div>
         {{/rows.0}}
 
+        {{! 3. Detailed Question Links (New Section) }}
+        {{#has_questions}}
+        <h4 class="mt-5">{{#str}}questionlinks, local_yetkinlik{{/str}}</h4>
+        <div class="table-responsive">
+            <table class="generaltable table table-bordered table-hover mt-3 shadow-sm bg-white">
+                <thead class="thead-light">
+                    <tr>
+                        <th>{{#str}}quiz, local_yetkinlik{{/str}}</th>
+                        <th>{{#str}}questionname, local_yetkinlik{{/str}}</th>
+                        <th class="text-center">{{#str}}action, local_yetkinlik{{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#question_details}}
+                    <tr>
+                        <td>{{quizname}}</td>
+                        <td>{{questionname}}</td>
+                        <td class="text-center">
+                            <a href="{{url}}" class="btn btn-sm btn-outline-primary view-question-modal">
+                                <i class="fa fa-search"></i> {{#str}}viewattempt, local_yetkinlik{{/str}}
+                            </a>
+                        </td>
+                    </tr>
+                    {{/question_details}}
+                </tbody>
+            </table>
+        </div>
+        {{/has_questions}}
+
         {{^rows}}
-            {{! Empty State Alert }}
             <div class="alert alert-warning shadow-sm">
                 <i class="fa fa-exclamation-triangle"></i> {{#str}}nocompetencyexamdata, local_yetkinlik{{/str}}
             </div>
@@ -132,8 +106,8 @@
 </div>
 
 {{#js}}
-require(['core/form-autocomplete'], function(Autocomplete) {
-    // Apply Moodle's Autocomplete feature to the competency selection box.
+require(['core/form-autocomplete', 'local_yetkinlik/modal_viewer'], function(Autocomplete, ModalViewer) {
     Autocomplete.enhance('#id_competency_select', false, false, "{{#str}}selectcompetency, local_yetkinlik{{/str}}");
+    ModalViewer.init('.view-question-modal');
 });
 {{/js}}
