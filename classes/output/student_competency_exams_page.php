@@ -85,14 +85,13 @@ class student_competency_exams_page implements renderable, templatable {
                 $export->rows[] = [
                     'quizname' => $r->quizname,
                     'questions' => (float)$r->questions,
-                    'correct' => (float)$r->correct,
+                    'correct' => number_format($r->correct,1),
                     'rate' => $rate,
                     'colorclass' => $colorclass,
-                    'review_url' => $r->review_url,
                 ];
 
                 $totalq += $r->questions;
-                $totalc += $r->correct;
+                $totalc += number_format($r->correct,1);
             }
 
             // Generate aggregated total data for the table footer.
@@ -105,6 +104,10 @@ class student_competency_exams_page implements renderable, templatable {
                     'colorclass' => ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger'),
                 ];
             }
+
+            // Export detailed question links for the modal viewer.
+            $export->has_questions = !empty($this->data->question_details);
+            $export->question_details = $this->data->question_details;
         }
 
         return $export;
