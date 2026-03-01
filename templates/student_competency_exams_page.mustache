@@ -1,3 +1,54 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_yetkinlik/student_competency_exams_page
+
+    Template for displaying student performance report for a specific competency.
+
+    Context variables required for this template:
+    * courseid - The ID of the current course.
+    * competencyid - The ID of the selected competency.
+    * competencies - List of available competencies for selection.
+    * has_selection - Boolean indicating if a competency is selected.
+    * description - The description of the competency.
+    * rows - Array of quiz summary rows.
+    * total - Aggregated total performance data.
+    * has_questions - Boolean indicating if detailed question links exist.
+    * questiondetails - Array of individual question attempts with review URLs.
+
+    Example context (json):
+    {
+        "courseid": 2,
+        "competencyid": 1,
+        "has_selection": true,
+        "description": "Competency description text.",
+        "competencies": [
+            {"id": 1, "shortname": "Competency 1", "selected": true}
+        ],
+        "rows": [
+            {"quizname": "Quiz 1", "questions": 5, "correct": 4.5, "rate": 90, "colorclass": "text-success"}
+        ],
+        "total": {"questions": 5, "correct": 4.5, "rate": 90, "colorclass": "text-success"},
+        "has_questions": true,
+        "questiondetails": [
+            {"quizname": "Quiz 1", "questionname": "Q1", "url": "#"}
+        ]
+    }
+}}
 <div class="local_yetkinlik_competency_exams">
     {{! 1. Competency Selection Filter }}
     <div class="card mb-4 border-0 shadow-sm bg-light">
@@ -54,21 +105,21 @@
                     </tr>
                     {{/rows}}
                 </tbody>
+                {{#total}}
                 <tfoot>
-                    {{#total}}
                     <tr class="table-secondary font-weight-bold">
                         <td>{{#str}}total, local_yetkinlik{{/str}}</td>
                         <td class="text-center">{{questions}}</td>
                         <td class="text-center">{{correct}}</td>
                         <td class="text-center {{colorclass}}">%{{rate}}</td>
                     </tr>
-                    {{/total}}
                 </tfoot>
+                {{/total}}
             </table>
         </div>
         {{/rows.0}}
 
-        {{! 3. Detailed Question Links (New Section) }}
+        {{! 3. Detailed Question Links }}
         {{#has_questions}}
         <h4 class="mt-5">{{#str}}questionlinks, local_yetkinlik{{/str}}</h4>
         <div class="table-responsive">
@@ -81,7 +132,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{#question_details}}
+                    {{#questiondetails}}
                     <tr>
                         <td>{{quizname}}</td>
                         <td>{{questionname}}</td>
@@ -91,7 +142,7 @@
                             </a>
                         </td>
                     </tr>
-                    {{/question_details}}
+                    {{/questiondetails}}
                 </tbody>
             </table>
         </div>
