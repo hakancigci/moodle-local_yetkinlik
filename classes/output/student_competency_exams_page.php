@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with Moodle.  See <https://www.gnu.org/licenses/>.
 
 /**
  * Renderable class for student competency exam analysis page.
@@ -84,6 +84,7 @@ class student_competency_exams_page implements renderable, templatable {
 
                 $export->rows[] = [
                     'quizname' => $r->quizname,
+                    'quizurl' => $r->quizurl,
                     'questions' => (float) $r->questions,
                     'correct' => number_format($r->correct, 1),
                     'rate' => $rate,
@@ -91,7 +92,7 @@ class student_competency_exams_page implements renderable, templatable {
                 ];
 
                 $totalq += $r->questions;
-                $totalc += number_format($r->correct, 1);
+                $totalc += (float) $r->correct;
             }
 
             // Generate aggregated total data for the table footer.
@@ -99,7 +100,7 @@ class student_competency_exams_page implements renderable, templatable {
                 $totalrate = $totalq ? number_format(($totalc / $totalq) * 100, 1) : 0;
                 $export->total = [
                     'questions' => $totalq,
-                    'correct' => $totalc,
+                    'correct' => number_format($totalc, 1),
                     'rate' => $totalrate,
                     'colorclass' => ($totalrate >= 80) ? 'text-success' : (($totalrate >= 40) ? 'text-warning' : 'text-danger'),
                 ];
