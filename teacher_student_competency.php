@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with Moodle.  See <https://www.gnu.org/licenses/>.
 
 /**
  * Teacher view: Student-specific competency performance report.
@@ -69,7 +69,6 @@ class local_yetkinlik_teacher_form extends moodleform {
         $mform->addElement('hidden', 'courseid');
         $mform->setType('courseid', PARAM_INT);
 
-        // Düzenlenen bölüm: Çok satırlı fonksiyon çağrıları kurallara uygun hale getirildi.
         $mform->addElement(
             'autocomplete',
             'userid',
@@ -129,7 +128,6 @@ if ($userid && $competencyid) {
                      AND quiza.state = 'finished'
                    GROUP BY quiz.id, quiz.name";
 
-    // Düzenlenen bölüm: Çok satırlı array/parametre yapısı.
     $summaryrows = $DB->get_records_sql(
         $sqlsummary,
         ['competencyid' => $competencyid, 'userid' => $userid, 'courseid' => $courseid]
@@ -162,32 +160,32 @@ if ($userid && $competencyid) {
     }
 
     // 3b. Detail Table Data.
-$sqldetails = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, qa.slot
-               FROM {quiz_attempts} quiza
-               JOIN {quiz} quiz ON quiz.id = quiza.quiz
-               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-               JOIN {question} q ON q.id = qa.questionid
-               INNER JOIN {qbank_yetkinlik_qmap} map ON map.questionid = qa.questionid
-               WHERE map.competencyid = :competencyid AND quiza.userid = :userid AND quiza.state = 'finished'
-               ORDER BY quiz.name ASC, qa.slot ASC";
+    $sqldetails = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, qa.slot
+                   FROM {quiz_attempts} quiza
+                   JOIN {quiz} quiz ON quiz.id = quiza.quiz
+                   JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+                   JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+                   JOIN {question} q ON q.id = qa.questionid
+                   INNER JOIN {qbank_yetkinlik_qmap} map ON map.questionid = qa.questionid
+                   WHERE map.competencyid = :competencyid AND quiza.userid = :userid AND quiza.state = 'finished'
+                   ORDER BY quiz.name ASC, qa.slot ASC";
 
-$questions = $DB->get_records_sql($sqldetails, ['competencyid' => $competencyid, 'userid' => $userid]);
+    $questions = $DB->get_records_sql($sqldetails, ['competencyid' => $competencyid, 'userid' => $userid]);
 
-foreach ($questions as $q) {
-    // page ve showall parametreleri kaldırıldı.
-    // URL artık reviewquestion.php'ye yönleniyor ve slot parametresini içeriyor.
-    $renderdata->questiondetails[] = [
-        'quizname'     => $q->quizname,
-        'questionname' => $q->qname,
-        'attemptid'    => $q->attemptid,
-        'slot'         => $q->slot,
-        'url'          => (new moodle_url('/mod/quiz/reviewquestion.php', [
-            'attempt' => $q->attemptid,
-            'slot'    => $q->slot
-        ]))->out(false)
-    ];
-}
+    foreach ($questions as $q) {
+        // Page and showall parameters removed.
+        // URL now points to reviewquestion.php and includes slot parameter.
+        $renderdata->questiondetails[] = [
+            'quizname'     => $q->quizname,
+            'questionname' => $q->qname,
+            'attemptid'    => $q->attemptid,
+            'slot'         => $q->slot,
+            'url'          => (new moodle_url('/mod/quiz/reviewquestion.php', [
+                'attempt' => $q->attemptid,
+                'slot'    => $q->slot,
+            ]))->out(false),
+        ];
+    }
 }
 
 echo $OUTPUT->header();
