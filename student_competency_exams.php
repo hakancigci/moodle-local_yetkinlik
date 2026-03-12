@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+// along with Moodle.  See <https://www.gnu.org/licenses/>.
 
 /**
  * Report showing student performance per quiz for a specific selected competency.
@@ -67,7 +67,8 @@ if ($competencyid) {
     }
 
     // 3. Fetch summary performance data for the current user in the selected competency across all quizzes.
-    $sqlsummary = "SELECT quiz.id AS quizid, quiz.name AS quizname,
+    // Added MAX(quiza.id) as lastattemptid to enable links.
+    $sqlsummary = "SELECT quiz.id AS quizid, quiz.name AS quizname, MAX(quiza.id) as lastattemptid,
                           SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
                    FROM {quiz_attempts} quiza
                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -93,23 +94,25 @@ if ($competencyid) {
     ]);
 
     foreach ($summaryrows as $r) {
+        // Link added for quiz review.
+        $r->quizurl = (new moodle_url('/mod/quiz/review.php', ['attempt' => $r->lastattemptid]))->out(false);
         $renderdata->rows[] = $r;
     }
 
     // 4. Fetch detailed question attempts related to the competency with page-specific links.
-    $sqldetails = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, slot.page
+    // Removed JOIN {quiz_slots} and target qa.slot directly.
+    $sqldetails = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, qa.slot
                    FROM {quiz_attempts} quiza
                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
                    JOIN {question_attempts} qa ON qa.questionusageid = qu.id
                    JOIN {question} q ON q.id = qa.questionid
-                   JOIN {quiz_slots} slot ON slot.quizid = quiz.id AND slot.slot = qa.slot
                    INNER JOIN {qbank_yetkinlik_qmap} m ON m.questionid = qa.questionid
                    WHERE m.competencyid = :competencyid
                      AND quiza.userid = :userid
                      AND quiza.state = 'finished'
                      AND quiz.course = :courseid
-                   ORDER BY quiz.name ASC, slot.slot ASC";
+                   ORDER BY quiz.name ASC, qa.slot ASC";
 
     $questions = $DB->get_records_sql($sqldetails, [
         'competencyid' => $competencyid,
@@ -118,17 +121,14 @@ if ($competencyid) {
     ]);
 
     foreach ($questions as $q) {
-        // Apply the -1 offset fix for correct page targeting.
-        $targetpage = max(0, $q->page - 1);
-
+        // Switch to reviewquestion.php with slot parameter.
         $renderdata->questiondetails[] = [
             'quizname'     => $q->quizname,
             'questionname' => $q->qname,
-            'url'          => (new moodle_url('/mod/quiz/review.php', [
+            'url'          => (new moodle_url('/mod/quiz/reviewquestion.php', [
                                 'attempt' => $q->attemptid,
-                                'page' => $targetpage,
-                                'showall' => 0,
-                              ]))->out(false) . '#q' . $q->id,
+                                'slot'    => $q->slot,
+                              ]))->out(false)
         ];
     }
 }
