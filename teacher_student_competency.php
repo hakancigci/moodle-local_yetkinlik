@@ -162,34 +162,32 @@ if ($userid && $competencyid) {
     }
 
     // 3b. Detail Table Data.
-    $sqldetails = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, slot.page
-                   FROM {quiz_attempts} quiza
-                   JOIN {quiz} quiz ON quiz.id = quiza.quiz
-                   JOIN {question_usages} qu ON qu.id = quiza.uniqueid
-                   JOIN {question_attempts} qa ON qa.questionusageid = qu.id
-                   JOIN {question} q ON q.id = qa.questionid
-                   JOIN {quiz_slots} slot ON slot.quizid = quiz.id AND slot.slot = qa.slot
-                   INNER JOIN {qbank_yetkinlik_qmap} map ON map.questionid = qa.questionid
-                   WHERE map.competencyid = :competencyid AND quiza.userid = :userid AND quiza.state = 'finished'
-                   ORDER BY quiz.name ASC, slot.slot ASC";
+$sqldetails = "SELECT qa.id, q.name AS qname, quiz.name AS quizname, quiza.id AS attemptid, qa.slot
+               FROM {quiz_attempts} quiza
+               JOIN {quiz} quiz ON quiz.id = quiza.quiz
+               JOIN {question_usages} qu ON qu.id = quiza.uniqueid
+               JOIN {question_attempts} qa ON qa.questionusageid = qu.id
+               JOIN {question} q ON q.id = qa.questionid
+               INNER JOIN {qbank_yetkinlik_qmap} map ON map.questionid = qa.questionid
+               WHERE map.competencyid = :competencyid AND quiza.userid = :userid AND quiza.state = 'finished'
+               ORDER BY quiz.name ASC, qa.slot ASC";
 
-    $questions = $DB->get_records_sql($sqldetails, ['competencyid' => $competencyid, 'userid' => $userid]);
+$questions = $DB->get_records_sql($sqldetails, ['competencyid' => $competencyid, 'userid' => $userid]);
 
-    foreach ($questions as $q) {
-        $targetpage = max(0, $q->page - 1);
-
-        $renderdata->questiondetails[] = [
-            'quizname' => $q->quizname,
-            'questionname' => $q->qname,
-            'attemptid' => $q->attemptid,
-            'page' => $targetpage,
-            'url' => (new moodle_url('/mod/quiz/review.php', [
-                'attempt' => $q->attemptid,
-                'page' => $targetpage,
-                'showall' => 0,
-            ]))->out(false) . '#q' . $q->id,
-        ];
-    }
+foreach ($questions as $q) {
+    // page ve showall parametreleri kaldırıldı.
+    // URL artık reviewquestion.php'ye yönleniyor ve slot parametresini içeriyor.
+    $renderdata->questiondetails[] = [
+        'quizname'     => $q->quizname,
+        'questionname' => $q->qname,
+        'attemptid'    => $q->attemptid,
+        'slot'         => $q->slot,
+        'url'          => (new moodle_url('/mod/quiz/reviewquestion.php', [
+            'attempt' => $q->attemptid,
+            'slot'    => $q->slot
+        ]))->out(false)
+    ];
+}
 }
 
 echo $OUTPUT->header();
