@@ -40,7 +40,7 @@
             {"id": 1, "shortname": "Competency 1", "selected": true}
         ],
         "rows": [
-            {"quizname": "Quiz 1", "questions": 5, "correct": 4.5, "rate": 90, "colorclass": "text-success"}
+            {"quizname": "Quiz 1", "quizurl": "#", "questions": 5, "correct": 4.5, "rate": 90, "colorclass": "text-success"}
         ],
         "total": {"questions": 5, "correct": 4.5, "rate": 90, "colorclass": "text-success"},
         "has_questions": true,
@@ -98,7 +98,9 @@
                 <tbody>
                     {{#rows}}
                     <tr>
-                        <td><strong>{{quizname}}</strong></td>
+                        <td>
+                            <a href="{{quizurl}}" target="_blank"><strong>{{quizname}}</strong></a>
+                        </td>
                         <td class="text-center">{{questions}}</td>
                         <td class="text-center">{{correct}}</td>
                         <td class="text-center font-weight-bold {{colorclass}}">%{{rate}}</td>
