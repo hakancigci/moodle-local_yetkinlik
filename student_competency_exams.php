@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  See <https://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Report showing student performance per quiz for a specific selected competency.
@@ -126,9 +126,9 @@ if ($competencyid) {
             'quizname'     => $q->quizname,
             'questionname' => $q->qname,
             'url'          => (new moodle_url('/mod/quiz/reviewquestion.php', [
-                                'attempt' => $q->attemptid,
-                                'slot'    => $q->slot,
-                              ]))->out(false)
+                'attempt' => $q->attemptid,
+                'slot'    => $q->slot,
+            ]))->out(false),
         ];
     }
 }
