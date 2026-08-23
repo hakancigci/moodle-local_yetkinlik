@@ -42,7 +42,11 @@ $compsraw = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname
     FROM {qbank_yetkinlik_qmap} m
     JOIN {competency} c ON c.id = m.competencyid
-    ORDER BY c.shortname");
+    JOIN {competency_coursecomp} cc ON cc.competencyid = c.id
+    WHERE cc.courseid = :courseid
+    ORDER BY c.shortname", [
+        'courseid' => $courseid
+    ]);
 
 $competencies = [];
 foreach ($compsraw as $c) {
