@@ -52,7 +52,7 @@ $competencies = $DB->get_records_sql("
     JOIN {competency} c ON c.id = m.competencyid
     JOIN {competency_coursecomp} cc ON cc.competencyid = c.id
     WHERE cc.courseid = :courseid
-    ORDER BY c.shortname" , [
+    ORDER BY c.shortname", [
         'courseid' => $courseid
     ]);
 
