@@ -53,7 +53,7 @@ $competencies = $DB->get_records_sql("
     JOIN {competency_coursecomp} cc ON cc.competencyid = c.id
     WHERE cc.courseid = :courseid
     ORDER BY c.shortname", [
-        'courseid' => $courseid
+        'courseid' => $courseid,
     ]);
 
 $compoptions = [0 => get_string('selectcompetency', 'local_yetkinlik')];
