@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/yetkinlik/db" VERSION="2026031270" COMMENT="Manuel sınavlar için tablo tanımlamaları"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    
+    <!-- Scale Percentage Interval Mapping Table -->
+    <TABLE NAME="local_yetkinlik_scale_map" COMMENT="Maps Moodle scale items to percentage ranges for automated grading">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="scaleid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="ID from mdl_scale"/>
+        <FIELD NAME="scaleitemindex" TYPE="int" LENGTH="5" NOTNULL="true" COMMENT="Index of the scale item (1-based)"/>
+        <FIELD NAME="minpercent" TYPE="number" LENGTH="5" DECIMALS="2" NOTNULL="true" DEFAULT="0.00" COMMENT="Minimum percentage threshold"/>
+        <FIELD NAME="maxpercent" TYPE="number" LENGTH="5" DECIMALS="2" NOTNULL="true" DEFAULT="100.00" COMMENT="Maximum percentage threshold"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
