@@ -101,7 +101,22 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
         }
     }
 
-    // 3. Admin Only: Background Tasks.
+    // 3. Scale Mapping (Teacher & Admin).
+    if (has_capability('mod/quiz:viewreports', $context) || has_capability('moodle/site:config', context_system::instance())) {
+        if (!$navigation->find('yetkinlik_scale_mapping', navigation_node::TYPE_SETTING)) {
+            $url = new moodle_url('/local/yetkinlik/scale_mapping.php', ['courseid' => $course->id]);
+            $navigation->add(
+                get_string('scalemapping', 'local_yetkinlik'), // Dil dosyanızdaki anahtara göre ayarlayabilirsiniz
+                $url,
+                navigation_node::TYPE_SETTING,
+                null,
+                'yetkinlik_scale_mapping',
+                new pix_icon('i/grades', '')
+            );
+        }
+    }
+
+    // 4. Admin Only: Background Tasks.
     if (has_capability('moodle/site:config', context_system::instance())) {
         if (!$navigation->find('yetkinlik_admin_process', navigation_node::TYPE_SETTING)) {
             $url = new moodle_url('/local/yetkinlik/add_success_to_evidence.php', ['courseid' => $course->id]);
@@ -116,7 +131,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
         }
     }
 
-    // 4. Student Specific Menus.
+    // 5. Student Specific Menus.
     if (isloggedin() && !isguestuser()) {
         $studentnode = $navigation->find('yetkinlik_student_parent', navigation_node::TYPE_CUSTOM);
         if (!$studentnode) {
