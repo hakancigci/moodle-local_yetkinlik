@@ -21,7 +21,7 @@ function xmldb_local_yetkinlik_upgrade($oldversion) {
 
     if ($oldversion < 2026082200) {
 
-        // 1. local_yetkinlik_scale_map tablosunu tanımlıyoruz.
+        // 1. We define the local_competence_scale_map table.
         $table1 = new xmldb_table('local_yetkinlik_scale_map');
 
         $table1->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
@@ -36,7 +36,7 @@ function xmldb_local_yetkinlik_upgrade($oldversion) {
             $dbman->create_table($table1);
         }
 
-        // Moodle'a bu aşamanın başarıyla geçildiğini bildiriyoruz.
+        // We are notifying Moodle that this stage has been successfully completed.
         upgrade_plugin_savepoint(true, 2026082200, 'local', 'yetkinlik');
     }
 
