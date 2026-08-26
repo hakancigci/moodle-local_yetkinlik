@@ -19,7 +19,7 @@ function xmldb_local_yetkinlik_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2026082200) {
+    if ($oldversion < 2026082600) {
 
         // 1. We define the local_competence_scale_map table.
         $table1 = new xmldb_table('local_yetkinlik_scale_map');
