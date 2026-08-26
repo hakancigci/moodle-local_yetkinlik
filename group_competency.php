@@ -70,8 +70,11 @@ if ($groupid) {
         SELECT DISTINCT c.id, c.shortname
         FROM {qbank_yetkinlik_qmap} m
         JOIN {competency} c ON c.id = m.competencyid
-        ORDER BY c.shortname ASC
-    ");
+        JOIN {competency_coursecomp} cc ON cc.competencyid = c.id
+        WHERE cc.courseid = :courseid
+         ORDER BY c.shortname", [
+        'courseid' => $courseid
+    ]);
     $renderdata->competencies = array_values($competencies);
 
     // 4. Performance data query optimized with unique key for easier mapping.
