@@ -27,6 +27,7 @@ require_once(__DIR__ . '/../../config.php');
 // Parameters.
 $courseid = required_param('courseid', PARAM_INT);
 $run = optional_param('run', 0, PARAM_BOOL);
+$evaluationmode = optional_param('evaluationmode', 'score_by_question', PARAM_ALPHANUMEXT);
 
 // Security and Context.
 $context = context_course::instance($courseid);
@@ -47,6 +48,7 @@ if ($run) {
     $task->set_custom_data([
         'courseid' => $courseid,
         'adminid' => $USER->id,
+        'evaluationmode' => $evaluationmode,
     ]);
 
     \core\task\manager::queue_adhoc_task($task);
@@ -54,11 +56,28 @@ if ($run) {
     echo $OUTPUT->notification(get_string('process_queued', 'local_yetkinlik'), 'success');
     echo $OUTPUT->continue_button(new moodle_url('/course/view.php', ['id' => $courseid]));
 } else {
-    // Information box and action button.
+    // Form and selection UI.
     echo $OUTPUT->box(get_string('process_success_desc', 'local_yetkinlik'), 'generalbox boxaligncenter');
 
-    $url = new moodle_url($PAGE->url, ['run' => 1, 'courseid' => $courseid]);
-    echo $OUTPUT->single_button($url, get_string('btn_process_now', 'local_yetkinlik'));
+    $formhtml = '<form action="' . $PAGE->url . '" method="GET">';
+    $formhtml .= '<input type="hidden" name="courseid" value="' . $courseid . '">';
+    $formhtml .= '<input type="hidden" name="run" value="1">';
+    
+    $formhtml .= '<div class="form-group mb-3" style="max-width: 500px; margin: 20px auto;">';
+    $formhtml .= '<label for="evaluationmode"><strong>' . get_string('label_evaluation_mode', 'local_yetkinlik') . '</strong></label>';
+    $formhtml .= '<select name="evaluationmode" id="evaluationmode" class="custom-select form-control">';
+    $formhtml .= '<option value="only_evidence">' . get_string('mode_only_evidence', 'local_yetkinlik') . '</option>';
+    $formhtml .= '<option value="score_by_question" selected>' . get_string('mode_score_by_question', 'local_yetkinlik') . '</option>';
+    $formhtml .= '<option value="score_by_average">' . get_string('mode_score_by_average', 'local_yetkinlik') . '</option>';
+    $formhtml .= '</select>';
+    $formhtml .= '</div>';
+
+    $formhtml .= '<div class="text-center">';
+    $formhtml .= '<input type="submit" class="btn btn-primary" value="' . get_string('btn_process_now', 'local_yetkinlik') . '">';
+    $formhtml .= '</div>';
+    $formhtml .= '</form>';
+
+    echo $formhtml;
 }
 
 echo $OUTPUT->footer();
