@@ -1,0 +1,122 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_yetkinlik/teacher_student_competency_activity_page
+
+    Teacher view for student competency performance (Quizzes & Competency Module Activities).
+}}
+<div class="local_yetkinlik_teacher_report">
+    <div class="card mb-4 p-3 bg-light border-0 shadow-sm">
+        <div class="card-body">{{{form_html}}}</div>
+    </div>
+
+    {{#has_selection}}
+        {{#description}}
+        <div class="alert alert-info border-left-info shadow-sm mb-4">
+            <i class="fa fa-info-circle"></i> {{{description}}}
+        </div>
+        {{/description}}
+
+        {{! Genel Özet Kartı }}
+        {{#overallsummary}}
+        <div class="card border-primary mb-4 shadow-sm">
+            <div class="card-body bg-light text-center">
+                <h5 class="card-title text-muted mb-1">{{#str}}overallsummarytitle, local_yetkinlik{{/str}}</h5>
+                <h3 class="font-weight-bold" style="color: {{color}};">%{{rate}}</h3>
+            </div>
+        </div>
+        {{/overallsummary}}
+
+        {{! 1. Sınav Başarıları Tablosu }}
+        {{#has_rows}}
+            <h4 class="mt-4">{{#str}}summaryreport, local_yetkinlik{{/str}}</h4>
+            <div class="table-responsive">
+                <table class="generaltable table table-bordered table-hover mt-3 shadow-sm bg-white">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>{{#str}}quiz, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}question, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}correct, local_yetkinlik{{/str}}</th>
+                            <th class="text-center">{{#str}}success, local_yetkinlik{{/str}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#rows}}
+                        <tr>
+                            <td><a href="{{quizurl}}" target="_blank"><strong>{{quizname}}</strong></a></td>
+                            <td class="text-center">{{questions}}</td>
+                            <td class="text-center">{{correct}}</td>
+                            <td class="text-center font-weight-bold" style="color: {{color}};">%{{rate}}</td>
+                        </tr>
+                        {{/rows}}
+                    </tbody>
+                    {{#total}}
+                    <tfoot>
+                        <tr class="table-secondary font-weight-bold">
+                            <td>{{#str}}general_total_average, local_yetkinlik{{/str}}</td>
+                            <td class="text-center">{{questions}}</td>
+                            <td class="text-center">{{correct}}</td>
+                            <td class="text-center" style="color: {{color}};">%{{rate}}</td>
+                        </tr>
+                    </tfoot>
+                    {{/total}}
+                </table>
+            </div>
+        {{/has_rows}}
+
+        {{^has_rows}}
+            <div class="alert alert-warning mt-4">{{#str}}nodatastudentcompetency, local_yetkinlik{{/str}}</div>
+        {{/has_rows}}
+
+        {{! 2. competency_modulecomp ile Eşleşen Etkinlikler Tablosu }}
+        <h4 class="mt-5">{{#str}}other_activities_related_title, local_yetkinlik{{/str}}</h4>
+        
+        {{#has_activityrows}}
+            <div class="table-responsive">
+                <table class="generaltable table table-bordered table-hover mt-3 shadow-sm bg-white">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>{{#str}}activity_name, local_yetkinlik{{/str}}</th>
+                            <th class="text-center" style="width: 25%;">{{#str}}success_percentage, local_yetkinlik{{/str}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#activityrows}}
+                        <tr>
+                            <td><a href="{{url}}" target="_blank"><strong>{{activityname}}</strong></a></td>
+                            <td class="text-center font-weight-bold" style="color: {{color}};">%{{rate}}</td>
+                        </tr>
+                        {{/activityrows}}
+                    </tbody>
+                    {{#activitytotal}}
+                    <tfoot>
+                        <tr class="table-secondary font-weight-bold">
+                            <td>{{#str}}arithmetic_mean_activities, local_yetkinlik{{/str}}</td>
+                            <td class="text-center" style="color: {{color}};">%{{rate}}</td>
+                        </tr>
+                    </tfoot>
+                    {{/activitytotal}}
+                </table>
+            </div>
+        {{/has_activityrows}}
+
+        {{^has_activityrows}}
+            <div class="alert alert-info mt-4">{{#str}}no_direct_activities_found, local_yetkinlik{{/str}}</div>
+        {{/has_activityrows}}
+
+    {{/has_selection}}
+</div>
