@@ -20,8 +20,8 @@
  * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'core/modal_factory', 'core/modal_events', 'core/str', 'core/notification'],
-    function($, ModalFactory, ModalEvents, Str, Notification) {
+define(['jquery', 'core/modal', 'core/str', 'core/notification'],
+    function($, Modal, Str, Notification) {
 
     return {
         /**
@@ -30,35 +30,27 @@ define(['jquery', 'core/modal_factory', 'core/modal_events', 'core/str', 'core/n
          * @param {string} selector The CSS selector for the links (e.g., '.view-question-modal')
          */
         init: function(selector) {
-            $(selector).on('click', function(e) {
-                // Prevent the default link behavior (opening in a new tab).
+            $(document).on('click', selector, function(e) {
                 e.preventDefault();
+                e.stopPropagation();
 
                 var targetUrl = $(this).attr('href');
 
                 // Fetch the translated string for the modal title.
-                // We use 'viewattempt' from our local_yetkinlik language file.
                 Str.get_string('viewattempt', 'local_yetkinlik').then(function(title) {
 
-                    // Create the Moodle Modal instance.
-                    return ModalFactory.create({
-                        type: ModalFactory.types.CANCEL,
+                    // Create and show modal using modern Moodle 5.x Modal class.
+                    return Modal.create({
                         title: title,
                         body: '<iframe src="' + targetUrl + '" width="100%" height="600px" frameborder="0"></iframe>',
-                        large: true
+                        large: true,
+                        show: true,
+                        removeOnClose: true
                     });
 
-                }).then(function(modal) {
-                    // Display the modal to the user.
-                    modal.show();
-
-                    // Destroy the modal from the DOM once it is hidden to free up memory.
-                    modal.getRoot().on(ModalEvents.hidden, function() {
-                        modal.destroy();
-                    });
-
-                    return;
                 }).catch(Notification.exception);
+
+                return false;
             });
         }
     };
