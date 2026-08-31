@@ -3,12 +3,25 @@
 A Moodle **Competency Analysis and Reporting** plugin. This plugin analyzes and reports on user competencies based on the question‑competency links created by `qbank_yetkinlik`.
 
 ## Features
-- Generate analysis based on competency‑linked questions
-- Track user competency progress
-- Provide color‑coded and motivational feedback
-- Export PDF reports
-- Multi‑language support
-- Works in integration with `qbank_yetkinlik`
+Generate analysis based on competency-linked questions
+
+Track user competency progress with percentage-based scale matching
+
+Automatically calculate and assign question success rates as competency evidence via background processing
+
+Combine question performance with other competency-related activities for comprehensive evaluation
+
+Configure and weight other competency-related activities using competency_weights.php
+
+Automatically grade Moodle competencies using weighted averages or arithmetic averages of all linked evidence
+
+Provide color-coded and motivational feedback
+
+Export PDF reports
+
+Multi-language support
+
+Seamless integration with the new version of qbank_yetkinlik
 
 ## Installation
 1. Copy this plugin into `moodle/local/yetkinlik`.
