@@ -79,6 +79,7 @@ $string['generalcomment'] = 'General Comment';
 $string['greenlegend'] = 'Green: Fully Achieved (80%+)';
 $string['groupcompetency'] = 'Group Competency Analysis';
 $string['groupquizcompetency'] = 'Group Quiz Competency Analysis';
+$string['index'] = 'İndeks';
 $string['label_evaluation_mode'] = 'Select Processing Mode:';
 $string['last30days'] = 'Last 30 days';
 $string['last90days'] = 'Last 90 days';
