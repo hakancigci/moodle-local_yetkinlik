@@ -19,9 +19,9 @@ function xmldb_local_yetkinlik_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2026082600) {
+    if ($oldversion < 2026082200) {
 
-        // 1. We define the local_competence_scale_map table.
+        // 1. local_yetkinlik_scale_map tablosunu tanımlıyoruz.
         $table1 = new xmldb_table('local_yetkinlik_scale_map');
 
         $table1->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
@@ -36,8 +36,31 @@ function xmldb_local_yetkinlik_upgrade($oldversion) {
             $dbman->create_table($table1);
         }
 
-        // We are notifying Moodle that this stage has been successfully completed.
+        // Moodle'a bu aşamanın başarıyla geçildiğini bildiriyoruz.
         upgrade_plugin_savepoint(true, 2026082200, 'local', 'yetkinlik');
+    }
+
+    if ($oldversion < 2026083001) {
+
+        // 2. local_yetkinlik_weights tablosunu tanımlıyoruz.
+        $table2 = new xmldb_table('local_yetkinlik_weights');
+
+        $table2->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table2->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table2->add_field('competencyid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table2->add_field('itemtype', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, null);
+        $table2->add_field('itemid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table2->add_field('weight', XMLDB_TYPE_NUMBER, '10,2', null, XMLDB_NOTNULL, null, '0.00');
+        $table2->add_field('excluded', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+
+        $table2->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        if (!$dbman->table_exists($table2)) {
+            $dbman->create_table($table2);
+        }
+
+        // Moodle'a bu aşamanın başarıyla geçildiğini bildiriyoruz.
+        upgrade_plugin_savepoint(true, 2026083001, 'local', 'yetkinlik');
     }
 
     return true;
