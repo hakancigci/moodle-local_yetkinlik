@@ -4,7 +4,6 @@
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    
     <!-- Scale Percentage Interval Mapping Table -->
     <TABLE NAME="local_yetkinlik_scale_map" COMMENT="Maps Moodle scale items to percentage ranges for automated grading">
       <FIELDS>
