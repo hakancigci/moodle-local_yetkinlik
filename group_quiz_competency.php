@@ -37,8 +37,8 @@ require_capability('mod/quiz:viewreports', $context);
 // 3. Page Settings (Must be defined before header output).
 $PAGE->set_url('/local/yetkinlik/group_quiz_competency.php', [
     'courseid' => $courseid,
-    'groupid'  => $groupid,
-    'quizid'   => $quizid,
+    //'groupid'  => $groupid,
+    //'quizid'   => $quizid,
 ]);
 $PAGE->set_title(get_string('groupquizcompetency', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('groupquizcompetency', 'local_yetkinlik'));
