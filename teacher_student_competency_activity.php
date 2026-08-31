@@ -116,7 +116,7 @@ if ($userid && $competencyid) {
 
     // 3a. Quiz / Sınav Bazlı Soru Başarı Analizi
     $sqlsummary = "SELECT quiz.id AS quizid, quiz.name AS quizname, MAX(quiza.id) as lastattemptid,
-                          SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
+                        SUM(qa.maxfraction) AS questions, SUM(qas.fraction) AS correct
                    FROM {quiz_attempts} quiza
                    JOIN {quiz} quiz ON quiz.id = quiza.quiz
                    JOIN {question_usages} qu ON qu.id = quiza.uniqueid
@@ -178,6 +178,19 @@ if ($userid && $competencyid) {
     ]);
 
     $activityrates = [];
+    $weightedsum = 0;
+    $totalweightsused = 0;
+
+    // Sınav grubu ağırlığını veritabanından çekelim
+    $quizweightrec = $DB->get_record('local_yetkinlik_weights', [
+        'courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => 'quiz_questions'
+    ]);
+
+    if (!is_null($quiztrate) && $quizweightrec && !$quizweightrec->excluded && $quizweightrec->weight > 0) {
+        $weightedsum += ($quiztrate * ($quizweightrec->weight / 100));
+        $totalweightsused += $quizweightrec->weight;
+    }
+
     foreach ($rawactivities as $ar) {
         $modulename = ucfirst($ar->modname);
         if ($DB->get_manager()->table_exists($ar->modname)) {
@@ -198,7 +211,7 @@ if ($userid && $competencyid) {
             WHERE gi.courseid = :courseid
               AND gi.itemtype = 'mod'
               AND gi.itemmodule = :modname
-              and gi.iteminstance = :instance
+              AND gi.iteminstance = :instance
               AND gg.userid = :userid
         ", [
             'courseid' => $courseid,
@@ -216,6 +229,16 @@ if ($userid && $competencyid) {
             $actrate = number_format($actnumrate, 1);
             $color = ($actnumrate >= 80) ? 'green' : (($actnumrate >= 40) ? 'orange' : 'red');
             $activityrates[] = $actnumrate;
+
+            // Etkinlik ağırlığını kontrol et
+            $modweightrec = $DB->get_record('local_yetkinlik_weights', [
+                'courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => $ar->modname, 'itemid' => $ar->instance
+            ]);
+
+            if ($modweightrec && !$modweightrec->excluded && $modweightrec->weight > 0) {
+                $weightedsum += ($actnumrate * ($modweightrec->weight / 100));
+                $totalweightsused += $modweightrec->weight;
+            }
         }
 
         $renderdata->activityrows[] = [
@@ -230,7 +253,7 @@ if ($userid && $competencyid) {
         $renderdata->has_activityrows = true;
     }
 
-    // Etkinlikler ortalaması
+    // Etkinlikler ortalaması (bilgi amaçlı eskisi gibi bırakılabilir)
     $activitytrate = null;
     if (!empty($activityrates)) {
         $activitytrate = array_sum($activityrates) / count($activityrates);
@@ -240,17 +263,9 @@ if ($userid && $competencyid) {
         ];
     }
 
-    // 3c. Sınav ve Etkinlikler Genel Aritmetik Ortalaması
-    $allrates = [];
-    if (!is_null($quiztrate)) {
-        $allrates[] = $quiztrate;
-    }
-    if (!is_null($activitytrate)) {
-        $allrates[] = $activitytrate;
-    }
-
-    if (!empty($allrates)) {
-        $overallrate = array_sum($allrates) / count($allrates);
+    // 3c. Ağırlıklı Genel Özet Hesabı
+    if ($totalweightsused > 0) {
+        $overallrate = $weightedsum; 
         $renderdata->overallsummary = [
             'rate'  => number_format($overallrate, 1),
             'color' => ($overallrate >= 80) ? 'green' : (($overallrate >= 40) ? 'orange' : 'red'),
