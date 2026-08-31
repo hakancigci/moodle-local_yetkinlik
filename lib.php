@@ -32,106 +32,125 @@
  */
 function local_yetkinlik_extend_navigation_course($navigation, $course, $context) {
 
-    // 1. Teacher Reports Section.
-    if (has_capability('mod/quiz:viewreports', $context)) {
-        // General class report.
-        if (!$navigation->find('yetkinlik_teacher', navigation_node::TYPE_SETTING)) {
+  // 1. Teacher Reports Section (Gruplandırılmış Menü - Öğretmen Menüleri)
+   if (has_capability('local/yetkinlik:viewreports', $context) || has_capability('local/yetkinlik:manage', $context) || has_capability('mod/quiz:viewreports', $context) || has_capability('moodle/course:update', $context)) {
+        
+        $teachernode = $navigation->find('yetkinlik_teacher_parent', navigation_node::TYPE_SETTING);
+        if (!$teachernode) {
             $url = new moodle_url('/local/yetkinlik/class_report.php', ['courseid' => $course->id]);
-            $navigation->add(
-                get_string('classreport', 'local_yetkinlik'),
+            $teachernode = $navigation->add(
+                get_string('teachercompetencymenu', 'local_yetkinlik'),
                 $url,
                 navigation_node::TYPE_SETTING,
                 null,
-                'yetkinlik_teacher',
+                'yetkinlik_teacher_parent',
                 new pix_icon('i/report', '')
             );
         }
 
+        // General class report.
+        if (has_capability('mod/quiz:viewreports', $context) || has_capability('local/yetkinlik:viewreports', $context)) {
+            $teachernode->add(
+                get_string('classreport', 'local_yetkinlik'),
+                new moodle_url('/local/yetkinlik/class_report.php', ['courseid' => $course->id]),
+                navigation_node::TYPE_SETTING,
+                null,
+                'yetkinlik_teacher'
+            );
+        }
+
         // Student analysis (General).
-        if (!$navigation->find('yetkinlik_teacher_student', navigation_node::TYPE_SETTING)) {
-            $url = new moodle_url('/local/yetkinlik/teacher_student_competency.php', ['courseid' => $course->id]);
-            $navigation->add(
+        if (has_capability('mod/quiz:viewreports', $context) || has_capability('local/yetkinlik:viewreports', $context)) {
+            $teachernode->add(
                 get_string('studentanalysis', 'local_yetkinlik'),
-                $url,
+                new moodle_url('/local/yetkinlik/teacher_student_competency.php', ['courseid' => $course->id]),
                 navigation_node::TYPE_SETTING,
                 null,
-                'yetkinlik_teacher_student',
-                new pix_icon('i/users', '')
+                'yetkinlik_teacher_student'
             );
         }
 
-        // Student exam analysis (Newly added).
-        if (!$navigation->find('yetkinlik_teacher_student_exam', navigation_node::TYPE_SETTING)) {
-            $url = new moodle_url('/local/yetkinlik/teacher_student_exam.php', ['courseid' => $course->id]);
-            $navigation->add(
+        // Student exam analysis.
+        if (has_capability('mod/quiz:viewreports', $context) || has_capability('local/yetkinlik:viewreports', $context)) {
+            $teachernode->add(
                 get_string('studentexamanalysis', 'local_yetkinlik'),
-                $url,
+                new moodle_url('/local/yetkinlik/teacher_student_exam.php', ['courseid' => $course->id]),
                 navigation_node::TYPE_SETTING,
                 null,
-                'yetkinlik_teacher_student_exam',
-                new pix_icon('i/search', '')
+                'yetkinlik_teacher_student_exam'
             );
         }
-    }
 
-    // 2. Group & Course Management Analysis.
-    if (has_capability('moodle/course:update', $context)) {
-        if (!$navigation->find('groupcompetency', navigation_node::TYPE_SETTING)) {
-            $url = new moodle_url('/local/yetkinlik/group_competency.php', ['courseid' => $course->id]);
-            $navigation->add(
+        // Teacher Student Competency Activity.
+        if (has_capability('mod/quiz:viewreports', $context) || has_capability('local/yetkinlik:viewreports', $context)) {
+            $teachernode->add(
+                get_string('teacherstudentcompetencyactivity', 'local_yetkinlik'),
+                new moodle_url('/local/yetkinlik/teacher_student_competency_activity.php', ['courseid' => $course->id]),
+                navigation_node::TYPE_SETTING,
+                null,
+                'yetkinlik_teacher_student_activity'
+            );
+        }
+
+        // Group Competency (Genel Grup Analizi).
+        if (has_capability('moodle/course:update', $context) || has_capability('local/yetkinlik:viewreports', $context)) {
+            $teachernode->add(
                 get_string('groupcompetency', 'local_yetkinlik'),
-                $url,
+                new moodle_url('/local/yetkinlik/group_competency.php', ['courseid' => $course->id]),
                 navigation_node::TYPE_SETTING,
                 null,
-                'groupcompetency',
-                new pix_icon('i/group', '')
+                'groupcompetency'
             );
         }
 
-        if (!$navigation->find('groupquizcompetency', navigation_node::TYPE_SETTING)) {
-            $url = new moodle_url('/local/yetkinlik/group_quiz_competency.php', ['courseid' => $course->id]);
-            $navigation->add(
+        // Group Quiz Competency.
+        if (has_capability('mod/quiz:viewreports', $context) || has_capability('local/yetkinlik:viewreports', $context)) {
+            $node = $teachernode->add(
                 get_string('groupquizcompetency', 'local_yetkinlik'),
-                $url,
+                new moodle_url('/local/yetkinlik/group_quiz_competency.php', ['courseid' => $course->id]),
                 navigation_node::TYPE_SETTING,
                 null,
-                'groupquizcompetency',
-                new pix_icon('i/quiz', '')
+                'groupquizcompetency'
             );
+            
+          
         }
-    }
 
-    // 3. Scale Mapping (Teacher & Admin).
-    if (has_capability('mod/quiz:viewreports', $context) || has_capability('moodle/site:config', context_system::instance())) {
-        if (!$navigation->find('yetkinlik_scale_mapping', navigation_node::TYPE_SETTING)) {
-            $url = new moodle_url('/local/yetkinlik/scale_mapping.php', ['courseid' => $course->id]);
-            $navigation->add(
-                get_string('scalemapping', 'local_yetkinlik'), // Dil dosyanızdaki anahtara göre ayarlayabilirsiniz
-                $url,
+        // Competency Weights Management.
+        if (has_capability('moodle/course:update', $context) || has_capability('local/yetkinlik:manage', $context)) {
+            $teachernode->add(
+                get_string('competencyweights', 'local_yetkinlik'),
+                new moodle_url('/local/yetkinlik/competency_weights.php', ['courseid' => $course->id]),
                 navigation_node::TYPE_SETTING,
                 null,
-                'yetkinlik_scale_mapping',
-                new pix_icon('i/grades', '')
+                'competency_weight'
             );
         }
-    }
 
-    // 4. Admin Only: Background Tasks.
-    if (has_capability('moodle/site:config', context_system::instance())) {
-        if (!$navigation->find('yetkinlik_admin_process', navigation_node::TYPE_SETTING)) {
-            $url = new moodle_url('/local/yetkinlik/add_success_to_evidence.php', ['courseid' => $course->id]);
-            $navigation->add(
+        // Scale Mapping (Teacher & Admin).
+        if (has_capability('mod/quiz:viewreports', $context) || has_capability('moodle/site:config', context_system::instance()) || has_capability('local/yetkinlik:manage', $context)) {
+            $teachernode->add(
+                get_string('scalemapping', 'local_yetkinlik'),
+                new moodle_url('/local/yetkinlik/scale_mapping.php', ['courseid' => $course->id]),
+                navigation_node::TYPE_SETTING,
+                null,
+                'yetkinlik_scale_mapping'
+            );
+        }
+
+        // Admin Only: Background Tasks.
+        if (has_capability('moodle/site:config', context_system::instance())) {
+            $teachernode->add(
                 get_string('process_success_title', 'local_yetkinlik'),
-                $url,
+                new moodle_url('/local/yetkinlik/add_success_to_evidence.php', ['courseid' => $course->id]),
                 navigation_node::TYPE_SETTING,
                 null,
-                'yetkinlik_admin_process',
-                new pix_icon('i/settings', '')
+                'yetkinlik_admin_process'
             );
         }
     }
 
-    // 5. Student Specific Menus.
+    // 2. Student Specific Menus.
     if (isloggedin() && !isguestuser()) {
         $studentnode = $navigation->find('yetkinlik_student_parent', navigation_node::TYPE_CUSTOM);
         if (!$studentnode) {
@@ -172,6 +191,15 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             'yetkinlik_student_competency'
         );
 
+        // Student Competency Activity (Öğrenci Etkinlik Performansı).
+        $studentnode->add(
+            get_string('studentcompetencyactivity', 'local_yetkinlik'),
+            new moodle_url('/local/yetkinlik/student_competency_activity.php', ['courseid' => $course->id]),
+            navigation_node::TYPE_CUSTOM,
+            null,
+            'yetkinlik_student_activity'
+        );
+
         // Competency state (Yetkinlik Durumu).
         $studentnode->add(
             get_string('mycompetencystate', 'local_yetkinlik'),
@@ -187,8 +215,7 @@ function local_yetkinlik_extend_navigation_course($navigation, $course, $context
             new moodle_url('/local/yetkinlik/timeline.php', ['courseid' => $course->id]),
             navigation_node::TYPE_CUSTOM,
             null,
-            'yetkinlik_timeline',
-            new pix_icon('i/calendar', '')
+            'yetkinlik_timeline'
         );
     }
 }
