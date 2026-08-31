@@ -165,6 +165,19 @@ if ($competencyid) {
     ]);
 
     $activityrates = [];
+    $weightedsum = 0;
+    $totalweightsused = 0;
+
+    // Sınav grubu ağırlığını veritabanından çekelim
+    $quizweightrec = $DB->get_record('local_yetkinlik_weights', [
+        'courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => 'quiz_questions'
+    ]);
+
+    if (!is_null($quiztrate) && $quizweightrec && !$quizweightrec->excluded && $quizweightrec->weight > 0) {
+        $weightedsum += ($quiztrate * ($quizweightrec->weight / 100));
+        $totalweightsused += $quizweightrec->weight;
+    }
+
     foreach ($rawactivities as $ar) {
         $modulename = ucfirst($ar->modname);
         if ($DB->get_manager()->table_exists($ar->modname)) {
@@ -203,6 +216,16 @@ if ($competencyid) {
             $actrate = number_format($actnumrate, 1);
             $color = ($actnumrate >= 80) ? 'green' : (($actnumrate >= 40) ? 'orange' : 'red');
             $activityrates[] = $actnumrate;
+
+            // Etkinlik ağırlığını kontrol et
+            $modweightrec = $DB->get_record('local_yetkinlik_weights', [
+                'courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => $ar->modname, 'itemid' => $ar->instance
+            ]);
+
+            if ($modweightrec && !$modweightrec->excluded && $modweightrec->weight > 0) {
+                $weightedsum += ($actnumrate * ($modweightrec->weight / 100));
+                $totalweightsused += $modweightrec->weight;
+            }
         }
 
         $renderdata->activityrows[] = [
@@ -217,7 +240,7 @@ if ($competencyid) {
         $renderdata->has_activityrows = true;
     }
 
-    // Activities average calculation
+    // Activities average calculation (bilgi amaçlı)
     $activitytrate = null;
     if (!empty($activityrates)) {
         $activitytrate = array_sum($activityrates) / count($activityrates);
@@ -227,17 +250,9 @@ if ($competencyid) {
         ];
     }
 
-    // 3c. Overall arithmetic mean of quizzes and activities
-    $allrates = [];
-    if (!is_null($quiztrate)) {
-        $allrates[] = $quiztrate;
-    }
-    if (!is_null($activitytrate)) {
-        $allrates[] = $activitytrate;
-    }
-
-    if (!empty($allrates)) {
-        $overallrate = array_sum($allrates) / count($allrates);
+    // 3c. Ağırlıklı Genel Özet Hesabı (Öğrenci Paneli)
+    if ($totalweightsused > 0) {
+        $overallrate = $weightedsum;
         $renderdata->overallsummary = [
             'rate'  => number_format($overallrate, 1),
             'color' => ($overallrate >= 80) ? 'green' : (($overallrate >= 40) ? 'orange' : 'red'),
