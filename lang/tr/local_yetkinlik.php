@@ -79,6 +79,7 @@ $string['generalcomment'] = 'Genel Yorum';
 $string['greenlegend'] = 'Yeşil: Tam Kazanıldı (%80+)';
 $string['groupcompetency'] = 'Grup Yetkinlik Analizi';
 $string['groupquizcompetency'] = 'Grup Sınav Yetkinlik Analizi';
+$string['index'] = 'İndeks';
 $string['label_evaluation_mode'] = 'İşlem Modu Seçin:';
 $string['last30days'] = 'Son 30 gün';
 $string['last90days'] = 'Son 90 gün';
