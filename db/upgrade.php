@@ -40,7 +40,7 @@ function xmldb_local_yetkinlik_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026082200, 'local', 'yetkinlik');
     }
 
-    if ($oldversion < 2026083001) {
+    if ($oldversion < 2026083101) {
 
         // 2. local_yetkinlik_weights tablosunu tanımlıyoruz.
         $table2 = new xmldb_table('local_yetkinlik_weights');
@@ -60,7 +60,7 @@ function xmldb_local_yetkinlik_upgrade($oldversion) {
         }
 
         // Moodle'a bu aşamanın başarıyla geçildiğini bildiriyoruz.
-        upgrade_plugin_savepoint(true, 2026083001, 'local', 'yetkinlik');
+        upgrade_plugin_savepoint(true, 2026083101, 'local', 'yetkinlik');
     }
 
     return true;
