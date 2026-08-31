@@ -73,7 +73,7 @@ class process_competency_rates_task extends \core\task\adhoc_task {
             foreach ($competencies as $c) {
                 $competencyid = (int)$c->id;
                 
-                // Fetch user competency rate and detailed metrics
+                // Fetch user competency rate and detailed metrics based on weights and evaluation modes
                 $result = $this->get_user_competency_rate_and_details($studentid, $competencyid, $courseid, $evaluationmode);
 
                 if ($result === null || $result['rate'] === null) {
@@ -267,10 +267,10 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                          JOIN {question_attempts} qa ON qa.questionusageid = qu.id
                          JOIN {qbank_yetkinlik_qmap} map ON map.questionid = qa.questionid
                          JOIN (
-                              SELECT MAX(fraction) AS fraction, questionattemptid
-                                FROM {question_attempt_steps}
-                            GROUP BY questionattemptid
-                         ) qas ON qas.questionattemptid = qa.id
+                             SELECT MAX(fraction) AS fraction, questionattemptid
+                               FROM {question_attempt_steps}
+                           GROUP BY questionattemptid
+                        ) qas ON qas.questionattemptid = qa.id
                         WHERE map.competencyid = :competencyid
                           AND quiza.userid = :userid
                           AND quiz.course = :courseid
@@ -309,6 +309,22 @@ class process_competency_rates_task extends \core\task\adhoc_task {
 
         $activityrates = [];
         $activitylist = [];
+        $weightedsum = 0;
+        $totalweightsused = 0;
+
+        // Sınav grubu ağırlığını veritabanından çekelim
+        $quizweightrec = $DB->get_record('local_yetkinlik_weights', [
+            'courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => 'quiz_questions'
+        ]);
+
+        // Eğer ağırlık tablosunda kayıt varsa ve hariç tutulmadıysa ağırlıklı hesaba kat
+        $useweights = ($quizweightrec !== false);
+
+        if ($useweights && !is_null($quiztrate) && !$quizweightrec->excluded && $quizweightrec->weight > 0) {
+            $weightedsum += ($quiztrate * ($quizweightrec->weight / 100));
+            $totalweightsused += $quizweightrec->weight;
+        }
+
         foreach ($rawactivities as $ar) {
             $modulename = ucfirst($ar->modname);
             if ($DB->get_manager()->table_exists($ar->modname)) {
@@ -341,6 +357,16 @@ class process_competency_rates_task extends \core\task\adhoc_task {
                 $actnumrate = ($gradegrd->finalgrade / $gradegrd->grademax) * 100;
                 $activityrates[] = $actnumrate;
                 $activitylist[$modulename] = $actnumrate;
+
+                if ($useweights) {
+                    $modweightrec = $DB->get_record('local_yetkinlik_weights', [
+                        'courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => $ar->modname, 'itemid' => $ar->instance
+                    ]);
+                    if ($modweightrec && !$modweightrec->excluded && $modweightrec->weight > 0) {
+                        $weightedsum += ($actnumrate * ($modweightrec->weight / 100));
+                        $totalweightsused += $modweightrec->weight;
+                    }
+                }
             }
         }
 
@@ -364,7 +390,20 @@ class process_competency_rates_task extends \core\task\adhoc_task {
             return null;
         }
 
-        // 3. Calculation for 'score_by_average' Mode
+        // 3. Calculation Mode: Weighted or Standard Arithmetic Mean
+        if ($useweights && $totalweightsused > 0) {
+            $overallrate = $weightedsum;
+            return [
+                'rate' => $overallrate,
+                'details' => [
+                    'quizrate' => $quiztrate,
+                    'activityrate' => $activitytrate,
+                    'activitylist' => $activitylist
+                ]
+            ];
+        }
+
+        // Fallback to simple average if no custom weights are configured
         $allrates = [];
         if (!is_null($quiztrate)) {
             $allrates[] = $quiztrate;
