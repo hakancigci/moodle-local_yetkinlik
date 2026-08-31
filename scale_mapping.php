@@ -16,19 +16,22 @@
 
 require_once(__DIR__ . '/../../config.php');
 
+$courseid = required_param('courseid', PARAM_INT);
 $scaleid = optional_param('scaleid', 0, PARAM_INT);
-$courseid = optional_param('courseid', 0, PARAM_INT);
 
-// Yetkilendirme kontrolü (Site yöneticisi veya ders yönetim yetkisi)
-require_login();
-$context = context_system::instance();
-require_capability('moodle/site:config', $context);
+$course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+require_login($course);
 
-$PAGE->set_url('/local/yetkinlik/scale_mapping.php', ['scaleid' => $scaleid, 'courseid' => $courseid]);
+$context = context_course::instance($course->id);
+require_capability('local/yetkinlik:manage', $context);
+
+$PAGE->set_url('/local/yetkinlik/scale_mapping.php', ['courseid' => $courseid, //'scaleid' => $scaleid
+]);
+$PAGE->set_pagelayout('course');
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('scalemapping', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('scalemapping', 'local_yetkinlik'));
-$PAGE->set_pagelayout('admin');
+
 
 // Form gönderildiyse verileri kaydet
 if (optional_param('save', 0, PARAM_INT) && confirm_sesskey() && $scaleid) {
@@ -51,7 +54,7 @@ if (optional_param('save', 0, PARAM_INT) && confirm_sesskey() && $scaleid) {
         $DB->insert_record('local_yetkinlik_scale_map', $record);
     }
 
-    redirect(new moodle_url('/local/yetkinlik/scale_mapping.php', ['scaleid' => $scaleid]), 
+    redirect(new moodle_url('/local/yetkinlik/scale_mapping.php', ['courseid' => $courseid, 'scaleid' => $scaleid]), 
         get_string('changessaved', 'core'), null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
@@ -89,13 +92,14 @@ echo '<div class="local_yetkinlik_scale_mapping">';
 
 // 1. Ölçek Seçim Formu
 echo '<form method="get" action="scale_mapping.php" class="mb-4 form-inline">';
+echo '<input type="hidden" name="courseid" value="' . $courseid . '">';
 echo '<label class="mr-2 font-weight-bold" for="scaleid">' . get_string('selectscale', 'local_yetkinlik') . '</label>';
 echo html_writer::select($scalemenu, 'scaleid', $scaleid, false, ['class' => 'form-control mr-2', 'onchange' => 'this.form.submit()']);
 echo '</form>';
 
 // 2. Eşleme Tablosu Formu
 if ($scaleid && !empty($scaleitems)) {
-    echo '<form method="post" action="scale_mapping.php">';
+    echo '<form method="post" action="scale_mapping.php?courseid=' . $courseid . '">';
     echo '<input type="hidden" name="sesskey" value="' . sesskey() . '">';
     echo '<input type="hidden" name="scaleid" value="' . $scaleid . '">';
     echo '<input type="hidden" name="save" value="1">';
