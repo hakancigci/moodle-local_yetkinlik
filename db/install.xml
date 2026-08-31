@@ -17,20 +17,19 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
     </TABLE>
-      </TABLE>
     <TABLE NAME="local_yetkinlik_weights" COMMENT="Yetkinlik altındaki ögelerin (sorular ve etkinlikler) ağırlık ve aktiflik durumlarını tutar">
-  <FIELDS>
-    <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-    <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-    <FIELD NAME="competencyid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-    <FIELD NAME="itemtype" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="quiz_questions veya modül tipi (assignment, forum vb.)"/>
-    <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="DEFAULT '0'" COMMENT="Modül instance id veya soru için 0/özel id"/>
-    <FIELD NAME="weight" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0.00"/>
-    <FIELD NAME="excluded" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="1 ise ağırlık hesaplamasına dahil edilmez"/>
-  </FIELDS>
-  <KEYS>
-    <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-  </KEYS>
-</TABLE>
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="competencyid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="itemtype" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="quiz_questions veya modül tipi (assignment, forum vb.)"/>
+        <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" COMMENT="Modül instance id veya soru için 0/özel id"/>
+        <FIELD NAME="weight" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0.00"/>
+        <FIELD NAME="excluded" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="1 ise ağırlık hesaplamasına dahil edilmez"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
   </TABLES>
 </XMLDB>
