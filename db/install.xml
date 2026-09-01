@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/yetkinlik/db" VERSION="2026083101" COMMENT="Scale percentage comparison"
+<XMLDB PATH="local/yetkinlik/db" VERSION="2026090100" COMMENT="Scale percentage comparison"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
