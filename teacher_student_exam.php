@@ -83,9 +83,9 @@ if ($fromform = $mform->get_data()) {
 
             $data->rows[] = (object) [
                 'shortname' => s($r->shortname),
-                'attempts'  => number_format($r->attempts, 0),
-                'correct'   => number_format($r->correct, 1),
-                'rate'      => number_format($rawrate, 1),
+                'attempts'  => number_format($r->attempts ?? 0 , 0),
+                'correct'   => number_format($r->correct ?? 0 , 1),
+                'rate'      => number_format($rawrate ?? 0 , 1),
                 'rowclass'  => $rowclass,
                 'raw_rate'  => round($rawrate, 1), // Added comma after last item to fix NormalizedArrays error.
             ];
