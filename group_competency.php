@@ -118,11 +118,8 @@ if ($groupid) {
             '/local/yetkinlik/student_competency_detail.php',
             ['courseid' => $courseid, 'userid' => $s->id]
         );
-        $row->studentlink = html_writer::link(
-            $detailurl,
-            fullname($s),
-            ['target' => '_blank']
-        );
+       $studentname = trim($s->firstname . ' ' . $s->lastname);
+        $row->studentlink = html_writer::link($detailurl, $studentname, ['target' => '_blank']);
         $row->scores = [];
 
         foreach ($renderdata->competencies as $c) {
