@@ -138,7 +138,8 @@ if ($groupid && $quizid) {
             'courseid' => $courseid,
             'userid' => $s->id,
         ]);
-        $row->studentlink = html_writer::link($detailurl, fullname($s), ['target' => '_blank']);
+        $studentname = trim($s->firstname . ' ' . $s->lastname);
+        $row->studentlink = html_writer::link($detailurl, $studentname, ['target' => '_blank']);
         $row->scores = [];
 
         foreach ($renderdata->competencies as $c) {
