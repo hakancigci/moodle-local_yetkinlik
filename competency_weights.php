@@ -1,5 +1,27 @@
 <?php
+
 // This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Competency Weights.
+ *
+ * @package    local_yetkinlik
+ * @copyright  2026 Hakan Çiğci {@link https://hakancigci.com.tr}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/formslib.php');
@@ -18,7 +40,7 @@ $PAGE->set_title(get_string('configureweights', 'local_yetkinlik'));
 $PAGE->set_heading(get_string('configureweights', 'local_yetkinlik'));
 $PAGE->set_pagelayout('course');
 
-// Yetkinlik listesi
+// Fetch competency list.
 $competencies = $DB->get_records_sql("
     SELECT DISTINCT c.id, c.shortname
     FROM {qbank_yetkinlik_qmap} m
@@ -32,7 +54,7 @@ foreach ($competencies as $c) {
     $compoptions[$c->id] = $c->shortname;
 }
 
-// Form Tanımı
+// Form Definition.
 class local_yetkinlik_weights_form extends moodleform {
     public function definition() {
         $mform = $this->_form;
@@ -44,7 +66,7 @@ class local_yetkinlik_weights_form extends moodleform {
 
         $items = $this->_customdata['items'] ?? [];
 
-        $mform->addElement('html', '<div class="alert alert-warning">Ağırlıkların toplamı tam olarak <strong>100</strong> olmalıdır. Hariç tutmak istediğiniz öğeler için ağırlığı 0 yapabilir veya hariç tut kutucuğunu işaretleyebilirsiniz.</div>');
+        $mform->addElement('html', '<div class="alert alert-warning">' . get_string('weighttotalwarning', 'local_yetkinlik') . '</div>');
 
         foreach ($items as $key => $item) {
             $mform->addElement('header', 'hdr_' . $key, $item['name']);
@@ -63,18 +85,18 @@ class local_yetkinlik_weights_form extends moodleform {
     }
 }
 
-// Seçilen yetkinliğe ait ögeleri toplama
+// Collect items belonging to the selected competency.
 $items = [];
 if ($competencyid) {
-    // 1. Soru Başarı Grubu
+    // 1. Quiz Performance Group.
     $w_quiz = $DB->get_record('local_yetkinlik_weights', ['courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => 'quiz_questions']);
     $items['quiz_questions'] = [
-        'name' => get_string('summaryreport', 'local_yetkinlik') . ' (Soru Başarıları)',
+        'name' => get_string('summaryreport', 'local_yetkinlik') . ' (' . get_string('quizperformances', 'local_yetkinlik') . ')',
         'weight' => $w_quiz ? $w_quiz->weight : 0,
         'excluded' => $w_quiz ? $w_quiz->excluded : 0,
     ];
 
-    // 2. Modül Etkinlikleri
+    // 2. Module Activities.
     $sqlactivities = "SELECT cm.id AS cmid, m.name AS modname, cm.instance
                       FROM {competency_modulecomp} mc
                       JOIN {course_modules} cm ON cm.id = mc.cmid
@@ -92,7 +114,7 @@ if ($competencyid) {
         $w_mod = $DB->get_record('local_yetkinlik_weights', ['courseid' => $courseid, 'competencyid' => $competencyid, 'itemtype' => $ar->modname, 'itemid' => $ar->instance]);
         
         $items[$itemkey] = [
-            'name' => 'Etkinlik: ' . $modulename,
+            'name' => get_string('activityprefix', 'local_yetkinlik') . ': ' . $modulename,
             'weight' => $w_mod ? $w_mod->weight : 0,
             'excluded' => $w_mod ? $w_mod->excluded : 0,
             'modname' => $ar->modname,
@@ -103,7 +125,7 @@ if ($competencyid) {
 
 $mform = new local_yetkinlik_weights_form(null, ['items' => $items]);
 
-// Form verilerini alırken competencyid'yi güvenli şekilde yakalayalım
+// Capture competencyid safely while getting form data.
 if ($frmdata = $mform->get_data()) {
     $competencyid = $frmdata->competencyid;
     $totalweight = 0;
@@ -116,7 +138,7 @@ if ($frmdata = $mform->get_data()) {
     }
 
     if (round($totalweight, 2) != 100.00) {
-        \core\notification::error("Ağırlıklar toplamı 100 olmalıdır! Mevcut toplam: " . $totalweight);
+        \core\notification::error(get_string('weighttotalerror', 'local_yetkinlik', $totalweight));
     } else {
         foreach ($items as $key => $item) {
             $w = floatval($frmdata->{'weight_' . $key});
@@ -143,20 +165,20 @@ if ($frmdata = $mform->get_data()) {
                 $DB->insert_record('local_yetkinlik_weights', $record);
             }
         }
-        \core\notification::success("Ağırlıklar başarıyla kaydedildi.");
+        \core\notification::success(get_string('weightsavedsuccess', 'local_yetkinlik'));
         redirect(new moodle_url('/local/yetkinlik/competency_weights.php', ['courseid' => $courseid, 'competencyid' => $competencyid]));
     }
 }
 
-// Form nesnesine başlangıç verilerini set ediyoruz (hidden alanın formda dolması için kritik)
+// Set initial data to form object (critical for hidden field population).
 $mform->set_data(['courseid' => $courseid, 'competencyid' => $competencyid]);
 
 echo $OUTPUT->header();
 
-// Yetkinlik seçme dropdown arayüzü
+// Competency selector dropdown layout.
 echo '<div class="card mb-4 p-3 bg-light"><form method="GET" action="">';
 echo '<input type="hidden" name="courseid" value="'.$courseid.'">';
-echo '<label><b>Yetkinlik Seçin:</b></label> ';
+echo '<label><b>' . get_string('selectcompetencylabel', 'local_yetkinlik') . ':</b></label> ';
 echo html_writer::select($compoptions, 'competencyid', $competencyid, false, ['class' => 'custom-select d-inline-block w-auto ml-2 mr-2', 'onchange' => 'this.form.submit()']);
 echo '</form></div>';
 
