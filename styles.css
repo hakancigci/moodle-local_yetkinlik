@@ -1,0 +1,85 @@
+/* Kaydırma alanını sınırla */
+.yetkinlik-table-wrapper {
+    overflow-x: auto;
+    position: relative;
+    max-width: 100%;
+}
+
+/* Öğrenci isimlerinin olduğu ilk sütunu sabitle ve arka planını kapat */
+.local_yetkinlik_group_report .table .sticky-column {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: #ffffff !important; /* Hücrelerin arkasının görünmemesi için beyaz arka plan */
+}
+
+/* Tablonun zebra çizgilerinden (striped) etkilenen satırlar için de arka planı sabitle */
+.local_yetkinlik_group_report .table-striped tbody tr:nth-of-type(odd) .sticky-column {
+    background-color: #ffffff !important;
+}
+
+.local_yetkinlik_group_report .table-striped tbody tr:nth-of-type(even) .sticky-column {
+    background-color: #f9f9f9 !important; /* Çift satırlar için hafif gri ton (varsayılan Bootstrap zebra rengi) */
+}
+
+/* Başlık (Header) satırı sabit sütun arka planı */
+.local_yetkinlik_group_report .table thead th.sticky-column {
+    background-color: #f8f9fa !important;
+    z-index: 3;
+}
+
+/* Alt toplam (Footer) satırı sabit sütun arka planı */
+.local_yetkinlik_group_report .table tfoot tr.table-secondary td.sticky-column {
+    background-color: #e2e3e5 !important;
+    z-index: 3;
+}
+
+/* Sabit sütun ile kayan sütunlar arasına şık bir gölge ekler */
+.local_yetkinlik_group_report .table .sticky-column::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 4px;
+    box-shadow: inset -3px 0 3px -3px rgba(0, 0, 0, 0.15);
+}
+
+/* İpucu baloncuğu için hücre pozisyonu */
+.local_yetkinlik_group_report .score-cell {
+    position: relative;
+    cursor: pointer;
+}
+
+/* Mouse ile hücreye gelindiğinde yetkinlik ismini göster */
+.local_yetkinlik_group_report .score-cell:hover::after {
+    content: attr(data-competency);
+    position: absolute;
+    bottom: 100%; /* Hücrenin hemen üstünde belirsin */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2b3035;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: normal;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.25);
+    pointer-events: none; /* Mouse etkileşimini engeller, tıklamayı aksatmaz */
+}
+
+/* Baloncuğun altındaki küçük üçgen ok */
+.local_yetkinlik_group_report .score-cell:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #2b3035 transparent transparent transparent;
+    z-index: 10;
+    pointer-events: none;
+}
