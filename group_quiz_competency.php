@@ -144,6 +144,7 @@ if ($groupid && $quizid) {
 
         foreach ($renderdata->competencies as $c) {
             $scoreobj = new stdClass();
+            $scoreobj->competencyname = $c->shortname;
             if (isset($scoremap[$s->id][$c->id])) {
                 $att = $scoremap[$s->id][$c->id]['att'];
                 $cor = $scoremap[$s->id][$c->id]['cor'];
