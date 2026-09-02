@@ -5,37 +5,44 @@
     max-width: 100%;
 }
 
-/* Öğrenci isimlerinin olduğu ilk sütunu sabitle ve arka planını kapat */
-.local_yetkinlik_group_report .table .sticky-column {
+/* Öğrenci isimlerinin olduğu ilk sütunu sabitle ve arka planını kapat (Her iki sayfa için ortak) */
+.local_yetkinlik_group_report .table .sticky-column,
+.local_yetkinlik_group_quiz_report .table .sticky-column {
     position: sticky;
     left: 0;
     z-index: 2;
     background-color: #ffffff !important; /* Hücrelerin arkasının görünmemesi için beyaz arka plan */
 }
 
-/* Tablonun zebra çizgilerinden (striped) etkilenen satırlar için de arka planı sabitle */
-.local_yetkinlik_group_report .table-striped tbody tr:nth-of-type(odd) .sticky-column {
+/* Tablonun zebra çizgilerinden (striped) etkilenen tek satırlar için arka plan */
+.local_yetkinlik_group_report .table-striped tbody tr:nth-of-type(odd) .sticky-column,
+.local_yetkinlik_group_quiz_report .table-striped tbody tr:nth-of-type(odd) .sticky-column {
     background-color: #ffffff !important;
 }
 
-.local_yetkinlik_group_report .table-striped tbody tr:nth-of-type(even) .sticky-column {
-    background-color: #f9f9f9 !important; /* Çift satırlar için hafif gri ton (varsayılan Bootstrap zebra rengi) */
+/* Tablonun zebra çizgilerinden (striped) etkilenen çift satırlar için arka plan */
+.local_yetkinlik_group_report .table-striped tbody tr:nth-of-type(even) .sticky-column,
+.local_yetkinlik_group_quiz_report .table-striped tbody tr:nth-of-type(even) .sticky-column {
+    background-color: #f9f9f9 !important; /* Çift satırlar için hafif gri ton */
 }
 
 /* Başlık (Header) satırı sabit sütun arka planı */
-.local_yetkinlik_group_report .table thead th.sticky-column {
+.local_yetkinlik_group_report .table thead th.sticky-column,
+.local_yetkinlik_group_quiz_report .table thead th.sticky-column {
     background-color: #f8f9fa !important;
     z-index: 3;
 }
 
 /* Alt toplam (Footer) satırı sabit sütun arka planı */
-.local_yetkinlik_group_report .table tfoot tr.table-secondary td.sticky-column {
+.local_yetkinlik_group_report .table tfoot tr.table-secondary td.sticky-column,
+.local_yetkinlik_group_quiz_report .table tfoot tr.table-secondary td.sticky-column {
     background-color: #e2e3e5 !important;
     z-index: 3;
 }
 
 /* Sabit sütun ile kayan sütunlar arasına şık bir gölge ekler */
-.local_yetkinlik_group_report .table .sticky-column::after {
+.local_yetkinlik_group_report .table .sticky-column::after,
+.local_yetkinlik_group_quiz_report .table .sticky-column::after {
     content: '';
     position: absolute;
     top: 0;
@@ -46,13 +53,15 @@
 }
 
 /* İpucu baloncuğu için hücre pozisyonu */
-.local_yetkinlik_group_report .score-cell {
+.local_yetkinlik_group_report .score-cell,
+.local_yetkinlik_group_quiz_report .score-cell {
     position: relative;
     cursor: pointer;
 }
 
 /* Mouse ile hücreye gelindiğinde yetkinlik ismini göster */
-.local_yetkinlik_group_report .score-cell:hover::after {
+.local_yetkinlik_group_report .score-cell:hover::after,
+.local_yetkinlik_group_quiz_report .score-cell:hover::after {
     content: attr(data-competency);
     position: absolute;
     bottom: 100%; /* Hücrenin hemen üstünde belirsin */
@@ -71,7 +80,8 @@
 }
 
 /* Baloncuğun altındaki küçük üçgen ok */
-.local_yetkinlik_group_report .score-cell:hover::before {
+.local_yetkinlik_group_report .score-cell:hover::before,
+.local_yetkinlik_group_quiz_report .score-cell:hover::before {
     content: '';
     position: absolute;
     bottom: 100%;
