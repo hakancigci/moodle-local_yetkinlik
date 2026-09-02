@@ -27,7 +27,7 @@
         ],
         "students": [
             {
-                "studentlink": "<a href='#'>Ali Yılmaz</a>",
+                "studentlink": "<a href='#'>Ali Y覺lmaz</a>",
                 "scores": [
                     { "rate": "85", "color": "green" },
                     { "rate": "45", "color": "orange" }
@@ -54,11 +54,11 @@
 
     {{#has_group}}
         {{#competencies.0}}
-        <div class="table-responsive">
-            <table class="generaltable table table-bordered table-striped mt-3">
+        <div class="table-responsive yetkinlik-table-wrapper">
+            <table class="generaltable table table-bordered table-striped mt-3 mb-0">
                 <thead>
                     <tr>
-                        <th>{{#str}}student, local_yetkinlik{{/str}}</th>
+                        <th class="sticky-column">{{#str}}student, local_yetkinlik{{/str}}</th>
                         {{#competencies}}
                             <th class="text-center">{{shortname}}</th>
                         {{/competencies}}
@@ -67,9 +67,9 @@
                 <tbody>
                     {{#students}}
                         <tr>
-                            <td>{{{studentlink}}}</td>
+                            <td class="sticky-column">{{{studentlink}}}</td>
                             {{#scores}}
-                                <td class="text-center" style="color: {{color}}; font-weight: bold;">
+                                <td class="text-center score-cell" style="color: {{color}}; font-weight: bold;" data-competency="{{competencyname}}">
                                     {{#rate}}%{{rate}}{{/rate}}
                                     {{^rate}}-{{/rate}}
                                 </td>
@@ -79,7 +79,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="table-secondary font-weight-bold">
-                        <td>{{#str}}total, local_yetkinlik{{/str}}</td>
+                        <td class="sticky-column">{{#str}}total, local_yetkinlik{{/str}}</td>
                         {{#totals}}
                             <td class="text-center" style="color: {{color}};">
                                 {{#rate}}%{{rate}}{{/rate}}
