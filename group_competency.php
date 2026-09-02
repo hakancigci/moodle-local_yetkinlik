@@ -118,13 +118,13 @@ if ($groupid) {
             '/local/yetkinlik/student_competency_detail.php',
             ['courseid' => $courseid, 'userid' => $s->id]
         );
-       $studentname = trim($s->firstname . ' ' . $s->lastname);
-        $row->studentlink = html_writer::link($detailurl, $studentname, ['target' => '_blank']);
+        $studentname = trim($s->firstname . ' ' . $s->lastname);
+$row->studentlink = html_writer::link($detailurl, $studentname, ['target' => '_blank']);
         $row->scores = [];
 
         foreach ($renderdata->competencies as $c) {
             $scoreobj = new stdClass();
-
+            $scoreobj->competencyname = $c->shortname;
             if (isset($scoremap[$s->id][$c->id])) {
                 $att = $scoremap[$s->id][$c->id]['att'];
                 $cor = $scoremap[$s->id][$c->id]['cor'];
